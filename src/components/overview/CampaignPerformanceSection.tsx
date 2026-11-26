@@ -31,8 +31,8 @@ const COLUMNS: ReadonlyArray<{
   { key: 'pipelineValue', label: 'Pipeline', align: 'right' },
   { key: 'proposalCount', label: 'Proposals', align: 'right' },
   { key: 'signedValue', label: 'Signed value', align: 'right' },
-  { key: 'signedCash', label: 'Signed cash (M-03)', align: 'right' },
-  { key: 'collectedCash', label: 'Collected (M-01)', align: 'right' },
+  { key: 'signedCash', label: 'Signed cash', align: 'right' },
+  { key: 'collectedCash', label: 'Collected', align: 'right' },
   { key: 'health', label: 'Health', align: 'left' },
 ];
 
@@ -221,3 +221,4 @@ export function CampaignPerformanceSection({
     </section>
   );
 }
+

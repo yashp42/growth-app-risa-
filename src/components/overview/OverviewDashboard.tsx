@@ -376,7 +376,7 @@ export function OverviewDashboard({
               </div>
               <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
                 <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                  Server rate
+                  Conversion rate
                 </p>
                 <p className="mt-1 text-[20px] font-semibold text-[var(--color-ink)] tabular-nums">
                   {inspectedStage.rateFormatted ?? inspectedStage.reason ?? '—'}
@@ -428,7 +428,7 @@ export function OverviewDashboard({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
               <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                Cleared cash collected (M-01)
+                Cleared cash collected
               </p>
               <p className="mt-1 text-[20px] font-semibold text-[var(--color-ink)] tabular-nums">
                 {payload.cashOutcome.collectedCashFormatted ??
@@ -438,7 +438,7 @@ export function OverviewDashboard({
             </div>
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
               <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                Collection rate (M-06)
+                Collection rate
               </p>
               <p className="mt-1 text-[20px] font-semibold text-[var(--color-accent)] tabular-nums">
                 {payload.cashOutcome.collectionRateFormatted ??
@@ -448,7 +448,7 @@ export function OverviewDashboard({
             </div>
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
               <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                Signed cash basis (M-03)
+                Signed cash basis
               </p>
               <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink)] tabular-nums">
                 {payload.cashOutcome.confirmedCashBasisFormatted ?? '—'}
@@ -456,7 +456,7 @@ export function OverviewDashboard({
             </div>
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
               <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                In-kind value (M-04, separate)
+                In-kind value (non-cash)
               </p>
               <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink-muted)] tabular-nums">
                 {payload.cashOutcome.inKindValueSeparateFormatted ?? '—'}
@@ -522,20 +522,20 @@ export function OverviewDashboard({
         {inspectedCampaign ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
-              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Pipeline (M-21)</p>
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Pipeline</p>
               <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.pipelineFormatted ?? '—'}
               </p>
             </div>
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
-              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Proposals (M-13)</p>
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Proposals</p>
               <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.proposalCount ?? '—'}
               </p>
             </div>
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
               <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                Signed value (M-02)
+                Signed value
               </p>
               <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.signedFormatted ?? '—'}
@@ -543,7 +543,7 @@ export function OverviewDashboard({
             </div>
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
               <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                Signed cash (M-03)
+                Signed cash
               </p>
               <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.signedCashFormatted ?? '—'}
@@ -551,7 +551,7 @@ export function OverviewDashboard({
             </div>
             <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
               <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                Collected (M-01)
+                Collected
               </p>
               <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-accent)] tabular-nums">
                 {inspectedCampaign.collectedCashFormatted ?? '—'}

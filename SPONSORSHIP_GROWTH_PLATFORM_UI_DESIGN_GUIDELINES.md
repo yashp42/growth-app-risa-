@@ -61,3 +61,8 @@ No hardcoded performance statistics or replacement mock data. Do not compute new
 ## Verification
 
 TypeScript, build and existing regressions run in GitHub CI. New tests exercise speech lifecycle, cancellation/replacement races, speaking-state precedence and the empty Analyst composition. These are MOCKED checks. Actual microphone permission, speech playback quality, responsive screenshots and deployed route checks require LIVE browser validation. Never describe source inspection or server-rendered markup as a visual browser pass.
+
+
+## Business language in primary screens
+
+Use business names (Cash collected, Signed value, Collection rate, Base/Plan/Stretch) rather than metric, scenario or rule codes. Show recommended actions as plain-language alert headlines. Keep internal IDs, formulas, raw ratios, forecast percentiles, assessment expressions and source checks in closed details or contextual definitions. Never strip identifiers from API objects or change metric keys, numerical values, permissions or calculations. Keep cash/in-kind distinctions, missing-data explanations and historical/demo/live context visible.

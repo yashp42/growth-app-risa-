@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import { ArrowUpRight } from 'lucide-react';
 import {
   ANALYTICS_METRIC_UI_HINTS,
@@ -40,7 +41,7 @@ export function AnalyticsMetricCard({
 }: AnalyticsMetricCardProps) {
   const hint = ANALYTICS_METRIC_UI_HINTS[metricId];
   const title = hint?.title || definition?.name || metricId;
-  const grain = hint?.grain || 'Metric engine';
+  const grain = hint?.grain || 'Metric';
 
   const infoContentParts = [
     definition?.business_meaning,
@@ -60,23 +61,17 @@ export function AnalyticsMetricCard({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <h3 className="truncate text-[14px] font-semibold text-[var(--color-ink)]">
-                {title}
+                {businessText(title)}
               </h3>
               {infoContentParts.length > 0 ? (
                 <InfoHint
-                  label={`${title} (${metricId})`}
+                  label={`${businessText(title)} (${metricId})`}
                   content={infoContentParts.join(' · ')}
                 />
               ) : null}
             </div>
-            <p className="mt-0.5 text-[12px] text-[var(--color-ink-subtle)]">
-              {grain}
-              {result?.unit ? ` · ${result.unit}` : ''}
-            </p>
+
           </div>
-          <span className="sr-only">
-            {metricId}
-          </span>
         </div>
 
         {loading ? (
@@ -125,13 +120,15 @@ export function AnalyticsMetricCard({
 
         {extraNote || hint?.caveat ? (
           <p className="mt-2 text-[12px] leading-snug text-[var(--color-ink-muted)]">
-            {extraNote || hint?.caveat}
+            {businessText(extraNote || hint?.caveat)}
           </p>
         ) : null}
       </div>
 
       <div className="mt-3 border-t border-[var(--color-border-subtle)] pt-2.5 text-[12px] text-[var(--color-ink-subtle)]">
         <details className="space-y-1"><summary>Calculation &amp; source</summary>
+          <p>{metricId} · {grain} · {result?.unit}</p>
+          {ratioBreakdown ? <p>{ratioBreakdown}</p> : null}
           <div className="truncate font-mono">
             {result?.record_class || recordClass || 'simulated'}
             {result?.as_of || asOfDate ? ` · as of ${result?.as_of || asOfDate}` : ''}

@@ -74,7 +74,7 @@ export function CampaignChannelComparisonSection({
             Campaign and channel comparison
           </h2>
           <p className="text-[13px] text-[var(--color-ink-muted)]">
-            Scoped by channel_group or campaign_id via POST /api/metrics/query ({recordClass} · as of {asOfDate}). When viewing by channel group, a separate ED-2025 &ldquo;2025 synthetic&rdquo; comparison row is displayed underneath each group.
+            Compare campaigns or channels for the selected season. Channel comparisons include a separate historical 2025 baseline.
           </p>
         </div>
 
@@ -147,13 +147,11 @@ export function CampaignChannelComparisonSection({
                             />
                           ) : null}
                         </div>
-                        <span className="block font-mono text-[12px] font-normal text-[var(--color-ink-subtle)]">
-                          {col.id} · {col.grain}
-                        </span>
+
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3">Provenance</th>
+                  <th className="px-4 py-3">Source</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
@@ -327,3 +325,4 @@ export function CampaignChannelComparisonSection({
     </section>
   );
 }
+

@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import { ArrowRight } from 'lucide-react';
 import type {
   ApiErrorInfo,
@@ -60,7 +61,7 @@ export function TeamExecutionSection({
       isText: false,
     },
     {
-      label: 'Cash per active owner (M-27)',
+      label: 'Cash per active owner',
       value: execution.capacityStatusLabel ?? execution.capacityReason ?? '—',
       isText: !execution.capacityStatusLabel,
     },
@@ -105,7 +106,7 @@ export function TeamExecutionSection({
                     : 'text-[22px] font-semibold text-[var(--color-ink)] tabular-nums'
                 }`}
               >
-                {item.value}
+                {businessText(item.value)}
               </p>
             </div>
           ))}
@@ -114,3 +115,4 @@ export function TeamExecutionSection({
     </section>
   );
 }
+

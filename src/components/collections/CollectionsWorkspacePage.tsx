@@ -1277,7 +1277,7 @@ export function CollectionsWorkspacePage({
                                     ? 'Counted as collected'
                                     : rec.reconciled
                                       ? 'Reconciled, not yet allocated'
-                                      : 'Not yet counted toward M-01'}
+                                      : 'Not yet included in collected cash'}
                                 </div>
 
                                 {permissionProfile.canReadReceiptsScope !==

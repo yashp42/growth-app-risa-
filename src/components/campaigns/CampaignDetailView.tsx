@@ -715,16 +715,14 @@ export function CampaignDetailView({
                                 content={`${def.formula}. ${def.inclusion_exclusion}`}
                               />
                             </span>
-                            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                              {metricId}
-                            </span>
+
                           </div>
 
                           <p className="mt-2.5 text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
                             {formatMetricValue(entry)}
                           </p>
 
-                          <div className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[12px] text-[var(--color-ink-subtle)]">
+                          <details className="source-details mt-1.5"><summary>Calculation &amp; source</summary><p>{metricId}</p>
                             <span>
                               {hasRatioParts
                                 ? `${entry.numerator} / ${entry.denominator}`
@@ -738,7 +736,7 @@ export function CampaignDetailView({
                             entry?.data_version !== undefined ? (
                               <span>v{entry.data_version}</span>
                             ) : null}
-                          </div>
+                          </details>
                         </div>
                       );
                     })}
@@ -939,7 +937,7 @@ export function CampaignDetailView({
                   <span>Originated opportunities</span>
                   <InfoHint
                     label="Support type and monetary separation"
-                    content="Cash and in-kind support are tracked separately via support_type. Confirmed value reflects M-02 (includes in-kind when applicable; never cash)."
+                    content="Cash and in-kind support are tracked separately. Signed value includes in-kind commitments and is not the same as collected cash."
                   />
                 </div>
 
@@ -1225,3 +1223,4 @@ export function CampaignDetailView({
     </div>
   );
 }
+

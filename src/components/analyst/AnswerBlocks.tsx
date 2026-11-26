@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import { ArrowDown, ArrowUp, ArrowUpDown, Database } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { formatInr, formatInrLakh, formatIstDateTime } from '../../lib/displayFormat';
@@ -59,7 +60,7 @@ function BlockFrame({
   return (
     <figure className="rounded-md border border-[var(--color-border)] bg-white p-3.5">
       <figcaption className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-[14px] font-semibold text-[var(--color-ink)]">{title}</span>
+        <span className="text-[14px] font-semibold text-[var(--color-ink)]">{businessText(title)}</span>
         <SourceChip source={source} dataVersion={dataVersion} />
       </figcaption>
       {children}
@@ -94,7 +95,7 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
   return (
     <BlockFrame title={block.title} source={block.source} dataVersion={block.data_version}>
       {block.status ? <p className="mb-2 text-[12px] text-[var(--color-ink-muted)]">{block.status}</p> : null}
-      {block.source_path ? <p className="mb-2 break-all text-[12px] text-[var(--color-ink-subtle)]">{block.source_path}{block.source_sha256 ? ' · SHA-256 ' + block.source_sha256 : ''}</p> : null}
+      {block.source_path ? <details className="source-details mb-2"><summary>File source</summary><p>{block.source_path}{block.source_sha256 ? ' · SHA-256 ' + block.source_sha256 : ''}</p></details> : null}
       <div className="overflow-x-auto rounded border border-[var(--color-border-subtle)]">
         <table className="min-w-full divide-y divide-[var(--color-border-subtle)] text-left text-[13px]">
           <thead className="bg-[var(--color-surface-subtle)] text-[12px] text-[var(--color-ink-subtle)]">
@@ -163,7 +164,7 @@ export function BarBlockView({ block }: { block: AnswerBarBlock }) {
     <BlockFrame title={block.title} source={block.source} dataVersion={block.data_version}>
       {block.total !== null && block.total !== undefined ? (
         <p className="mb-2 text-[12px] text-[var(--color-ink-muted)]">
-          Total [{block.metric_id}]: <span className="font-mono font-semibold text-[var(--color-ink)]">{formatMetricValue(block.total, block.unit)}</span>
+          Total: <span className="font-mono font-semibold text-[var(--color-ink)]">{formatMetricValue(block.total, block.unit)}</span>
         </p>
       ) : null}
       <ul className="space-y-2" aria-label={`${block.title} bar chart`}>
@@ -241,7 +242,7 @@ export function KpiBlockView({ block }: { block: AnswerKpiBlock }) {
   return (
     <div className="rounded-md border border-[var(--color-border)] bg-white p-3">
       <p className="text-[12px] text-[var(--color-ink-muted)]">
-        {block.label} <span className="font-mono">[{block.metric_id}]</span>
+        {businessText(block.label)}
       </p>
       <p className="mt-0.5 font-mono text-[18px] font-semibold tabular-nums text-[var(--color-ink)]">
         {block.computable ? (block.unit === 'INR' && block.value !== null && Math.abs(block.value) >= 1e5 ? formatInrLakh(block.value) : formatMetricValue(block.value, block.unit)) : 'Not computable'}

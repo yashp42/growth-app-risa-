@@ -126,7 +126,7 @@ export function FunnelDiagnosticsSection({
               Funnel by channel group vs 2025 synthetic
             </h2>
             <p className="text-[13px] text-[var(--color-ink-muted)]">
-              M-23, M-11, M-12, M-13, M-09, and M-02 per channel_group. Active edition ({recordClass} · as of {asOfDate}) is queried separately from the ED-2025 historical_synthetic baseline (&ldquo;2025 synthetic&rdquo;).
+              Compare response, meeting, conversion and signed value by channel. The selected season and historical 2025 baseline are shown separately.
             </p>
           </div>
           <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
@@ -256,9 +256,9 @@ export function FunnelDiagnosticsSection({
             grains)
           </h2>
           <p className="text-[13px] text-[var(--color-ink-muted)]">
-            Separate grains: opportunity win rates and counts (M-13, M-09) vs
-            first-touch brand win rate (M-14) vs mean confirmation cycle days
-            (M-20).
+            Compare opportunity win rates and counts with
+            first-touch brand win rate and average confirmation time
+           .
           </p>
         </div>
 
@@ -422,3 +422,4 @@ function FragmentRowGroup({
 function FragmentCell({ cell }: { cell: React.ReactNode }) {
   return <>{cell}</>;
 }
+

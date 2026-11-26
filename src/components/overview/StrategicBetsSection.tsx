@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import type {
   ApiErrorInfo,
   DataLoadStatus,
@@ -45,7 +46,7 @@ export function StrategicBetsSection({
       className="space-y-4"
     >
       <SectionHeader
-        title="Strategic bets &amp; rules"
+        title="Growth initiatives"
         meta={
           recordClass && asOfDate ? `${recordClass} · as of ${asOfDate}` : undefined
         }
@@ -79,16 +80,14 @@ export function StrategicBetsSection({
                   className="grid grid-cols-1 items-center gap-3 px-5 py-3.5 sm:grid-cols-12"
                 >
                   <div className="flex items-baseline gap-3 sm:col-span-5">
-                    <span className="font-mono text-[12px] font-medium text-[var(--color-ink-subtle)] shrink-0">
-                      {bet.indexLabel}
-                    </span>
+
                     <div className="min-w-0">
                       <p className="truncate text-[14px] font-medium text-[var(--color-ink)]">
                         {bet.title}
                       </p>
                       {bet.metricSummary ? (
                         <p className="truncate text-[13px] text-[var(--color-ink-subtle)]">
-                          {bet.metricSummary}
+                          {businessText(bet.metricSummary)}
                         </p>
                       ) : null}
                     </div>
@@ -115,9 +114,10 @@ export function StrategicBetsSection({
 
                   <div className="sm:col-span-3 sm:text-right">
                     <span className={`font-mono text-[12px] font-medium ${statusTone}`}>
-                      {bet.thresholdStatus ?? '—'}
+                      {bet.band === 'keep' ? 'On track' : bet.band === 'escalate' ? 'Action needed' : bet.band === 'stop' ? 'Pause and review' : bet.band === 'change' ? 'Adjust approach' : businessText(bet.thresholdStatus) || 'Not yet assessed'}
                     </span>
                   </div>
+                  <details className="source-details sm:col-span-12"><summary>Assessment details</summary><p>{bet.indexLabel} · {bet.thresholdStatus}</p></details>
                 </li>
               );
             })}
@@ -127,3 +127,4 @@ export function StrategicBetsSection({
     </section>
   );
 }
+

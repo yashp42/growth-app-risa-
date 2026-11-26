@@ -147,18 +147,17 @@ export function MetricExplorerSection({
           id="metric-explorer-heading"
           className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
         >
-          Metric explorer and definitions
+          Explore measures
         </h2>
         <p className="text-[13px] text-[var(--color-ink-muted)]">
-          Read-only catalog sourced from the reference metric and KPI
-          definitions, paired with live results for the active filters.
+          Browse business measures and their results for the selected season.
         </p>
       </div>
 
       {!metricsAvailable || metricDefinitions.length === 0 ? (
         <EmptyStateNotice
           title="Metric dictionary reference is currently unavailable"
-          description="Metric definitions are served strictly from the backend reference catalog and are not duplicated in frontend code."
+          description="Measure definitions could not be loaded. Try refreshing this page."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -174,7 +173,7 @@ export function MetricExplorerSection({
                   type="search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Filter by metric ID, name, or KPI..."
+                  placeholder="Search measures..."
                   aria-label="Search metric definitions"
                   className="h-9 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] pl-9 pr-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:bg-white focus:outline-none"
                 />
@@ -206,14 +205,12 @@ export function MetricExplorerSection({
                           {m.name}
                         </p>
                         <p className="mt-0.5 truncate text-[12px] text-[var(--color-ink-subtle)]">
-                          {[m.kpi_id, m.unit, m.value_nature]
+                          {[m.unit]
                             .filter(Boolean)
                             .join(' · ')}
                         </p>
                       </div>
-                      <span className="shrink-0 font-mono text-[12px] font-medium text-[var(--color-accent)]">
-                        {m.metric_id}
-                      </span>
+
                     </button>
                   );
                 })
@@ -229,22 +226,12 @@ export function MetricExplorerSection({
                 <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
                   <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-3">
                     <div>
-                      <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                        {selectedMetric.metric_id}
-                        {ANALYTICS_METRIC_UI_HINTS[selectedMetric.metric_id]
-                          ?.grain
-                          ? ` · ${ANALYTICS_METRIC_UI_HINTS[selectedMetric.metric_id].grain}`
-                          : ''}
-                      </span>
+
                       <h3 className="mt-0.5 text-[16px] font-semibold text-[var(--color-ink)]">
                         {selectedMetric.name}
                       </h3>
                     </div>
-                    {liveResult?.definition_version ? (
-                      <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                        Def v{String(liveResult.definition_version)}
-                      </span>
-                    ) : null}
+
                   </div>
 
                   {queryLoading ? (
@@ -277,12 +264,10 @@ export function MetricExplorerSection({
                           )}
                         </p>
                         {formatNumeratorDenominator(liveResult) ? (
-                          <p className="mt-0.5 font-mono text-[13px] text-[var(--color-ink-muted)]">
-                            {formatNumeratorDenominator(liveResult)}
-                          </p>
+                          <details className="source-details"><summary>Calculation</summary>{formatNumeratorDenominator(liveResult)}</details>
                         ) : null}
                       </div>
-                      <div className="text-right font-mono text-[12px] text-[var(--color-ink-subtle)]">
+                      <details className="text-right font-mono text-[12px] text-[var(--color-ink-subtle)]"><summary>Source details</summary>
                         <div>
                           {liveResult.record_class}
                           {liveResult.as_of ? ` · as of ${liveResult.as_of}` : ''}
@@ -297,13 +282,14 @@ export function MetricExplorerSection({
                             liveResult.applied_filters
                           )}
                         </div>
-                      </div>
+                      </details>
                     </div>
                   )}
                 </div>
 
                 {/* Read-Only Reference Definition */}
-                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                <details className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <summary className="text-sm font-medium">Definition &amp; calculation</summary>
                   <h4 className="border-b border-[var(--color-border-subtle)] pb-2.5 text-[14px] font-semibold text-[var(--color-ink)]">
                     Reference definition
                   </h4>
@@ -401,7 +387,8 @@ export function MetricExplorerSection({
                       </dd>
                     </div>
                   </dl>
-                </div>
+                  <p>{selectedMetric.metric_id} · {liveResult?.definition_version}</p>
+                </details>
               </>
             ) : null}
           </div>
@@ -410,3 +397,4 @@ export function MetricExplorerSection({
     </section>
   );
 }
+

@@ -178,14 +178,14 @@ export function PerformancePacingSection({
               Growth pacing and target performance
             </h2>
             <p className="text-[13px] text-[var(--color-ink-muted)]">
-              W1–W10 M-08 cumulative signed-value pacing vs Base (SC-01) and Plan (SC-02) K-G-01 gates, separate from T−7 cash collection gate.
+              Weekly signed value against Base and Plan targets. Pre-event cash collection is tracked separately.
             </p>
           </div>
 
           {latestPassedGateWeek ? (
             <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-1.5 text-right font-mono text-[12px]">
               <span className="text-[var(--color-ink-subtle)]">
-                Latest passed checkpoint ({latestPassedGateWeek.period} ·{' '}
+                Latest checkpoint ({latestPassedGateWeek.period} ·{' '}
                 {latestPassedGateWeek.week_end}):{' '}
               </span>
               <span className="font-semibold text-[var(--color-ink)]">
@@ -214,7 +214,7 @@ export function PerformancePacingSection({
                       : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                   }`}
                 >
-                  {sc.scenario_id} · {sc.name}
+                  {sc.scenario_id} {sc.name}
                 </button>
               );
             })}
@@ -227,21 +227,21 @@ export function PerformancePacingSection({
             <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-3">
               <div>
                 <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
-                  Cumulative signed value pacing (M-08 series)
+                  Cumulative signed value
                 </h3>
                 <p className="text-[13px] text-[var(--color-ink-subtle)]">
-                  Actual M-08 vs Base (SC-01) and Plan (SC-02) W4–W9 gates · {recordClass} · as of {asOfDate}
+                  Actual signed value against Base and Plan targets · {recordClass} · as of {asOfDate}
                 </p>
               </div>
               <div className="flex items-center gap-3 font-mono text-[12px] text-[var(--color-ink-muted)]">
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-2 w-3 bg-[var(--color-accent)]" /> Actual M-08
+                  <span className="inline-block h-2 w-3 bg-[var(--color-accent)]" /> Actual signed value
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[var(--color-ink-subtle)]" /> Base (SC-01)
+                  <span className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[var(--color-ink-subtle)]" /> Base
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-0.5 w-3 border-t-2 border-dotted border-[#B67A2E]" /> Plan (SC-02)
+                  <span className="inline-block h-0.5 w-3 border-t-2 border-dotted border-[#B67A2E]" /> Plan
                 </span>
               </div>
             </div>
@@ -250,7 +250,7 @@ export function PerformancePacingSection({
               <div className="mt-4">
                 <EmptyStateNotice
                   title="Weekly pacing data and target gates are unavailable"
-                  description="Connect the metric and gate services to inspect signed-value pacing."
+                  description="Pacing information could not be loaded. Try refreshing the page."
                 />
               </div>
             ) : (
@@ -261,7 +261,7 @@ export function PerformancePacingSection({
                       viewBox={`0 0 ${width} ${height}`}
                       className="h-48 w-full min-w-[460px]"
                       role="img"
-                      aria-label="Weekly M-08 cumulative signed value vs Base and Plan gates"
+                      aria-label="Weekly signed value against Base and Plan targets"
                     >
                       {[0, 0.5, 1].map((ratio) => {
                         const y = padY + plotH - ratio * plotH;
@@ -365,7 +365,7 @@ export function PerformancePacingSection({
                   <div className="mt-4 flex items-center gap-2 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
                     <AlertCircle className="h-4 w-4 shrink-0 text-[var(--color-ink-subtle)]" />
                     <span>
-                      No weekly M-08 series or K-G-01 gate values returned for
+                      No weekly signed-value targets are available for
                       the selected context.
                     </span>
                   </div>
@@ -378,15 +378,15 @@ export function PerformancePacingSection({
                         <th className="px-3 py-2 font-medium">Week</th>
                         <th className="px-3 py-2 font-medium">Week end</th>
                         <th className="px-3 py-2 text-right font-medium">
-                          Actual signed (M-08)
+                          Actual signed
                         </th>
                         <th className="px-3 py-2 text-right font-medium">
-                          Base gate (SC-01)
+                          Base target
                         </th>
                         <th className="px-3 py-2 text-right font-medium">
-                          Plan gate (SC-02)
+                          Plan target
                         </th>
-                        <th className="px-3 py-2 font-medium">Server status</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--color-border-subtle)]">
@@ -439,11 +439,9 @@ export function PerformancePacingSection({
             <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
               <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
                 <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
-                  T−7 cash collection gate
+                  Pre-event collection target
                 </h3>
-                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                  M-06 · K-G-02
-                </span>
+
               </div>
 
               {isCashViewerRestricted ? (
@@ -453,7 +451,7 @@ export function PerformancePacingSection({
               ) : (
                 <div className="mt-3 space-y-2.5 text-[14px]">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[var(--color-ink-muted)]">Collected ÷ signed cash</span>
+                    <span className="text-[var(--color-ink-muted)]">Collection rate</span>
                     <span className="font-mono text-[18px] font-semibold tabular-nums text-[var(--color-accent)]">
                       {formatAnalyticsMetricValue(m06, 'ratio')}
                     </span>
@@ -464,14 +462,12 @@ export function PerformancePacingSection({
                     </p>
                   ) : null}
                   {formatNumeratorDenominator(m06) ? (
-                    <p className="font-mono text-[13px] text-[var(--color-ink-muted)]">
-                      {formatNumeratorDenominator(m06)}
-                    </p>
+                    <details className="source-details"><summary>Calculation</summary>{formatNumeratorDenominator(m06)}</details>
                   ) : null}
 
                   <div className="border-t border-[var(--color-border-subtle)] pt-2.5 text-[13px]">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[var(--color-ink-muted)]">Gate threshold</span>
+                      <span className="text-[var(--color-ink-muted)]">Collection target</span>
                       <span className="font-mono font-medium text-[var(--color-ink)]">
                         {cashGate
                           ? `≥ ${(cashGate.threshold * 100).toFixed(0)}%`
@@ -479,7 +475,7 @@ export function PerformancePacingSection({
                       </span>
                     </div>
                     <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="text-[var(--color-ink-muted)]">Server evaluation</span>
+                      <span className="text-[var(--color-ink-muted)]">Status</span>
                       <span className="font-medium text-[var(--color-ink)]">
                         {cashGate
                           ? cashGate.is_due === false || cashGate.computable
@@ -513,11 +509,10 @@ export function PerformancePacingSection({
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-3">
             <div>
               <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
-                Approved scenarios reference (M-30 lookup)
+                Approved cash scenarios
               </h3>
               <p className="text-[13px] text-[var(--color-ink-subtle)]">
-                Frozen D-009 scenario outputs (₹ lakh, pre-fest cash collected;
-                in-kind excluded) alongside server M-30 lookup values.
+                Expected pre-event cash collection, in ₹ lakh. In-kind support is excluded.
               </p>
             </div>
             <div className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
@@ -529,7 +524,7 @@ export function PerformancePacingSection({
             <div className="mt-4">
               <EmptyStateNotice
                 title="Approved scenario rows are currently unavailable"
-                description="Scenario expectations are loaded strictly from the reference service and are not hardcoded locally."
+                description="Scenario forecasts could not be loaded. Try refreshing this page."
               />
             </div>
           ) : (
@@ -540,18 +535,18 @@ export function PerformancePacingSection({
                     <th className="px-3 py-2 font-medium">Scenario</th>
                     <th className="px-3 py-2 font-medium">Status</th>
                     <th className="px-3 py-2 text-right font-medium">
-                      Expected cash (ref)
+                      Expected cash
                     </th>
                     <th className="px-3 py-2 text-right font-medium">
-                      M-30 server lookup
+                      Current forecast
                     </th>
                     <th className="px-3 py-2 text-right font-medium">
-                      P10–P90
+                      Forecast range
                     </th>
                     <th className="px-3 py-2 text-right font-medium">
                       Person-weeks
                     </th>
-                    <th className="px-3 py-2 font-medium">Decision &amp; Checksum</th>
+                    <th className="px-3 py-2 font-medium">Source details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-border-subtle)]">
@@ -560,9 +555,7 @@ export function PerformancePacingSection({
                     return (
                       <tr key={sc.scenario_id}>
                         <td className="px-3 py-2.5">
-                          <span className="font-mono font-medium text-[var(--color-ink)]">
-                            {sc.scenario_id}
-                          </span>{' '}
+
                           <span className="font-medium text-[var(--color-ink)]">
                             · {sc.name}
                           </span>
@@ -594,9 +587,7 @@ export function PerformancePacingSection({
                             : '—'}
                         </td>
                         <td className="px-3 py-2.5 font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                          {[sc.decision_id, sc.output_checksum]
-                            .filter(Boolean)
-                            .join(' · ') || '—'}
+                          <details><summary>Source</summary>{[sc.scenario_id, sc.decision_id, sc.output_checksum].filter(Boolean).join(' · ') || '—'}</details>
                         </td>
                       </tr>
                     );
@@ -610,3 +601,4 @@ export function PerformancePacingSection({
     </div>
   );
 }
+

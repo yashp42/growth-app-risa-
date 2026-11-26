@@ -102,7 +102,7 @@ export function SponsorshipFunnelSection({
                   <div>
                     <div className="flex items-center justify-between gap-1">
                       <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums">
-                        0{index + 1} · {stage.metricId}
+                        Step {index + 1}
                       </span>
                       {stage.rateFormatted ? (
                         <span className="font-mono text-[12px] text-[var(--color-accent)] tabular-nums">
@@ -175,9 +175,9 @@ export function SponsorshipFunnelSection({
             <div className="flex flex-col gap-4 rounded border border-[var(--color-accent)]/50 bg-[var(--color-surface-subtle)] p-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 text-[12px] font-mono text-[var(--color-accent)]">
-                  <span>Confirmed Partnerships</span>
+                  <span>Confirmed partnerships</span>
                   <ArrowRight className="h-3 w-3 shrink-0" aria-hidden="true" />
-                  <span>Financial outcome</span>
+                  <span>Payments</span>
                 </div>
                 <div className="mt-1 flex items-center gap-1.5">
                   <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
@@ -193,7 +193,7 @@ export function SponsorshipFunnelSection({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:flex-1 lg:max-w-xl">
                 <div className="border-t border-[var(--color-border-subtle)] pt-2 sm:border-t-0 sm:border-l sm:pl-4 sm:pt-0">
                   <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                    Cleared cash collected (M-01)
+                    Cleared cash collected
                   </p>
                   {cashOutcome.collectedCashFormatted ? (
                     <p className="mt-1 text-[20px] font-semibold text-[var(--color-ink)] tabular-nums">
@@ -208,7 +208,7 @@ export function SponsorshipFunnelSection({
 
                 <div className="border-t border-[var(--color-border-subtle)] pt-2 sm:border-t-0 sm:border-l sm:pl-4 sm:pt-0">
                   <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                    Collection rate (M-06)
+                    Collection rate
                   </p>
                   {cashOutcome.collectionRateFormatted ? (
                     <p className="mt-1 text-[20px] font-semibold text-[var(--color-accent)] tabular-nums">
@@ -220,13 +220,13 @@ export function SponsorshipFunnelSection({
                     </p>
                   )}
                   <p className="mt-0.5 text-[12px] text-[var(--color-ink-subtle)] tabular-nums">
-                    Signed cash (M-03): {cashOutcome.confirmedCashBasisFormatted ?? '—'}
+                    Signed cash: {cashOutcome.confirmedCashBasisFormatted ?? '—'}
                   </p>
                 </div>
 
                 <div className="border-t border-[var(--color-border-subtle)] pt-2 sm:border-t-0 sm:border-l sm:pl-4 sm:pt-0">
                   <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                    In-kind value (M-04, separate)
+                    In-kind value (non-cash)
                   </p>
                   <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink-muted)] tabular-nums">
                     {cashOutcome.inKindValueSeparateFormatted ?? '—'}
@@ -251,3 +251,4 @@ export function SponsorshipFunnelSection({
     </section>
   );
 }
+

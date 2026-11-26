@@ -122,10 +122,10 @@ export function StrategyPipelineCapacitySection({
               id="analytics-bets-heading"
               className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
             >
-              Strategic bet performance (D-010 scorecard &amp; /api/rules)
+              Growth initiative performance
             </h2>
             <p className="text-[13px] text-[var(--color-ink-muted)]">
-              Server-evaluated threshold rules from /api/rules with exact keep, change, escalate, and response bands.
+              Progress and recommended actions for each growth initiative.
             </p>
           </div>
           <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
@@ -151,9 +151,7 @@ export function StrategyPipelineCapacitySection({
                   <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border-subtle)] pb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[13px] font-semibold text-[var(--color-accent)]">
-                          {bet.bet_id}
-                        </span>
+
                         <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                           {bet.name}
                         </h3>
@@ -166,8 +164,7 @@ export function StrategyPipelineCapacitySection({
 
                   {bet.metricIds.length === 0 ? (
                     <div className="rounded border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-3 text-[13px] text-[var(--color-ink-muted)]">
-                      No standalone metric is mapped to {bet.bet_id} in the
-                      metric dictionary; no proxy score is constructed.
+                      No performance measure is available for this initiative.
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -189,10 +186,7 @@ export function StrategyPipelineCapacitySection({
                               <span className="text-[13px] font-medium text-[var(--color-ink)]">
                                 {def?.name || mId}
                               </span>
-                              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                                {mId}
-                                {def?.kpi_id ? ` · ${def.kpi_id}` : ''}
-                              </span>
+
                             </div>
 
                             {loading ? (
@@ -221,9 +215,7 @@ export function StrategyPipelineCapacitySection({
                                   {formatAnalyticsMetricValue(result)}
                                 </span>
                                 {ratio ? (
-                                  <span className="font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums">
-                                    {ratio}
-                                  </span>
+                                  <details className="source-details"><summary>Calculation</summary>{ratio}</details>
                                 ) : null}
                               </div>
                             )}
@@ -246,14 +238,14 @@ export function StrategyPipelineCapacitySection({
                 </div>
 
                 {/* Server-Evaluated Threshold Rules */}
-                <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-3">
+                <details className="mt-4 border-t border-[var(--color-border-subtle)] pt-3"><summary className="text-sm text-[var(--color-ink-muted)]">Assessment rules &amp; evidence</summary>
                   {!rulesAvailable ? (
                     <p className="text-[12px] text-[var(--color-ink-subtle)]">
-                      Operating threshold rules are currently unavailable from /api/rules.
+                      Performance assessments are currently unavailable.
                     </p>
                   ) : betRules.length === 0 ? (
                     <p className="text-[12px] text-[var(--color-ink-subtle)]">
-                      No threshold rule row matched for {bet.bet_id}.
+                      No performance assessment is available for this initiative.
                     </p>
                   ) : (
                     <div className="space-y-2.5">
@@ -296,7 +288,7 @@ export function StrategyPipelineCapacitySection({
                       })}
                     </div>
                   )}
-                </div>
+                </details>
               </div>
             );
           })}
@@ -398,7 +390,7 @@ export function StrategyPipelineCapacitySection({
             Capacity and operational efficiency
           </h2>
           <p className="text-[13px] text-[var(--color-ink-muted)]">
-            Logged task hours compared against model task hours (M-27). No cash
+            Logged task hours compared against planned task hours. No cash
             budget, spend cap, or monetary labour cost is modeled.
           </p>
         </div>
@@ -438,6 +430,7 @@ export function StrategyPipelineCapacitySection({
                 </p>
               ) : null}
 
+              <details className="source-details"><summary>Capacity assessment details</summary>
               {capacityRules.length > 0 ? (
                 capacityRules.map((r) => (
                   <div
@@ -459,15 +452,14 @@ export function StrategyPipelineCapacitySection({
               ) : (
                 <p className="text-[var(--color-ink-subtle)]">
                   {rulesAvailable
-                    ? 'No K-C-01 threshold rule row returned.'
-                    : 'Threshold rules are unavailable from /api/rules.'}
+                    ? 'No capacity assessment is available.'
+                    : 'Capacity assessments are unavailable.'}
                 </p>
               )}
 
+              </details>
               <p className="text-[var(--color-ink-subtle)]">
-                Hours logs are personal execution data restricted by role. When
-                hours logs are absent (including the 2025 synthetic dataset),
-                M-27 reports not computable rather than estimating capacity.
+                Logged hours are restricted by role. Capacity is unavailable when hours have not been recorded, including in the historical 2025 dataset.
               </p>
             </div>
           </div>
@@ -489,16 +481,14 @@ export function StrategyPipelineCapacitySection({
               <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                 Experiment register (read-only)
               </h3>
-              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                /api/reference/experiments
-              </span>
+
             </div>
 
             {experiments.length === 0 ? (
               <div className="mt-4">
                 <EmptyStateNotice
                   title="No experiment register records returned"
-                  description="Experiment records appear here when available from /api/reference/experiments."
+                  description="Experiments will appear here when available."
                 />
               </div>
             ) : (
@@ -589,15 +579,8 @@ export function StrategyPipelineCapacitySection({
         </div>
 
         {/* Model Assumptions */}
-        <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
-          <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
-            <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
-              Frozen model assumptions (read-only)
-            </h3>
-            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-              /api/reference/assumptions
-            </span>
-          </div>
+        <details className="rounded-md border border-[var(--color-border)] bg-white p-5">
+          <summary className="text-[14px] font-semibold text-[var(--color-ink)]">Forecast assumptions</summary>
 
           {!assumptionsAvailable || assumptions.length === 0 ? (
             <div className="mt-4">
@@ -640,8 +623,9 @@ export function StrategyPipelineCapacitySection({
               </table>
             </div>
           )}
-        </div>
+        </details>
       </section>
     </div>
   );
 }
+

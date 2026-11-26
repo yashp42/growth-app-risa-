@@ -587,7 +587,7 @@ export function AnalyticsWorkspace({
                 aria-hidden="true"
               />
               <span>
-                Viewer role active: cash collections (M-01, M-06, M-07), B2 advance timing (M-25), and logged staff hours (M-27) are restricted.
+                Your role does not include access to cash collections, advance payment timing or logged staff hours.
               </span>
             </div>
           ) : null}

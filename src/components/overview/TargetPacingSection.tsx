@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import type {
   ApiErrorInfo,
   DataLoadStatus,
@@ -75,8 +76,7 @@ export function TargetPacingSection({
                     : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                 }`}
               >
-                {pacing.scenarioTargets[key].shortLabel ??
-                  pacing.scenarioTargets[key].label}
+                {key === 'base' ? 'Base' : key === 'plan' ? 'Plan' : 'Stretch'}
               </button>
             ))}
           </div>
@@ -96,7 +96,7 @@ export function TargetPacingSection({
               <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-[var(--color-border-subtle)] pb-4">
                 <div>
                   <p className="text-[13px] font-medium text-[var(--color-ink-subtle)]">
-                    Actual signed value (M-02)
+                    Actual signed value
                   </p>
                   {pacing.actualSignedFormatted ? (
                     <p className="mt-1 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
@@ -112,29 +112,26 @@ export function TargetPacingSection({
                 {pacing.latestGateStatusLabel ? (
                   <div className="text-left sm:text-center">
                     <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
-                      Latest passed checkpoint ({pacing.latestGateWeekLabel})
+                      Latest checkpoint ({pacing.latestGateWeekLabel})
                     </p>
                     <p className="mt-1 font-mono text-[14px] font-semibold text-[#9B3B32]">
-                      {pacing.latestGateStatusLabel}
+                      {businessText(pacing.latestGateStatusLabel)}
                     </p>
                   </div>
                 ) : null}
 
                 <div className="text-left sm:text-right">
                   <p className="text-[13px] font-medium text-[var(--color-ink-subtle)]">
-                    {activeScenarioData.label}
+                    {businessText(activeScenarioData.label)}
                   </p>
                   <p className="mt-1 font-mono text-[16px] font-semibold text-[var(--color-ink)] tabular-nums">
                     {activeScenarioData.targetFormatted ?? '—'}
                   </p>
                   <p className="mt-0.5 text-[12px] text-[var(--color-ink-muted)] tabular-nums">
-                    Collected (M-01):{' '}
+                    Collected:{' '}
                     {activeScenarioData.cashCollectedFormatted ??
                       activeScenarioData.cashCollectedReason ??
                       'Not computable'}
-                    {activeScenarioData.p50Formatted
-                      ? ` · ${activeScenarioData.p50Formatted}`
-                      : ''}
                   </p>
                 </div>
               </div>
@@ -157,7 +154,7 @@ export function TargetPacingSection({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[13px] font-semibold text-[var(--color-ink)]">
-                          {item.label}
+                          {businessText(item.label)}
                         </span>
                         {isActive ? (
                           <span className="font-mono text-[12px] text-[var(--color-accent)] shrink-0">
@@ -169,14 +166,9 @@ export function TargetPacingSection({
                         <span className="font-mono text-[14px] font-semibold text-[var(--color-ink)] tabular-nums">
                           {item.targetFormatted ?? '—'}
                         </span>
-                        {item.p50Formatted ? (
-                          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums">
-                            {item.p50Formatted}
-                          </span>
-                        ) : null}
                       </div>
                       <p className="mt-0.5 text-[12px] text-[var(--color-ink-muted)] tabular-nums">
-                        Collected (M-01):{' '}
+                        Collected:{' '}
                         {item.cashCollectedFormatted ??
                           item.cashCollectedReason ??
                           'Not computable'}
@@ -190,10 +182,10 @@ export function TargetPacingSection({
               <div className="mt-5">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[13px] font-medium text-[var(--color-ink-muted)]">
-                    Weekly signed pacing series (M-08) &amp; K-G-01 Base / Plan gates
+                    Weekly signed value and targets
                   </p>
                   <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                    Base (SC-01) · Plan (SC-02)
+                    Base · Plan
                   </span>
                 </div>
 
@@ -235,7 +227,7 @@ export function TargetPacingSection({
                         </p>
                         {week.baseTargetFormatted || week.planTargetFormatted ? (
                           <p className="mt-0.5 font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums">
-                            B {week.baseTargetFormatted ?? '—'} · P{' '}
+                            Base {week.baseTargetFormatted ?? '—'} · Plan{' '}
                             {week.planTargetFormatted ?? '—'}
                           </p>
                         ) : null}
@@ -257,22 +249,22 @@ export function TargetPacingSection({
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5">
                   <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
-                    {pacing.cashCollectionGate.gateLabel}
+                    {businessText(pacing.cashCollectionGate.gateLabel)}
                   </h3>
                   <InfoHint
-                    label="T−7 cash collection gate definition"
-                    content="Cash collection gate evaluated 7 days before festival start (M-06 ≥ 85%), tracked separately from W4–W9 signed-value milestones."
+                    label="Pre-event collection target definition"
+                    content="Collection target checked seven days before the event, separately from weekly signed-value targets."
                   />
                 </div>
                 <span className="font-mono text-[12px] text-[var(--color-accent)] whitespace-nowrap">
-                  Separate gate
+                  Before the event
                 </span>
               </div>
 
               <div className="mt-5 space-y-3.5 border-t border-[var(--color-border-subtle)] pt-4">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-[13px] text-[var(--color-ink-subtle)]">
-                    Cash collected (M-01)
+                    Cash collected
                   </span>
                   <span className="text-[18px] font-semibold text-[var(--color-ink)] tabular-nums text-right">
                     {pacing.cashCollectionGate.collectedFormatted ?? '—'}
@@ -280,7 +272,7 @@ export function TargetPacingSection({
                 </div>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-[13px] text-[var(--color-ink-subtle)]">
-                    Collection rate (M-06)
+                    Collection rate
                   </span>
                   <span className="font-mono text-[14px] font-medium text-[var(--color-accent)] tabular-nums text-right">
                     {pacing.cashCollectionGate.collectionRateFormatted ?? '—'}
@@ -288,7 +280,7 @@ export function TargetPacingSection({
                 </div>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-[13px] text-[var(--color-ink-subtle)]">
-                    Outstanding cash (M-07)
+                    Outstanding cash
                   </span>
                   <span className="font-mono text-[14px] text-[var(--color-ink-muted)] tabular-nums text-right">
                     {pacing.cashCollectionGate.outstandingFormatted ?? '—'}
@@ -296,7 +288,7 @@ export function TargetPacingSection({
                 </div>
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="text-[13px] text-[var(--color-ink-subtle)]">
-                    Gate target
+                    Collection target
                   </span>
                   <span className="font-mono text-[14px] text-[var(--color-ink-muted)] tabular-nums text-right">
                     {pacing.cashCollectionGate.gateTargetFormatted ?? '—'}
@@ -313,7 +305,13 @@ export function TargetPacingSection({
             </div>
           </div>
         </div>
+        <details className="source-details"><summary>Calculation &amp; source</summary>
+          <p>Signed value: M-02 · Collected cash: M-01 · Collection rate: M-06 · Outstanding cash: M-07 · Weekly pacing: M-08</p>
+          <p>{pacing.cashCollectionGate.gateLabel}</p>
+          {SCENARIO_ORDER.map(key => <p key={key}>{pacing.scenarioTargets[key].label} · {pacing.scenarioTargets[key].p50Formatted}</p>)}
+        </details>
       </DataStateWrapper>
     </section>
   );
 }
+
