@@ -17,7 +17,8 @@ export async function saveRuntimeCheckpoint(db:DatabasePoolState,actor:VerifiedA
     const edition='ED-2026-DEMO';
     const batch=await ensureUiImportBatch(client,edition,'simulated',actor.memberId);
     const version=await client.query<{data_version:number}>('SELECT data_version FROM public.app_state WHERE id=1');
-    await insertAuditEvent(client,{actorId:actor.memberId,entity:'analyst_evaluation',entityId:key,operation:'insert',after:{checkpoint:encodeCheckpoint(value)},dataVersion:Number(version.rows[0]?.data_version??0),recordClass:'simulated',importBatchId:batch,sourceRef:'system:analyst_evaluation'});
+    const state=(value as {run?:{state?:string}})?.run?.state??'unknown';
+    await insertAuditEvent(client,{actorId:actor.memberId,entity:'analyst_evaluation',entityId:key,operation:'insert',after:{checkpoint_state:state,checkpoint:encodeCheckpoint(value)},dataVersion:Number(version.rows[0]?.data_version??0),recordClass:'simulated',importBatchId:batch,sourceRef:'system:analyst_evaluation'});
   },db);
 }
 export async function loadRuntimeCheckpoint(db:DatabasePoolState,actor:VerifiedActor,key:string):Promise<unknown|null> {
@@ -28,7 +29,7 @@ export async function loadRuntimeCheckpoint(db:DatabasePoolState,actor:VerifiedA
 /** Restore only a completed measured comparison; ties follow the existing adoption policy. */
 export async function restoreRuntimeRanking(db:DatabasePoolState) {
   if(!db.pool)return;
-  const result=await db.pool.query<{after:{checkpoint?:unknown}}>(`SELECT "after" FROM public.audit_event WHERE entity='analyst_evaluation' AND entity_id='analyst-evaluation:retrieval' AND source_ref='system:analyst_evaluation' AND NOT is_deleted ORDER BY created_at DESC,audit_id DESC LIMIT 1`);
+  const result=await db.pool.query<{after:{checkpoint?:unknown}}>(`SELECT "after" FROM public.audit_event WHERE entity='analyst_evaluation' AND entity_id='analyst-evaluation:retrieval' AND source_ref='system:analyst_evaluation' AND "after"->>'checkpoint_state'='completed' AND NOT is_deleted ORDER BY created_at DESC,audit_id DESC LIMIT 1`);
   const saved=decodeCheckpoint(result.rows[0]?.after?.checkpoint) as {run?:{state?:string};retrieval?:{results?:Record<string,unknown>}}|null;
   if(saved?.run?.state!=='completed')return;
   const scores=saved.retrieval?.results;

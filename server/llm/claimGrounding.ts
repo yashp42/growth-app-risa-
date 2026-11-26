@@ -5,11 +5,13 @@ const object = (x: unknown): x is Row => !!x && typeof x === 'object' && !Array.
 const label = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 /** Additional checks for structured financial evidence. This is not a general semantic truth oracle. */
 export function verifyScopedAnswer(answer: string, bundle: GroundingSourceBundle, scope: ClaimScope): AnswerCheckResult {
-  const numeric = verifyAnswerNumbers(answer, bundle);
+  // A number in the user's question is not evidence for an asserted answer.
+  const numeric = verifyAnswerNumbers(answer, {...bundle,userQuestion:''});
   const failures: string[] = [];
   const results = bundle.toolResults.filter(object);
   for(const p of results) {
-    if(p.record_class === 'knowledge_base' || p.edition_id === 'ALL') continue;
+    // Research/model references deliberately have their own provenance and no operational edition.
+    if(!['live','simulated','historical_synthetic'].includes(String(p.record_class)) || p.edition_id === 'ALL') continue;
     if(p.edition_id && p.edition_id !== scope.editionId && answer.includes(String(p.edition_id)) === false) failures.push('Evidence belongs to another edition');
     if(p.as_of && p.as_of!==scope.asOf && !answer.includes(String(p.as_of)) && p.edition_id===scope.editionId)failures.push('Evidence belongs to another as-of date');
     if(p.edition_id === scope.editionId && p.record_class && p.record_class !== scope.recordClass) failures.push('Evidence belongs to another dataset class');
@@ -46,5 +48,5 @@ export function verifiedFactsFallback(bundle: GroundingSourceBundle): string {
     }
   }
   const facts=[...new Set(lines)].slice(0,6);
-  return facts.length ? 'I could verify these facts:\n\n'+facts.join('\n\n')+'\n\nThe available evidence does not support the additional explanation. See the sources for scope and details.' : 'I do not have enough verified evidence to answer that reliably. The available source records are shown below; please specify the sponsor, campaign or measure you want to investigate.';
+  return facts.length ? 'I could verify these facts:\n\n'+facts.join('\n\n')+'\n\nAdditional claims could not be verified and were withheld. See the sources for scope and details.' : 'The answer could not be verified and was withheld. I do not have enough verified evidence to answer that reliably. The available source records are shown below; please specify the sponsor, campaign or measure you want to investigate.';
 }

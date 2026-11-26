@@ -47,7 +47,8 @@ export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePo
     if(previous?.state==='completed')throw new AppApiError(409,'EVALUATION_COMPLETE','This run is complete; start a new run');
     if(previous?.state==='running'||previous?.state==='error')throw new AppApiError(409,'REVIEW_INTERRUPTED_RUN','Review the interrupted or failed run before starting a new evaluation');
     const run:EvaluationRun=previous??{label:'LIVE',set,state:'running',started_at:new Date().toISOString(),updated_at:new Date().toISOString(),current_case:null,results:[],conversations:{},requests_used:0,remaining:cases.map(c=>c.test_id)};
-    run.state='running';active=run;await persist(run);
+    run.state='running';active=run;
+    try{await persist(run);}catch{active=null;throw new AppApiError(503,'CHECKPOINT_UNAVAILABLE','Could not save the evaluation checkpoint; no evaluation requests were sent.');}
     // Fixed loopback origin: never accept a URL, token or actor from the request body.
     const origin='http://127.0.0.1:'+config.port;
     setImmediate(()=>{void (async()=>{
@@ -96,7 +97,7 @@ export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePo
           return clean&&remaining.rows.every(r=>r.status==='rejected');
         },
       });
-    })().catch(async()=>{run.state='error';run.error='Evaluation failed; check the server logs and review pending evaluation proposals before restarting.';await persist(run);});});
+    })().catch(async()=>{run.state='error';run.error='Evaluation failed; check the server logs and review pending evaluation proposals before restarting.';try{await persist(run);}catch{console.error('[eval] Durable checkpoint unavailable; local error report retained.');}});});
     res.status(202).json({state:run.state,set:run.set,started_at:run.started_at});
   }));
   router.get('/admin/eval/status',asyncHandler(async(req,res)=>{

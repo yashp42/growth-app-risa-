@@ -9,7 +9,7 @@ export interface QuestionPlan {
 const writes = /\b(create|assign|update|delete|move|log|record|confirm|schedule|add task|send)\b/i;
 export function planQuestion(question: string, previous = ''): QuestionPlan {
   const q = question.trim();
-  const followup = /^(?:and |what about |how about |why |which of (?:those|them)|what should we do next|what next|tell me more|what is their|what's their)/i.test(q);
+  const followup = /^(?:and |what about |how about |why |which (?:one|of (?:those|them))|what should we do next|what next|tell me more|what is their|what's their)/i.test(q);
   // Previous user wording supplies intent only; it never supplies facts or values.
   const context = followup && previous ? previous + ' ' + q : q;
   const recommendation = /\b(prioriti[sz]e|pursue|approach|focus|target|potential|promising|recommend|outreach)\b/i.test(context);

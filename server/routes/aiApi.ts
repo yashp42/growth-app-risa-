@@ -21,7 +21,6 @@ import { withActorTransaction, type DatabasePoolState } from '../db.ts';
 import { AppApiError, asyncHandler } from '../errors.ts';
 import { getTodayIstIso, isValidIsoDate } from '../gates.ts';
 import { evaluateScopeAndRedaction } from './readApi.ts';
-import { verifyAnswerNumbers } from '../llm/answerCheck.ts';
 import {
   createOpenRouterClient,
   OpenRouterError,
@@ -1250,13 +1249,14 @@ export function createAiApiRouter(
       model_requests: 0,
     };
     const trackCompletionUsage = (completion: {
+      requestAttempts?: number;
       usage?: {
         prompt_tokens?: number;
         completion_tokens?: number;
         total_tokens?: number;
       };
     }) => {
-      tokenUsage.model_requests += 1;
+      tokenUsage.model_requests += completion.requestAttempts ?? 1;
       if (completion.usage) {
         tokenUsage.prompt_tokens += Number(completion.usage.prompt_tokens ?? 0);
         tokenUsage.completion_tokens += Number(
@@ -1266,6 +1266,7 @@ export function createAiApiRouter(
       }
     };
 
+    const trackFailure = (err:unknown) => { if(err instanceof OpenRouterError)tokenUsage.model_requests += err.requestAttempts; };
     const previousQuestion = [...priorMessages].reverse().find(m=>m.role==='user')?.content;
     // Repeated read calls in a turn share one result and one evidence entry.
     const turnReads = new Map<string,Promise<Record<string,unknown>>>();
@@ -1513,6 +1514,7 @@ export function createAiApiRouter(
           try {
             reportStep('Writing the answer…');
             const synth = await openrouter.createChatCompletion({
+                  maxAttempts: Math.max(1,MAX_MODEL_CALLS_PER_TURN-tokenUsage.model_requests),
               messages: llmMessages,
               temperature: 0,
             });
@@ -1523,6 +1525,7 @@ export function createAiApiRouter(
               finalAnswer = fallbackFromTools(acc, 'cap');
             }
           } catch (err) {
+                trackFailure(err);
             if (
               err instanceof OpenRouterError &&
               err.code === 'AI_QUOTA_EXHAUSTED'
@@ -1537,7 +1540,7 @@ export function createAiApiRouter(
             }
           }
         } else {
-          while (modelCalls < MAX_MODEL_CALLS_PER_TURN && !terminalDone) {
+          while (modelCalls < MAX_MODEL_CALLS_PER_TURN && tokenUsage.model_requests < MAX_MODEL_CALLS_PER_TURN && !terminalDone) {
             modelCalls += 1;
             const isFinalCall = modelCalls === MAX_MODEL_CALLS_PER_TURN;
             const hasReadEvidence =
@@ -1554,12 +1557,14 @@ export function createAiApiRouter(
             try {
               reportStep(modelCalls === 1 ? 'Reading your question…' : 'Writing the answer…');
               completion = await openrouter.createChatCompletion({
+                  maxAttempts: Math.max(1,MAX_MODEL_CALLS_PER_TURN-tokenUsage.model_requests),
                 messages: llmMessages,
                 tools: toolsForThisCall,
                 temperature: 0,
               });
               trackCompletionUsage(completion);
             } catch (err) {
+                trackFailure(err);
               if (
                 err instanceof OpenRouterError &&
                 err.code === 'AI_QUOTA_EXHAUSTED'
@@ -1770,10 +1775,11 @@ export function createAiApiRouter(
           }
 
           if (!finalAnswer && llmMessages.length > 0 && !terminalDone) {
-            if (modelCalls < MAX_MODEL_CALLS_PER_TURN) {
+            if (modelCalls < MAX_MODEL_CALLS_PER_TURN && tokenUsage.model_requests < MAX_MODEL_CALLS_PER_TURN) {
               modelCalls += 1;
               try {
                 const synth = await openrouter.createChatCompletion({
+                  maxAttempts: Math.max(1,MAX_MODEL_CALLS_PER_TURN-tokenUsage.model_requests),
                   messages: llmMessages,
                   temperature: 0,
                 });
@@ -1781,6 +1787,7 @@ export function createAiApiRouter(
                 modelUsed = synth.model;
                 finalAnswer = (synth.message.content ?? '').trim();
               } catch (err) {
+                trackFailure(err);
                 console.error(
                   `[ai:synth_error] ${err instanceof Error ? err.message : String(err)}`
                 );
@@ -1820,12 +1827,14 @@ export function createAiApiRouter(
           try {
             reportStep('Double-checking the figures…');
             const retryRes = await openrouter.createChatCompletion({
+                  maxAttempts: Math.max(1,MAX_MODEL_CALLS_PER_TURN-tokenUsage.model_requests),
               messages: retryMessages,
               temperature: 0,
             });
             trackCompletionUsage(retryRes);
             candidate = extractBlockChoice((retryRes.message.content ?? '').trim()).answer;
           } catch (err) {
+                trackFailure(err);
             console.error(
               `[ai:answer_check_retry_error] ${err instanceof Error ? err.message : String(err)}`
             );

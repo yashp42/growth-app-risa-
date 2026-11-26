@@ -1,10 +1,16 @@
 # Sponsorship Growth Platform
 
-A sponsorship operations workspace and Growth Analyst for the RISA Labs Growth APM Challenge B. React, TypeScript and Vite are served by one Express process; Supabase Postgres is the source of business metrics.
+A working growth center for the RISA Labs Growth APM assignment, Challenge B: maximize sponsorship cash collected before a Bengaluru college festival. Dashboard, campaigns, pipeline, tasks, collections and the embedded Growth Analyst use persistent application records.
 
-## Run locally
+**Demo:** https://sponsorship-growth-platform.onrender.com
 
-Use Node 22.18 or later. Copy `.env.example` to `.env` and configure the server-side variables there. Never commit secrets.
+The free host can take about a minute to wake up. Simulated, historical, research and modelled sources are labelled separately. Start with the [reviewer workflow and assignment mapping](docs/chatbot-reliability-and-reviewer-guide.md).
+
+## Architecture and setup
+
+React 19, TypeScript, Vite and Tailwind provide the interface; TanStack Query manages server state. One Node/Express process serves frontend and API. Supabase supplies authentication/PostgreSQL; `pg` and Zod support queries and argument validation. OpenRouter and optional Groq use server-side keys. Voice uses browser speech APIs; no server transcription service is introduced.
+
+Use Node 22.18 or later. Copy `.env.example` to `.env`, configure server-side variables and never commit secrets.
 
 ```sh
 npm ci
@@ -13,82 +19,68 @@ npm run build
 npm start
 ```
 
-Open the address printed by the server. Render uses `render.yaml`; the health endpoint is `/api/health`. First load may take up to a minute (free hosting).
+Render uses `render.yaml`; health endpoint `/api/health`. The existing demo database is already loaded: **do not rerun seeds**. For a new database, follow the READMEs and prerequisites in `db/`, including schema, grants, adjustments, metrics, reference/historical/demo seeds, knowledge and reference registers. Check `metrics.parity_2025()` and all 30 metric functions.
 
-The current lockfile failed `npm ci` in the Windows review environment with missing optional platform-package entries. Dependencies could not be fetched there. GitHub Linux CI subsequently installed dependencies and passed TypeScript and the Vite build. Do not substitute the native syntax check for a type check.
+ED-2025 is historical synthetic and read-only. ED-2026-DEMO is simulated. Preserve original inputs for unfamiliar-question and changed-data tests.
 
-## Database setup
+## Financial model and safeguards
 
-The existing demo database is already loaded: **do not rerun seeds**. For a new database, follow the database READMEs: schema, roles/grants, schema adjustments before dependent metrics, metric functions, reference seed, 2025 historical seed, 2026 simulated seed, knowledge, AI action types, then the five reference-register files. Follow their prerequisites and checksum instructions rather than guessing an order.
+Business values come from canonical database functions or approved source rows. The browser and model do not calculate dashboard totals. Cash collected means eligible reconciled and allocated receipts. Signed cash, in-kind, forecasts, research potential and open pipeline remain separate.
 
-Verify `metrics.parity_2025()` returns 32 passing checks and that all 30 metric functions exist. ED-2025 is historical synthetic and immutable; ED-2026-DEMO is simulated. Never blend these classes or reinterpret research prospects as operational pipeline.
+D-009/D-010 and checked-in references document the frozen strategy. Do not change metric definitions, historical inputs or approved assumptions to match an answer. Research face values are not forecasts; verified contact routes are not confirmed introductions. Source registers preserve ASK / ACTUAL / COST distinctions.
 
-## Analyst and safeguards
+The browser calls Express, never PostgreSQL or model providers. Verified roles and ownership constrain reads. AI writes remain proposals: only explicit human confirmation executes a permission-checked, actor-bound transaction and audit record. Finance changes, roles, deletion and historical edits retain their existing restrictions.
 
-- The browser calls Express, never the database or model provider. Provider keys remain server-side.
-- Business values come from metric functions or verbatim reference rows. Formatting and chart geometry do not aggregate business metrics.
-- The model selects tools and block kinds; the server supplies table/chart/KPI data and provenance.
-- Numeric prose is checked against this turn's tool results. A draft that still fails verification is withheld, while grounded tables and metric cards remain available.
-- AI changes are proposals. Only an explicit human Accept executes them through permission checks, actor-bound transactions and audit records. Finance changes, roles, deletes and historical data remain human-only or forbidden as specified in `CLAUDE.md`.
-- `get_dataset` and `list_datasets` read only AI-visible references. Filters use JSONB containment, column projection is validated, and results carry source path, checksum and status. External benchmarks preserve ASK / ACTUAL / COST.
-- Microphone metering stays local. Web Speech recognition may use the browser's recognition service; do not describe all voice recognition as guaranteed offline.
-- Only configured free-tier model providers are used. Provider quotas can still pause evaluation. Demo reviewers have 60 uncached questions per hour per identity/address; production retains 15. The internal evaluator uses a separate server-authenticated allowance. Greetings and cache hits do not consume that allowance.
+## Analyst behavior
+
+- Common financial and research reads use server plans without inference. Other questions use business task context, relevant tools and current evidence.
+- Prospect recommendations use the visible research register and stored priority index, with route/uncertainty caveats and source approach fields. They do not promote targets into pipeline or forecasts.
+- RAG retrieves strategy, definitions and provenance from PostgreSQL knowledge chunks. Current figures use database tools. Follow-up wording can inform retrieval; old answers are not current numeric evidence.
+- Numeric checks reject unsupported amounts. Additional structured checks catch specific wrong-sponsor, wrong-metric and operational edition/date errors. They are not proof that every causal or natural-language claim is correct.
+- Unsupported explanation is withheld; verified financial facts can still be restated. Missing information is explicit.
+- Answer caches include authenticated identity, member, roles, class, edition, date, filters and data version. Only independent first turns reuse answers; hits still persist messages for follow-ups. Identical reads within a turn share a result.
+
+## Free-tier operation
+
+Default provider order is `AI_PROVIDER_ORDER=openrouter_first`; `groq_first` is optional. Explicit OpenRouter `:free` IDs are mandatory. There is no paid/automatic-model fallback or Gemini integration.
+
+OpenRouter's free allowance is shared across free variants; switching models does not multiply it. Request counters are separate from USD credit balances. Failed attempts count conservatively. Unknown quotas remain unknown; provider windows are not added into an invented daily allowance.
+
+Cooldowns avoid repeating failed calls, Retry-After is respected, inference attempts are bounded, output is capped and task-specific tools reduce prompt size. Common deterministic questions continue without model capacity. Free hosting/inference do not guarantee uninterrupted service.
+
+Demo abuse protection allows 60 uncached questions per hour per identity/address; production retains 15. Evaluation has a separate server-authenticated allowance. Greetings and eligible cache hits do not consume it. These application limits differ from provider quotas.
+
+Official constraints: [OpenRouter](https://openrouter.ai/docs/api/reference/limits), [Render](https://render.com/docs/free), [Groq](https://console.groq.com/docs/rate-limits), [Supabase search](https://supabase.com/docs/guides/database/full-text-search).
 
 ## Evaluation
 
-Admin or coordination-lead users can open **Team & Settings → Run evaluation**. Run Retrieval first, then Gate set, then Full. The backend must run in demo mode for analyst evaluation.
-
-The runner never confirms proposals. It inspects stored actions, cancels them, checks operational snapshots, preserves follow-up conversations and checkpoints progress. Resume is available after rate/quota pauses. Cases needing copied databases, duplicate-name fixtures or injected sponsor notes are **NEEDS_HUMAN** and are not injected into shared data. A partial or gate-only run cannot meet the full release gate.
-
 ```sh
-# LIVE, no model requests; compare both variants and adopt higher recall (ties keep FTS)
-node scripts/eval-retrieval.ts --write --adopt
-
-# LIVE; invoke the running server's evaluation API
-node scripts/eval-analyst.ts --set=gate
-node scripts/eval-analyst.ts --set=full --resume
-
-# MOCKED, no dependencies or credentials needed
-node --test scripts/test-stage4-next.ts scripts/test-evaluation.ts
-
-# With dependencies installed: existing regression suites (consult each script for LIVE prerequisites)
+npm run lint
+npm run build
 npx tsx --test scripts/test*.ts
+
+# LIVE database retrieval, no inference requests
+npx tsx scripts/eval-retrieval.ts --write --adopt
+
+# LIVE deployed-demo analyst evaluation
+npx tsx scripts/eval-analyst.ts --set=full
+
+# LIVE provider / synthetic tool-selection tasks, at most eight attempts
+npx tsx scripts/benchmark-free-models.ts --run
 ```
 
-Set `EVAL_BASE_URL` to evaluate a deployed demo service. Reports/checkpoints stay in `eval/results/`, which is ignored by Git. Download CLI reports for durability: Render's free filesystem is ephemeral, so checkpoints and adopted retrieval ranking can be lost on redeploy or restart. Run Retrieval again after redeployment. The evaluator reports when `pg_trgm` is unavailable and keeps FTS.
+Set `EVAL_BASE_URL` for a deployed demo. Admin/coordination-lead users can run evaluation in Team & Settings. The runner never confirms actions: it inspects/cancels proposals, checks operational snapshots, preserves follow-up conversations and pauses on provider failures. Isolated fixtures are not injected into shared data.
 
-Recall@6 measures expected references retrieved; precision@6 divides relevant retrieved chunks by six, including empty result slots. Release gates require a completed Full run, at least 90% overall and 100% in Permissions, Action execution and Missing information. Subjective rubric items and isolated fixtures still require human review.
+API evaluation checkpoints are compressed, actor-bound administrative audit snapshots in PostgreSQL, with local JSON/Markdown exports. Completed measured retrieval comparisons are restored at startup. No migration is required. Restoration failures retain the versioned measured lexical baseline. Already-lost pre-update local-only checkpoints cannot be recovered.
 
-## Demo notes
+The original 66-question bank, eight extra cases, expected answers, seeds and metrics are unchanged. Retrieval recall is reference coverage, not answer accuracy. Mocked tests are not live accuracy. Release gates require a completed Full run, at least 90% overall and 100% in Permissions, Action execution and Missing information, with qualitative review of subjective criteria.
 
-Demo records changed during earlier LIVE checks, so screenshots and old handoff totals are not a substitute for current queries. The immutable reconciled but unallocated receipt `RC-F4KVVQIB3D` for ₹5,00,000 is a test artefact and does not count as collected cash.
+Current validation evidence is recorded in the pull request. No completed live release-gate score is claimed here. The runtime checkpoint path still needs a deployed database permission smoke check.
 
-## Validation of this change
+## Sources and limitations
 
-- **MOCKED:** 16 new regression checks passed using Node's test runner.
-- **MOCKED:** native syntax checks passed for 10 server/script files. This is not a TypeScript type check.
-- **MOCKED / GitHub CI:** clean dependency install, TypeScript type checking and Vite build passed on Linux. Local Windows installation remains blocked.
-- **MOCKED / GitHub CI:** all 121 regression checks passed after keeping the system prompt within its existing budget and preserving safe verification wording.
-- **LIVE:** not run. No new database parity, retrieval comparison, release-gate score, browser performance result or production-deployment success is claimed.
+Source registers, benchmarks, approved scenarios, metric definitions and original strategy handoffs are in `db/`, `docs/handoff/` and the application's reference catalogue. Follow source paths/checksums for detailed calculations and provenance. Demo data changed during earlier live checks; old screenshots are not authoritative. The immutable reconciled but unallocated test receipt `RC-F4KVVQIB3D` for ₹5,00,000 does not count as collected cash.
 
-Remaining acceptance work includes the researched-prospects UI, allocation-drawer empty state, complete scenario-view review, orb/browser checks, and all LIVE evaluations. See `docs/handoff/` for their original requirements.
+Browser speech support varies; recognition may use the browser vendor's service. Lexical retrieval can miss passages: measure candidates before adoption. Structured financial checks cover specific patterns, not arbitrary reasoning. Duplicate/absent fixtures and subjective recommendations require human review.
 
-## LIVE gate follow-up
-
-The first gate run paused after 15 of 35 cases. Its zero strict-pass count was not an accuracy estimate: reference questions were sometimes run in historical context, legacy route names did not map cleanly, and missing action fixtures could not validate expected proposals. Genuine defects also appeared: provider tool-protocol errors, printed tool-call XML, and scenario fallback money missing its lakh unit.
-
-The follow-up separates reviewer/evaluator budgets, answers greetings without a model, constrains answer-only calls, rejects raw tool-call markup, preserves scenario units, improves dataset keyword search, records HTTP error details, and pauses rather than grading provider-degraded fallback responses. It does not relax the full release gate or change the original test bank. Further LIVE runs are still required.
-
-## Free-provider routing
-
-The server defaults to `AI_PROVIDER_ORDER=openrouter_first`: both explicitly configured OpenRouter `:free` models, then Groq. Set `AI_PROVIDER_ORDER=groq_first` to restore the previous priority. There is no Gemini integration and no paid/automatic-model routing. All OpenRouter models remain subject to startup zero-price/tool-support checks.
-
-OpenRouter free-request counts are read from `free_model_daily_requests`; USD credit limits are not request counts. Its daily allowance is shared across free model variants, so switching models does not multiply the allowance. Unknown quota is displayed as unknown rather than inferred from a dollar balance. Failed OpenRouter attempts reduce the local conservative estimate.
-
-## Bounded reliability pass
-
-Activation inventory/pricing and forecast-versus-actual queries now have server read plans using visible reference rows, approved scenarios and current M-01. Values and units come from those sources; scenario forecasts are never substituted for receipts. A receipt-free expected answer conflicting with populated demo receipts is flagged for human review, not treated as authority over current metrics. Research introduction caveats require supporting retrieved evidence.
-
-Retrieval evaluation retains the original FTS and optional pg_trgm variants, and adds candidate C: meaningful terms, domain synonyms and chunk-text ranking. It uses no model requests. Candidate C is adopted only if a completed LIVE comparison shows strictly higher mean recall; defaults and tie preferences remain conservative. Render filesystem adoption/checkpoints remain ephemeral.
-
-Validation and remaining LIVE steps are tracked in [the bounded acceptance checklist](docs/reliability-acceptance.md). The original test bank, expected answers, metrics, seeds and approved strategy remain unchanged. No new LIVE score or provider-availability guarantee is claimed.
+Submission requires **exactly three strategy slides**, author name on slide one, the working product and this README. The [reviewer guide](docs/chatbot-reliability-and-reviewer-guide.md) maps the demonstration to all six scoring areas.

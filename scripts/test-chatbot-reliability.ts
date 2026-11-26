@@ -39,3 +39,7 @@ test('[MOCKED] changed data changes the verified fallback without model arithmet
  assert.match(before,/₹71,000/);assert.match(after,/₹1,94,000/);assert.doesNotMatch(after,/71,000/);
  assert.match(verifiedFactsFallback(bundle([])),/enough verified evidence/);
 });
+test('[MOCKED] user-suggested amounts are not supporting evidence; references retain their own provenance',()=>{
+ assert.equal(verifyScopedAnswer('We collected ₹9,99,999.',bundle([],'Did we collect ₹9,99,999?'),scope).passed,false);
+ assert.equal(verifyScopedAnswer('Research cash potential: ₹71,000.',bundle([{record_class:'external_research',edition_id:'REFERENCE',rows:[{cash_potential:71000}]}]),scope).passed,true);
+});
