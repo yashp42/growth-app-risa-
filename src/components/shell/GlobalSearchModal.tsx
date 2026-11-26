@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
@@ -65,6 +66,8 @@ export function GlobalSearchModal({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open,onClose,modalRef);
 
   useEffect(() => {
     if (!open) return;
@@ -180,27 +183,27 @@ export function GlobalSearchModal({
       aria-label="Global workspace search"
     >
       <div
-        className="fixed inset-0 bg-[#202824]/30"
+        className="fixed inset-0 bg-[var(--color-ink)]/30"
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-md border border-[#D9D7D0] bg-white shadow-xl">
+      <div className="relative z-10 w-full max-w-2xl overflow-hidden rounded-md border border-[var(--color-border)] bg-white shadow-xl">
         {/* Search input */}
-        <div className="flex items-center gap-3 border-b border-[#D9D7D0] px-4 py-3">
-          <Search className="h-4 w-4 shrink-0 text-[#788C83]" aria-hidden="true" />
+        <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3">
+          <Search className="h-4 w-4 shrink-0 text-[var(--color-ink-subtle)]" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`Search sponsors, campaigns, deals, tasks (${editionId})...`}
-            className="w-full bg-transparent text-[14px] text-[#202824] placeholder:text-[#788C83] focus:outline-none"
+            className="w-full bg-transparent text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:outline-none"
           />
           {query ? (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="text-[12px] font-medium text-[#788C83] hover:text-[#202824]"
+              className="text-[13px] font-medium text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)]"
             >
               Clear
             </button>
@@ -209,53 +212,53 @@ export function GlobalSearchModal({
             type="button"
             onClick={onClose}
             aria-label="Close search"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-[#788C83] hover:bg-[#FAF9F6] hover:text-[#202824]"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-subtle)] hover:text-[var(--color-ink)]"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
         {/* Scope filter bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8E6E0] bg-[#FAF9F6] px-4 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-4 py-2">
           <div className="flex flex-wrap items-center gap-1.5">
             {SEARCH_SCOPES.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setScope(item.id)}
-                className={`rounded px-2.5 py-1 text-[12px] font-medium transition-colors duration-150 ${
+                className={`rounded px-2.5 py-1 text-[13px] font-medium transition-colors duration-150 ${
                   scope === item.id
-                    ? 'bg-[#315F52] text-white'
-                    : 'text-[#525E58] hover:bg-white hover:text-[#202824]'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'text-[var(--color-ink-muted)] hover:bg-white hover:text-[var(--color-ink)]'
                 }`}
               >
                 {item.label}
               </button>
             ))}
           </div>
-          <span className="font-mono text-[11px] text-[#788C83]">
+          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
             {editionId} · {recordClass}
           </span>
         </div>
 
         {/* Results */}
-        <div className="max-h-[420px] overflow-y-auto divide-y divide-[#E8E6E0]">
+        <div className="max-h-[420px] overflow-y-auto divide-y divide-[var(--color-border-subtle)]">
           {/* Entity search results from GET /api/search */}
           <div className="px-4 py-3">
             {!query.trim() ? (
-              <p className="text-[12px] text-[#788C83]">
+              <p className="text-[13px] text-[var(--color-ink-subtle)]">
                 Type to search live records in {editionId}.
               </p>
             ) : loading ? (
-              <p className="text-[13px] text-[#525E58]">Searching records...</p>
+              <p className="text-[14px] text-[var(--color-ink-muted)]">Searching records...</p>
             ) : errorMessage ? (
-              <div className="flex items-center gap-2 text-[12px] text-[#9B3B32]">
+              <div className="flex items-center gap-2 text-[13px] text-[#9B3B32]">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 <span>{errorMessage}</span>
               </div>
             ) : filteredEntityResults.length > 0 ? (
               <div className="space-y-1">
-                <p className="mb-1.5 text-[11px] font-medium text-[#788C83]">
+                <p className="mb-1.5 text-[12px] font-medium text-[var(--color-ink-subtle)]">
                   Matching records
                 </p>
                 {filteredEntityResults.map((item) => (
@@ -270,26 +273,26 @@ export function GlobalSearchModal({
                       }
                       onClose();
                     }}
-                    className="flex w-full items-center justify-between rounded px-2.5 py-2 text-left transition-colors duration-150 hover:bg-[#FAF9F6]"
+                    className="flex w-full items-center justify-between rounded px-2.5 py-2 text-left transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-[#202824]">
+                      <p className="truncate text-[14px] font-medium text-[var(--color-ink)]">
                         {item.title}
                       </p>
-                      <p className="truncate text-[11px] text-[#788C83]">
+                      <p className="truncate text-[12px] text-[var(--color-ink-subtle)]">
                         {item.type} · {item.id}
                         {item.subtitle ? ` · ${item.subtitle}` : ''}
                       </p>
                     </div>
                     <ArrowRight
-                      className="h-3.5 w-3.5 shrink-0 text-[#788C83]"
+                      className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-subtle)]"
                       aria-hidden="true"
                     />
                   </button>
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] font-medium text-[#202824]">
+              <p className="text-[14px] font-medium text-[var(--color-ink)]">
                 No matching {scope === 'all' ? 'records' : scope}
               </p>
             )}
@@ -298,7 +301,7 @@ export function GlobalSearchModal({
           {/* Local Overview section jumps */}
           {scope === 'all' && workspaceMatches.matchedAnchors.length > 0 ? (
             <div className="px-4 py-3">
-              <p className="mb-2 text-[11px] font-medium text-[#788C83]">
+              <p className="mb-2 text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Overview sections
               </p>
               <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
@@ -310,18 +313,18 @@ export function GlobalSearchModal({
                       onJumpToOverviewAnchor(anchor.id);
                       onClose();
                     }}
-                    className="flex items-center justify-between rounded px-2.5 py-2 text-left transition-colors duration-150 hover:bg-[#FAF9F6]"
+                    className="flex items-center justify-between rounded px-2.5 py-2 text-left transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-[#202824]">
+                      <p className="truncate text-[14px] font-medium text-[var(--color-ink)]">
                         {anchor.label}
                       </p>
-                      <p className="truncate text-[11px] text-[#788C83]">
+                      <p className="truncate text-[12px] text-[var(--color-ink-subtle)]">
                         {anchor.subtitle}
                       </p>
                     </div>
                     <ArrowRight
-                      className="h-3.5 w-3.5 shrink-0 text-[#788C83]"
+                      className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-subtle)]"
                       aria-hidden="true"
                     />
                   </button>
@@ -333,7 +336,7 @@ export function GlobalSearchModal({
           {/* Workspace module navigation */}
           {workspaceMatches.matchedModules.length > 0 ? (
             <div className="px-4 py-3">
-              <p className="mb-2 text-[11px] font-medium text-[#788C83]">
+              <p className="mb-2 text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Workspace navigation
               </p>
               <div className="space-y-1">
@@ -345,17 +348,17 @@ export function GlobalSearchModal({
                       onNavigateSection(mod.id);
                       onClose();
                     }}
-                    className="flex w-full items-center justify-between rounded px-2.5 py-2 text-left transition-colors duration-150 hover:bg-[#FAF9F6]"
+                    className="flex w-full items-center justify-between rounded px-2.5 py-2 text-left transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                   >
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         {mod.label}
                       </p>
-                      <p className="truncate text-[12px] text-[#525E58]">
+                      <p className="truncate text-[13px] text-[var(--color-ink-muted)]">
                         {mod.description}
                       </p>
                     </div>
-                    <span className="ml-3 shrink-0 font-mono text-[11px] text-[#788C83]">
+                    <span className="ml-3 shrink-0 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                       {mod.groupLabel}
                     </span>
                   </button>
@@ -368,3 +371,4 @@ export function GlobalSearchModal({
     </div>
   );
 }
+

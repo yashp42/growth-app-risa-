@@ -22,7 +22,7 @@ export function SelectControl({
     <div className="flex flex-col gap-1">
       <label
         htmlFor={id}
-        className="text-[11px] font-medium text-[#788C83] whitespace-nowrap"
+        className="text-[12px] font-medium text-[var(--color-ink-subtle)] whitespace-nowrap"
       >
         {label}
       </label>
@@ -32,7 +32,7 @@ export function SelectControl({
           value={value}
           disabled={disabled}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-full appearance-none rounded-md border border-[#D9D7D0] bg-white pr-8 pl-3 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:border-[#788C83] focus:border-[#315F52] focus:outline-none disabled:cursor-not-allowed disabled:bg-[#FAF9F6] disabled:text-[#788C83]"
+          className="h-9 w-full appearance-none rounded-md border border-[var(--color-border)] bg-white pr-8 pl-3 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:border-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)] disabled:text-[var(--color-ink-subtle)]"
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -41,7 +41,7 @@ export function SelectControl({
           ))}
         </select>
         <ChevronDown
-          className="pointer-events-none absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-[#788C83]"
+          className="pointer-events-none absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-ink-subtle)]"
           aria-hidden="true"
         />
       </div>

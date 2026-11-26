@@ -40,8 +40,8 @@ interface StrategyPipelineCapacitySectionProps {
 function bandStyle(severity?: string | null): string {
   if (severity === 'critical') return 'text-[#9B3B32] font-semibold';
   if (severity === 'warning') return 'text-[#B67A2E] font-semibold';
-  if (severity === 'ok') return 'text-[#315F52] font-semibold';
-  return 'text-[#525E58] font-medium';
+  if (severity === 'ok') return 'text-[var(--color-accent)] font-semibold';
+  return 'text-[var(--color-ink-muted)] font-medium';
 }
 
 function formatRuleMetricValue(rule: ThresholdRuleRecord): string | null {
@@ -120,21 +120,21 @@ export function StrategyPipelineCapacitySection({
           <div>
             <h2
               id="analytics-bets-heading"
-              className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+              className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
             >
               Strategic bet performance (D-010 scorecard &amp; /api/rules)
             </h2>
-            <p className="text-[12px] text-[#525E58]">
+            <p className="text-[13px] text-[var(--color-ink-muted)]">
               Server-evaluated threshold rules from /api/rules with exact keep, change, escalate, and response bands.
             </p>
           </div>
-          <span className="font-mono text-[11px] text-[#788C83]">
+          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
             {recordClass} · as of {asOfDate}
           </span>
         </div>
 
         {recordClass === 'historical_synthetic' ? (
-          <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-4 py-2.5 text-[12px] font-medium text-[#525E58]">
+          <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-2.5 text-[13px] font-medium text-[var(--color-ink-muted)]">
             Reference only: rules apply to the 2026 season
           </div>
         ) : null}
@@ -145,27 +145,27 @@ export function StrategyPipelineCapacitySection({
             return (
               <div
                 key={bet.bet_id}
-                className="flex flex-col justify-between rounded-md border border-[#D9D7D0] bg-white p-5"
+                className="flex flex-col justify-between rounded-md border border-[var(--color-border)] bg-white p-5"
               >
                 <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-3 border-b border-[#E8E6E0] pb-3">
+                  <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border-subtle)] pb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-[12px] font-semibold text-[#315F52]">
+                        <span className="font-mono text-[13px] font-semibold text-[var(--color-accent)]">
                           {bet.bet_id}
                         </span>
-                        <h3 className="text-[14px] font-semibold text-[#202824]">
+                        <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                           {bet.name}
                         </h3>
                       </div>
-                      <p className="mt-0.5 text-[12px] text-[#788C83]">
+                      <p className="mt-0.5 text-[13px] text-[var(--color-ink-subtle)]">
                         Priority {bet.rank} · {bet.strategyNote}
                       </p>
                     </div>
                   </div>
 
                   {bet.metricIds.length === 0 ? (
-                    <div className="rounded border border-dashed border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-3 text-[12px] text-[#525E58]">
+                    <div className="rounded border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-3 text-[13px] text-[var(--color-ink-muted)]">
                       No standalone metric is mapped to {bet.bet_id} in the
                       metric dictionary; no proxy score is constructed.
                     </div>
@@ -183,52 +183,52 @@ export function StrategyPipelineCapacitySection({
                         return (
                           <div
                             key={mId}
-                            className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3"
+                            className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3"
                           >
                             <div className="flex items-baseline justify-between gap-2">
-                              <span className="text-[12px] font-medium text-[#202824]">
+                              <span className="text-[13px] font-medium text-[var(--color-ink)]">
                                 {def?.name || mId}
                               </span>
-                              <span className="font-mono text-[11px] text-[#788C83]">
+                              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                 {mId}
                                 {def?.kpi_id ? ` · ${def.kpi_id}` : ''}
                               </span>
                             </div>
 
                             {loading ? (
-                              <div className="mt-2 h-6 w-24 animate-pulse rounded bg-[#E8E6E0]" />
+                              <div className="mt-2 h-6 w-24 animate-pulse rounded bg-[var(--color-border-subtle)]" />
                             ) : isRestricted ? (
-                              <p className="mt-1.5 text-[12px] text-[#525E58]">
+                              <p className="mt-1.5 text-[13px] text-[var(--color-ink-muted)]">
                                 Restricted (viewer role).
                               </p>
                             ) : !result ? (
-                              <p className="mt-1.5 font-mono text-[13px] text-[#525E58]">
+                              <p className="mt-1.5 font-mono text-[14px] text-[var(--color-ink-muted)]">
                                 Unavailable
                               </p>
                             ) : !result.computable ? (
                               <div className="mt-1.5">
-                                <p className="font-mono text-[13px] font-medium text-[#525E58]">
+                                <p className="font-mono text-[14px] font-medium text-[var(--color-ink-muted)]">
                                   Not computable
                                 </p>
-                                <p className="mt-0.5 text-[11px] text-[#788C83]">
+                                <p className="mt-0.5 text-[12px] text-[var(--color-ink-subtle)]">
                                   {result.reason ||
                                     'Underlying season records are not available.'}
                                 </p>
                               </div>
                             ) : (
                               <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-2">
-                                <span className="font-mono text-[18px] font-semibold tabular-nums text-[#315F52]">
+                                <span className="font-mono text-[18px] font-semibold tabular-nums text-[var(--color-accent)]">
                                   {formatAnalyticsMetricValue(result)}
                                 </span>
                                 {ratio ? (
-                                  <span className="font-mono text-[12px] text-[#525E58] tabular-nums">
+                                  <span className="font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums">
                                     {ratio}
                                   </span>
                                 ) : null}
                               </div>
                             )}
 
-                            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#788C83]">
+                            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-[var(--color-ink-subtle)]">
                               {def?.time_period || kpi?.frequency ? (
                                 <span>
                                   Period: {def?.time_period || kpi?.frequency}
@@ -246,13 +246,13 @@ export function StrategyPipelineCapacitySection({
                 </div>
 
                 {/* Server-Evaluated Threshold Rules */}
-                <div className="mt-4 border-t border-[#E8E6E0] pt-3">
+                <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-3">
                   {!rulesAvailable ? (
-                    <p className="text-[11px] text-[#788C83]">
+                    <p className="text-[12px] text-[var(--color-ink-subtle)]">
                       Operating threshold rules are currently unavailable from /api/rules.
                     </p>
                   ) : betRules.length === 0 ? (
-                    <p className="text-[11px] text-[#788C83]">
+                    <p className="text-[12px] text-[var(--color-ink-subtle)]">
                       No threshold rule row matched for {bet.bet_id}.
                     </p>
                   ) : (
@@ -262,9 +262,9 @@ export function StrategyPipelineCapacitySection({
                         return (
                           <div
                             key={rule.rule_id}
-                            className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-2.5 text-[11px] text-[#525E58]"
+                            className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-2.5 text-[12px] text-[var(--color-ink-muted)]"
                           >
-                            <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[#202824]">
+                            <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[var(--color-ink)]">
                               <span>
                                 {rule.rule_id} · {rule.kpi_id}
                                 {rule.metric_id ? ` (${rule.metric_id})` : ''}
@@ -274,7 +274,7 @@ export function StrategyPipelineCapacitySection({
                               </span>
                             </div>
                             {ruleVal ? (
-                              <p className="mt-1 font-mono text-[#202824]">
+                              <p className="mt-1 font-mono text-[var(--color-ink)]">
                                 Current ({rule.metric_id}): {ruleVal}
                               </p>
                             ) : null}
@@ -284,7 +284,7 @@ export function StrategyPipelineCapacitySection({
                               {rule.change_if ? ` · Change if ${rule.change_if}` : ''}
                               {` · Escalate if ${rule.escalate_if}`}
                             </p>
-                            <p className="mt-0.5 text-[#788C83]">
+                            <p className="mt-0.5 text-[var(--color-ink-subtle)]">
                               Response: {rule.response}
                               {rule.owner_role
                                 ? ` · Owner role: ${rule.owner_role}`
@@ -308,11 +308,11 @@ export function StrategyPipelineCapacitySection({
         <div>
           <h2
             id="analytics-pipeline-heading"
-            className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+            className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
           >
             Pipeline quality and deal economics
           </h2>
-          <p className="text-[12px] text-[#525E58]">
+          <p className="text-[13px] text-[var(--color-ink-muted)]">
             Open pipeline value reflects proposed face value (never expected
             cash); won deal size includes in-kind unless filtered.
           </p>
@@ -393,11 +393,11 @@ export function StrategyPipelineCapacitySection({
         <div>
           <h2
             id="analytics-capacity-heading"
-            className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+            className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
           >
             Capacity and operational efficiency
           </h2>
-          <p className="text-[12px] text-[#525E58]">
+          <p className="text-[13px] text-[var(--color-ink-muted)]">
             Logged task hours compared against model task hours (M-27). No cash
             budget, spend cap, or monetary labour cost is modeled.
           </p>
@@ -417,20 +417,20 @@ export function StrategyPipelineCapacitySection({
             />
           </div>
 
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5 lg:col-span-7">
-            <div className="flex items-center justify-between border-b border-[#E8E6E0] pb-3">
-              <h3 className="text-[14px] font-semibold text-[#202824]">
+          <div className="rounded-md border border-[var(--color-border)] bg-white p-5 lg:col-span-7">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+              <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                 Capacity governance and thresholds
               </h3>
-              <span className="font-mono text-[11px] text-[#788C83]">
+              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                 K-C-01
               </span>
             </div>
 
-            <div className="mt-3 space-y-2.5 text-[12px] text-[#525E58]">
+            <div className="mt-3 space-y-2.5 text-[13px] text-[var(--color-ink-muted)]">
               {kpiC01 ? (
                 <p>
-                  <strong className="font-medium text-[#202824]">
+                  <strong className="font-medium text-[var(--color-ink)]">
                     {kpiC01.name}:
                   </strong>{' '}
                   {kpiC01.definition}
@@ -442,9 +442,9 @@ export function StrategyPipelineCapacitySection({
                 capacityRules.map((r) => (
                   <div
                     key={r.rule_id}
-                    className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3"
+                    className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3"
                   >
-                    <div className="flex items-center justify-between font-mono text-[11px] text-[#202824]">
+                    <div className="flex items-center justify-between font-mono text-[12px] text-[var(--color-ink)]">
                       <span>{r.rule_id}</span>
                       <span className={bandStyle(r.severity)}>
                         {r.status_label || r.evaluated_status || r.rule_status}
@@ -457,14 +457,14 @@ export function StrategyPipelineCapacitySection({
                   </div>
                 ))
               ) : (
-                <p className="text-[#788C83]">
+                <p className="text-[var(--color-ink-subtle)]">
                   {rulesAvailable
                     ? 'No K-C-01 threshold rule row returned.'
                     : 'Threshold rules are unavailable from /api/rules.'}
                 </p>
               )}
 
-              <p className="text-[#788C83]">
+              <p className="text-[var(--color-ink-subtle)]">
                 Hours logs are personal execution data restricted by role. When
                 hours logs are absent (including the 2025 synthetic dataset),
                 M-27 reports not computable rather than estimating capacity.
@@ -478,18 +478,18 @@ export function StrategyPipelineCapacitySection({
       <section aria-labelledby="analytics-governance-heading" className="space-y-4">
         <h2
           id="analytics-governance-heading"
-          className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+          className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
         >
           Experiments, forecasting scope, and model assumptions
         </h2>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-            <div className="flex items-center justify-between border-b border-[#E8E6E0] pb-3">
-              <h3 className="text-[14px] font-semibold text-[#202824]">
+          <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+              <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                 Experiment register (read-only)
               </h3>
-              <span className="font-mono text-[11px] text-[#788C83]">
+              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                 /api/reference/experiments
               </span>
             </div>
@@ -502,7 +502,7 @@ export function StrategyPipelineCapacitySection({
                 />
               </div>
             ) : (
-              <div className="mt-3 space-y-3 text-[12px]">
+              <div className="mt-3 space-y-3 text-[13px]">
                 {experiments.map((exp) => {
                   const res = experimentResults.find(
                     (r) => r.experiment_id === exp.experiment_id
@@ -510,20 +510,20 @@ export function StrategyPipelineCapacitySection({
                   return (
                     <div
                       key={exp.experiment_id}
-                      className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3"
+                      className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3"
                     >
-                      <div className="flex items-center justify-between font-mono text-[11px] text-[#202824]">
+                      <div className="flex items-center justify-between font-mono text-[12px] text-[var(--color-ink)]">
                         <span>
                           {exp.experiment_id} · {exp.bet_id}
                         </span>
-                        <span className="capitalize text-[#315F52]">
+                        <span className="capitalize text-[var(--color-accent)]">
                           {exp.status}
                         </span>
                       </div>
-                      <p className="mt-1 font-medium text-[#202824]">
+                      <p className="mt-1 font-medium text-[var(--color-ink)]">
                         {exp.hypothesis}
                       </p>
-                      <p className="mt-0.5 text-[#525E58]">
+                      <p className="mt-0.5 text-[var(--color-ink-muted)]">
                         {[
                           exp.primary_kpi_id ? `KPI: ${exp.primary_kpi_id}` : null,
                           exp.rule_id ? `Rule: ${exp.rule_id}` : null,
@@ -533,7 +533,7 @@ export function StrategyPipelineCapacitySection({
                           .join(' · ')}
                       </p>
                       {res ? (
-                        <p className="mt-1 font-mono text-[11px] text-[#315F52]">
+                        <p className="mt-1 font-mono text-[12px] text-[var(--color-accent)]">
                           Decision: {res.decision} (n = {res.n})
                         </p>
                       ) : null}
@@ -544,30 +544,30 @@ export function StrategyPipelineCapacitySection({
             )}
           </div>
 
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-            <div className="flex items-center justify-between border-b border-[#E8E6E0] pb-3">
-              <h3 className="text-[14px] font-semibold text-[#202824]">
+          <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+            <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+              <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                 In-season re-forecasting
               </h3>
-              <span className="font-mono text-[11px] text-[#788C83]">
+              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                 Out of scope
               </span>
             </div>
 
             {forecasts.length > 0 ? (
-              <div className="mt-3 space-y-2 text-[12px]">
+              <div className="mt-3 space-y-2 text-[13px]">
                 {forecasts.map((fc) => (
                   <div
                     key={fc.forecast_id}
-                    className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3"
+                    className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3"
                   >
-                    <div className="flex items-center justify-between font-mono text-[11px] text-[#202824]">
+                    <div className="flex items-center justify-between font-mono text-[12px] text-[var(--color-ink)]">
                       <span>
                         {fc.forecast_id} · {fc.model_version}
                       </span>
                       <span className="capitalize">{fc.status}</span>
                     </div>
-                    <p className="mt-1 text-[#525E58]">
+                    <p className="mt-1 text-[var(--color-ink-muted)]">
                       Baseline: {fc.baseline_scenario_id} · Expected cash:{' '}
                       {fc.expected_cash !== null &&
                       fc.expected_cash !== undefined
@@ -589,12 +589,12 @@ export function StrategyPipelineCapacitySection({
         </div>
 
         {/* Model Assumptions */}
-        <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-          <div className="flex items-center justify-between border-b border-[#E8E6E0] pb-3">
-            <h3 className="text-[14px] font-semibold text-[#202824]">
+        <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+          <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+            <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
               Frozen model assumptions (read-only)
             </h3>
-            <span className="font-mono text-[11px] text-[#788C83]">
+            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
               /api/reference/assumptions
             </span>
           </div>
@@ -608,9 +608,9 @@ export function StrategyPipelineCapacitySection({
             </div>
           ) : (
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full border-collapse text-left text-[12px]">
+              <table className="w-full border-collapse text-left text-[13px]">
                 <thead>
-                  <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[#525E58]">
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-ink-muted)]">
                     <th className="px-3 py-2 font-medium">ID</th>
                     <th className="px-3 py-2 font-medium">Variable</th>
                     <th className="px-3 py-2 font-medium">Frozen value</th>
@@ -618,20 +618,20 @@ export function StrategyPipelineCapacitySection({
                     <th className="px-3 py-2 font-medium">Uncertainty</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E6E0]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {assumptions.map((a) => (
                     <tr key={a.assumption_id}>
-                      <td className="px-3 py-2 font-mono font-medium text-[#202824]">
+                      <td className="px-3 py-2 font-mono font-medium text-[var(--color-ink)]">
                         {a.assumption_id}
                       </td>
-                      <td className="px-3 py-2 text-[#202824]">{a.variable}</td>
-                      <td className="px-3 py-2 font-mono text-[#525E58]">
+                      <td className="px-3 py-2 text-[var(--color-ink)]">{a.variable}</td>
+                      <td className="px-3 py-2 font-mono text-[var(--color-ink-muted)]">
                         {a.frozen_value}
                       </td>
-                      <td className="px-3 py-2 font-mono text-[#525E58]">
+                      <td className="px-3 py-2 font-mono text-[var(--color-ink-muted)]">
                         {a.validation_kpi_id || '—'}
                       </td>
-                      <td className="px-3 py-2 text-[#788C83]">
+                      <td className="px-3 py-2 text-[var(--color-ink-subtle)]">
                         {a.uncertainty || '—'}
                       </td>
                     </tr>

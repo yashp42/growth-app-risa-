@@ -41,7 +41,7 @@ export function CitationList({
 
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-medium text-[#788C83]">
+      <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
         Sources ({citations.length})
       </p>
 
@@ -59,29 +59,29 @@ export function CitationList({
               key={key}
               type="button"
               onClick={() => setSelectedCitation(citation)}
-              className={`inline-flex max-w-full items-center gap-1.5 rounded border bg-[#FAF9F6] text-left transition-colors hover:border-[#315F52] hover:bg-white ${
-                compact ? 'px-2 py-1 text-[11px]' : 'px-2.5 py-1.5 text-[12px]'
-              } ${isCaution ? 'border-[#C8847D]' : 'border-[#D9D7D0]'}`}
+              className={`inline-flex max-w-full items-center gap-1.5 rounded border bg-[var(--color-surface-subtle)] text-left transition-colors hover:border-[var(--color-accent)] hover:bg-white ${
+                compact ? 'px-2 py-1 text-[12px]' : 'px-2.5 py-1.5 text-[13px]'
+              } ${isCaution ? 'border-[#C8847D]' : 'border-[var(--color-border)]'}`}
             >
               <FileText
-                className="h-3 w-3 shrink-0 text-[#315F52]"
+                className="h-3 w-3 shrink-0 text-[var(--color-accent)]"
                 aria-hidden="true"
               />
-              <span className="font-mono text-[11px] font-medium text-[#315F52]">
+              <span className="font-mono text-[12px] font-medium text-[var(--color-accent)]">
                 {citation.chunk_id || citation.id}
               </span>
               {citation.title || citation.section ? (
-                <span className="truncate max-w-[180px] text-[#202824]">
+                <span className="truncate max-w-[180px] text-[var(--color-ink)]">
                   {citation.title || citation.section}
                 </span>
               ) : null}
               {statusLabel && isCaution ? (
-                <span className="font-mono text-[10px] font-medium text-[#9B3B32]">
+                <span className="font-mono text-[12px] font-medium text-[#9B3B32]">
                   · {statusLabel}
                 </span>
               ) : null}
               <ChevronRight
-                className="h-3 w-3 shrink-0 text-[#788C83]"
+                className="h-3 w-3 shrink-0 text-[var(--color-ink-subtle)]"
                 aria-hidden="true"
               />
             </button>
@@ -117,12 +117,12 @@ export function CitationList({
           <div className="space-y-4">
             {selectedStatusLabel ? (
               <div
-                className={`rounded border px-3 py-2 text-[12px] ${
+                className={`rounded border px-3 py-2 text-[13px] ${
                   selectedCitation.decision_status === 'proposed' ||
                   selectedCitation.retrieval_rule ===
                     'contradiction_and_history_only'
                     ? 'border-[#C8847D] bg-[#FDF5F4] text-[#9B3B32]'
-                    : 'border-[#D9D7D0] bg-[#FAF9F6] text-[#202824]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-ink)]'
                 }`}
               >
                 Status: <span className="font-medium">{selectedStatusLabel}</span>
@@ -130,63 +130,63 @@ export function CitationList({
             ) : null}
 
             {selectedCitation.chunk_text ? (
-              <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-4">
-                <p className="mb-1.5 text-[11px] font-medium text-[#788C83]">
+              <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4">
+                <p className="mb-1.5 text-[12px] font-medium text-[var(--color-ink-subtle)]">
                   Source excerpt
                 </p>
-                <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#202824]">
+                <p className="whitespace-pre-wrap text-[14px] leading-relaxed text-[var(--color-ink)]">
                   {selectedCitation.chunk_text}
                 </p>
               </div>
             ) : (
-              <p className="text-[12px] text-[#525E58]">
+              <p className="text-[13px] text-[var(--color-ink-muted)]">
                 Verified source reference recorded for this answer.
               </p>
             )}
 
-            <dl className="grid grid-cols-1 gap-2 rounded-md border border-[#E8E6E0] bg-white p-3.5 text-[12px] sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-2 rounded-md border border-[var(--color-border-subtle)] bg-white p-3.5 text-[13px] sm:grid-cols-2">
               <div>
-                <dt className="text-[11px] text-[#788C83]">Citation ID</dt>
-                <dd className="font-mono text-[#202824]">
+                <dt className="text-[12px] text-[var(--color-ink-subtle)]">Citation ID</dt>
+                <dd className="font-mono text-[var(--color-ink)]">
                   {selectedCitation.chunk_id || selectedCitation.id}
                 </dd>
               </div>
               {selectedCitation.doc_id ? (
                 <div>
-                  <dt className="text-[11px] text-[#788C83]">Document</dt>
-                  <dd className="font-mono text-[#202824]">
+                  <dt className="text-[12px] text-[var(--color-ink-subtle)]">Document</dt>
+                  <dd className="font-mono text-[var(--color-ink)]">
                     {selectedCitation.doc_id}
                   </dd>
                 </div>
               ) : null}
               {selectedCitation.decision_id ? (
                 <div>
-                  <dt className="text-[11px] text-[#788C83]">Decision</dt>
-                  <dd className="font-mono text-[#202824]">
+                  <dt className="text-[12px] text-[var(--color-ink-subtle)]">Decision</dt>
+                  <dd className="font-mono text-[var(--color-ink)]">
                     {selectedCitation.decision_id}
                   </dd>
                 </div>
               ) : null}
               {selectedCitation.effective_date ? (
                 <div>
-                  <dt className="text-[11px] text-[#788C83]">Effective date</dt>
-                  <dd className="font-mono text-[#202824]">
+                  <dt className="text-[12px] text-[var(--color-ink-subtle)]">Effective date</dt>
+                  <dd className="font-mono text-[var(--color-ink)]">
                     {selectedCitation.effective_date}
                   </dd>
                 </div>
               ) : null}
               {selectedCitation.citation_location ? (
                 <div className="sm:col-span-2">
-                  <dt className="text-[11px] text-[#788C83]">Location</dt>
-                  <dd className="font-mono text-[#202824]">
+                  <dt className="text-[12px] text-[var(--color-ink-subtle)]">Location</dt>
+                  <dd className="font-mono text-[var(--color-ink)]">
                     {selectedCitation.citation_location}
                   </dd>
                 </div>
               ) : null}
               {selectedCitation.related_bet || selectedCitation.related_kpi ? (
                 <div className="sm:col-span-2">
-                  <dt className="text-[11px] text-[#788C83]">Scope</dt>
-                  <dd className="font-mono text-[#202824]">
+                  <dt className="text-[12px] text-[var(--color-ink-subtle)]">Scope</dt>
+                  <dd className="font-mono text-[var(--color-ink)]">
                     {[selectedCitation.related_bet, selectedCitation.related_kpi]
                       .filter(Boolean)
                       .join(' · ')}
@@ -195,8 +195,8 @@ export function CitationList({
               ) : null}
               {selectedCitation.record_class ? (
                 <div>
-                  <dt className="text-[11px] text-[#788C83]">Data class</dt>
-                  <dd className="text-[#202824]">
+                  <dt className="text-[12px] text-[var(--color-ink-subtle)]">Data class</dt>
+                  <dd className="text-[var(--color-ink)]">
                     {formatRecordClassLabel(selectedCitation.record_class)}
                   </dd>
                 </div>
@@ -204,8 +204,8 @@ export function CitationList({
               {selectedCitation.data_version !== undefined &&
               selectedCitation.data_version !== null ? (
                 <div>
-                  <dt className="text-[11px] text-[#788C83]">Data version</dt>
-                  <dd className="font-mono text-[#202824]">
+                  <dt className="text-[12px] text-[var(--color-ink-subtle)]">Data version</dt>
+                  <dd className="font-mono text-[var(--color-ink)]">
                     v{String(selectedCitation.data_version)}
                   </dd>
                 </div>

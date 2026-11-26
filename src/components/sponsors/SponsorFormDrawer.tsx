@@ -216,7 +216,7 @@ export function SponsorFormDrawer({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {readOnly ? (
-          <div className="rounded border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             This record is read-only and cannot be modified.
           </div>
         ) : null}
@@ -224,7 +224,7 @@ export function SponsorFormDrawer({
         {formError ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{formError}</span>
@@ -234,7 +234,7 @@ export function SponsorFormDrawer({
         <div>
           <label
             htmlFor="sponsor-display-name"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Display name
           </label>
@@ -246,14 +246,14 @@ export function SponsorFormDrawer({
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="e.g. Acme Consumer Labs"
-            className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           />
         </div>
 
         <div>
           <label
             htmlFor="sponsor-legal-name"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Legal name
           </label>
@@ -264,7 +264,7 @@ export function SponsorFormDrawer({
             value={legalName}
             onChange={(e) => setLegalName(e.target.value)}
             placeholder="Registered entity name for invoicing"
-            className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           />
         </div>
 
@@ -272,7 +272,7 @@ export function SponsorFormDrawer({
           <div>
             <label
               htmlFor="sponsor-record-class"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Record class
             </label>
@@ -285,7 +285,7 @@ export function SponsorFormDrawer({
                 setRecordClass(nextClass);
                 setEditionId(getDefaultSponsorEditionForClass(nextClass));
               }}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               <option value="simulated">Simulated (demo)</option>
               <option value="live">Live</option>
@@ -295,7 +295,7 @@ export function SponsorFormDrawer({
           <div>
             <label
               htmlFor="sponsor-edition"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Festival edition
             </label>
@@ -304,7 +304,7 @@ export function SponsorFormDrawer({
               disabled={readOnly || submitting || isEditing}
               value={editionId}
               onChange={(e) => setEditionId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {SPONSOR_EDITION_BY_CLASS[recordClass].map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -320,7 +320,7 @@ export function SponsorFormDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="sponsor-category-id"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Category
               </label>
@@ -337,7 +337,7 @@ export function SponsorFormDrawer({
                 disabled={readOnly || submitting}
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               >
                 <option value="">Select category</option>
                 {categoryId &&
@@ -362,7 +362,7 @@ export function SponsorFormDrawer({
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 placeholder="Category catalog unavailable"
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] placeholder:font-sans placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               />
             )}
           </div>
@@ -370,7 +370,7 @@ export function SponsorFormDrawer({
           <div>
             <label
               htmlFor="sponsor-first-source"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               First source
             </label>
@@ -381,7 +381,7 @@ export function SponsorFormDrawer({
               onChange={(e) =>
                 setFirstSource(e.target.value as SponsorFirstSource)
               }
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {FIRST_SOURCE_INPUT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -397,7 +397,7 @@ export function SponsorFormDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="sponsor-lifecycle-status"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Lifecycle status
               </label>
@@ -413,7 +413,7 @@ export function SponsorFormDrawer({
               onChange={(e) =>
                 setLifecycleStatus(e.target.value as SponsorLifecycleStatus)
               }
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {LIFECYCLE_INPUT_OPTIONS.map((opt) => (
                 <option
@@ -430,7 +430,7 @@ export function SponsorFormDrawer({
           <div>
             <label
               htmlFor="sponsor-city"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               City
             </label>
@@ -441,7 +441,7 @@ export function SponsorFormDrawer({
               value={city}
               onChange={(e) => setCity(e.target.value)}
               placeholder="e.g. Bengaluru"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
         </div>
@@ -450,7 +450,7 @@ export function SponsorFormDrawer({
           <div>
             <label
               htmlFor="sponsor-website"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Website
             </label>
@@ -461,7 +461,7 @@ export function SponsorFormDrawer({
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
               placeholder="https://example.com"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
 
@@ -469,7 +469,7 @@ export function SponsorFormDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="sponsor-gstin"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 GSTIN
               </label>
@@ -486,21 +486,21 @@ export function SponsorFormDrawer({
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value.toUpperCase())}
                 placeholder="15-character GSTIN"
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] placeholder:font-sans placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               />
             ) : (
-              <div className="mt-1 flex h-9 items-center rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 text-[12px] text-[#788C83]">
+              <div className="mt-1 flex h-9 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 text-[13px] text-[var(--color-ink-subtle)]">
                 {gstinRestrictionLabel}
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
@@ -508,7 +508,7 @@ export function SponsorFormDrawer({
             <button
               type="submit"
               disabled={submitting}
-              className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:opacity-60"
+              className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
               {submitting
                 ? 'Saving...'

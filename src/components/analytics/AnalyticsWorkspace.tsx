@@ -388,11 +388,11 @@ export function AnalyticsWorkspace({
         {[0, 1, 2, 3, 4, 5].map((idx) => (
           <div
             key={idx}
-            className="h-36 animate-pulse rounded-md border border-[#D9D7D0] bg-white p-4"
+            className="h-36 animate-pulse rounded-xl border border-[var(--color-border)] bg-white p-4"
           />
         ))}
       </div>
-      <div className="h-64 animate-pulse rounded-md border border-[#D9D7D0] bg-white" />
+      <div className="h-64 animate-pulse rounded-xl border border-[var(--color-border)] bg-white" />
     </div>
   );
 
@@ -401,21 +401,21 @@ export function AnalyticsWorkspace({
       {/* Page Header & Actions */}
       <section
         aria-labelledby="analytics-heading"
-        className="border-b border-[#D9D7D0] pb-6"
+        className="border-b border-[var(--color-border)] pb-6"
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1
               id="analytics-heading"
-              className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-[#202824]"
+              className="page-heading text-[var(--color-ink)]"
             >
               Analytics
             </h1>
-            <p className="mt-1 text-[14px] text-[#525E58]">
+            <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Performance pacing, funnel diagnostics, channel attribution, and
               strategic bet scorecards.
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[#788C83]">
+            <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{recordClass==='historical_synthetic'?'Historical data':recordClass==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{getRecordClassBannerLabel(recordClass)}</span>
               <span>·</span>
               <span>Edition: {editionId}</span>
@@ -427,29 +427,29 @@ export function AnalyticsWorkspace({
                   <span>Data v{String(dataVersion)}</span>
                 </>
               ) : null}
-            </div>
+            </div></details>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             {showDevControls ? (
-              <div className="flex items-center gap-2 rounded-md border border-dashed border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1">
-                <span className="font-mono text-[11px] text-[#788C83] whitespace-nowrap">
+              <div className="flex items-center gap-2 rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1">
+                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] whitespace-nowrap">
                   Dev state
                 </span>
                 <div
                   role="group"
                   aria-label="Developer preview analytics state"
-                  className="inline-flex rounded border border-[#D9D7D0] bg-white p-0.5"
+                  className="inline-flex rounded border border-[var(--color-border)] bg-white p-0.5"
                 >
                   {(['default', 'loading', 'error'] as const).map((mode) => (
                     <button
                       key={mode}
                       type="button"
                       onClick={() => setPreviewMode(mode)}
-                      className={`rounded px-2 py-0.5 text-[11px] font-medium capitalize transition-colors ${
+                      className={`rounded px-2 py-0.5 text-[12px] font-medium capitalize transition-colors ${
                         previewMode === mode
-                          ? 'bg-[#315F52] text-white'
-                          : 'text-[#525E58] hover:text-[#202824]'
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                       }`}
                     >
                       {mode}
@@ -463,7 +463,7 @@ export function AnalyticsWorkspace({
               type="button"
               disabled
               title="Audited analytics export requires a server-side export service and is unavailable in this release."
-              className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 text-[13px] font-medium text-[#788C83]"
+              className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 text-[14px] font-medium text-[var(--color-ink-subtle)]"
             >
               <Download className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Export CSV</span>
@@ -472,10 +472,10 @@ export function AnalyticsWorkspace({
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors hover:bg-[#FAF9F6]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-subtle)]"
             >
               <RotateCcw
-                className="h-3.5 w-3.5 text-[#525E58]"
+                className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                 aria-hidden="true"
               />
               <span>Reset</span>
@@ -484,10 +484,10 @@ export function AnalyticsWorkspace({
             <button
               type="button"
               onClick={handleRefresh}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors hover:bg-[#FAF9F6]"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-subtle)]"
             >
               <RefreshCw
-                className="h-3.5 w-3.5 text-[#525E58]"
+                className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                 aria-hidden="true"
               />
               <span>Refresh</span>
@@ -510,7 +510,7 @@ export function AnalyticsWorkspace({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="analytics-filter-as-of"
-              className="text-[11px] font-medium text-[#788C83] whitespace-nowrap"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)] whitespace-nowrap"
             >
               As of date (IST)
             </label>
@@ -523,7 +523,7 @@ export function AnalyticsWorkspace({
                   setAsOf(e.target.value);
                 }
               }}
-              className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:border-[#788C83] focus:border-[#315F52] focus:outline-none"
+              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:border-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none"
             />
           </div>
           <SelectControl
@@ -549,7 +549,7 @@ export function AnalyticsWorkspace({
           />
           <SelectControl
             id="analytics-filter-scenario"
-            label="Scenario (M-30)"
+            label="Forecast scenario"
             value={scenarioId}
             options={ANALYTICS_SCENARIO_OPTIONS}
             onChange={setScenarioId}
@@ -562,17 +562,17 @@ export function AnalyticsWorkspace({
       !permissionProfile.canViewAnalytics ? (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-md border border-[#D9D7D0] bg-white p-5"
+          className="flex items-start gap-3 rounded-xl border border-[var(--color-border)] bg-white p-5"
         >
           <Lock
             className="mt-0.5 h-4 w-4 shrink-0 text-[#9B3B32]"
             aria-hidden="true"
           />
           <div>
-            <h2 className="text-[14px] font-semibold text-[#202824]">
+            <h2 className="text-[14px] font-semibold text-[var(--color-ink)]">
               Analytics access restricted (403)
             </h2>
-            <p className="mt-1 text-[13px] text-[#525E58]">
+            <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Your current account does not hold an operational business or
               viewer role required for sponsorship analytics.
             </p>
@@ -581,9 +581,9 @@ export function AnalyticsWorkspace({
       ) : (
         <>
           {permissionProfile.isViewerRestricted || restrictedForbidden ? (
-            <div className="flex items-start gap-2.5 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-4 py-3 text-[12px] text-[#525E58]">
+            <div className="flex items-start gap-2.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-[13px] text-[var(--color-ink-muted)]">
               <Lock
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#788C83]"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-ink-subtle)]"
                 aria-hidden="true"
               />
               <span>
@@ -593,9 +593,9 @@ export function AnalyticsWorkspace({
           ) : null}
 
           {isReadOnlyHistorical ? (
-            <div className="flex items-start gap-2.5 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-4 py-3 text-[12px] text-[#525E58]">
+            <div className="flex items-start gap-2.5 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-[13px] text-[var(--color-ink-muted)]">
               <AlertCircle
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#788C83]"
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-ink-subtle)]"
                 aria-hidden="true"
               />
               <span>
@@ -607,7 +607,7 @@ export function AnalyticsWorkspace({
           {/* Sub-navigation Tabs */}
           <nav
             aria-label="Analytics sections"
-            className="flex flex-wrap gap-1 border-b border-[#D9D7D0]"
+            className="flex flex-wrap gap-1 border-b border-[var(--color-border)]"
           >
             {ANALYTICS_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
@@ -617,10 +617,10 @@ export function AnalyticsWorkspace({
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`border-b-2 px-3.5 py-2.5 text-[13px] font-medium transition-colors whitespace-nowrap ${
+                  className={`border-b-2 px-3.5 py-2.5 text-[14px] font-medium transition-colors whitespace-nowrap ${
                     isActive
-                      ? 'border-[#315F52] text-[#202824]'
-                      : 'border-transparent text-[#525E58] hover:text-[#202824]'
+                      ? 'border-[var(--color-accent)] text-[var(--color-ink)]'
+                      : 'border-transparent text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                   }`}
                 >
                   {tab.label}
@@ -718,3 +718,4 @@ export function AnalyticsWorkspace({
     </div>
   );
 }
+

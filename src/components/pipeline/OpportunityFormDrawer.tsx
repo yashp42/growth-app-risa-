@@ -393,7 +393,7 @@ export function OpportunityFormDrawer({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {readOnly ? (
-          <div className="rounded border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Historical synthetic records are read-only and cannot be modified.
           </div>
         ) : null}
@@ -401,7 +401,7 @@ export function OpportunityFormDrawer({
         {formError ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{formError}</span>
@@ -410,18 +410,18 @@ export function OpportunityFormDrawer({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-[11px] font-medium text-[#788C83]">
+            <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
               Record class
             </p>
-            <p className="mt-1 font-mono text-[12px] text-[#202824]">
+            <p className="mt-1 font-mono text-[13px] text-[var(--color-ink)]">
               {effectiveRecordClass}
             </p>
           </div>
           <div>
-            <p className="text-[11px] font-medium text-[#788C83]">
+            <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
               Festival edition
             </p>
-            <p className="mt-1 font-mono text-[12px] text-[#202824]">
+            <p className="mt-1 font-mono text-[13px] text-[var(--color-ink)]">
               {effectiveEditionId}
             </p>
           </div>
@@ -431,7 +431,7 @@ export function OpportunityFormDrawer({
           <div className="flex items-center gap-1">
             <label
               htmlFor="opp-sponsor-id"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Sponsor
             </label>
@@ -441,7 +441,7 @@ export function OpportunityFormDrawer({
             />
           </div>
           {isEditing ? (
-            <div className="mt-1 flex h-9 items-center rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 text-[13px] text-[#525E58]">
+            <div className="mt-1 flex h-9 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 text-[14px] text-[var(--color-ink-muted)]">
               {editingOpportunity?.sponsor_name ||
                 editingOpportunity?.sponsor_id}
             </div>
@@ -455,7 +455,7 @@ export function OpportunityFormDrawer({
                 setSponsorId(e.target.value);
                 setPrimaryContactId('');
               }}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               <option value="">
                 {sponsorsLoading
@@ -489,7 +489,7 @@ export function OpportunityFormDrawer({
           sponsorEligibility.checked &&
           !sponsorEligibility.eligible &&
           sponsorEligibility.reason ? (
-            <p className="mt-1.5 text-[12px] text-[#9B3B32]">
+            <p className="mt-1.5 text-[13px] text-[#9B3B32]">
               {sponsorEligibility.reason}
             </p>
           ) : null}
@@ -498,7 +498,7 @@ export function OpportunityFormDrawer({
         <div>
           <label
             htmlFor="opp-name"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Opportunity name
           </label>
@@ -509,7 +509,7 @@ export function OpportunityFormDrawer({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Title activation partnership"
-            className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           />
         </div>
 
@@ -517,7 +517,7 @@ export function OpportunityFormDrawer({
           <div>
             <label
               htmlFor="opp-primary-contact"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Primary contact
             </label>
@@ -526,7 +526,7 @@ export function OpportunityFormDrawer({
               disabled={readOnly || submitting || !sponsorId}
               value={primaryContactId}
               onChange={(e) => setPrimaryContactId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               <option value="">Unassigned</option>
               {contacts.map((c) => (
@@ -541,7 +541,7 @@ export function OpportunityFormDrawer({
           <div>
             <label
               htmlFor="opp-support-type"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Support type
             </label>
@@ -553,7 +553,7 @@ export function OpportunityFormDrawer({
               onChange={(e) =>
                 setSupportType(e.target.value as OpportunitySupportType)
               }
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {SUPPORT_TYPE_INPUTS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -569,7 +569,7 @@ export function OpportunityFormDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="opp-originating-campaign"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Originating campaign
               </label>
@@ -579,7 +579,7 @@ export function OpportunityFormDrawer({
               />
             </div>
             {isEditing ? (
-              <div className="mt-1 flex h-9 items-center rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 text-[13px] text-[#525E58]">
+              <div className="mt-1 flex h-9 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 text-[14px] text-[var(--color-ink-muted)]">
                 {editingOpportunity?.originating_campaign_name ||
                   editingOpportunity?.originating_campaign_id ||
                   '—'}
@@ -590,7 +590,7 @@ export function OpportunityFormDrawer({
                 disabled={readOnly || submitting}
                 value={originatingCampaignId}
                 onChange={(e) => setOriginatingCampaignId(e.target.value)}
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               >
                 <option value="">None / unassigned</option>
                 {campaigns.map((cam) => (
@@ -606,7 +606,7 @@ export function OpportunityFormDrawer({
           <div>
             <label
               htmlFor="opp-bet-id"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Strategic bet
             </label>
@@ -615,7 +615,7 @@ export function OpportunityFormDrawer({
               disabled={readOnly || submitting}
               value={betId}
               onChange={(e) => setBetId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               <option value="">Unassigned</option>
               {CANONICAL_BETS.map((bet) => (
@@ -627,21 +627,21 @@ export function OpportunityFormDrawer({
           </div>
         </div>
 
-        <label className="flex items-center gap-2.5 text-[13px] text-[#202824]">
+        <label className="flex items-center gap-2.5 text-[14px] text-[var(--color-ink)]">
           <input
             type="checkbox"
             disabled={readOnly || submitting}
             checked={isRenewal}
             onChange={(e) => setIsRenewal(e.target.checked)}
-            className="h-4 w-4 rounded border-[#D9D7D0] text-[#315F52] focus:ring-[#315F52]"
+            className="h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
           />
           <span>Renewal opportunity from an earlier edition</span>
         </label>
 
         {!isEditing ? (
-          <div className="space-y-4 border-t border-[#E8E6E0] pt-4">
+          <div className="space-y-4 border-t border-[var(--color-border-subtle)] pt-4">
             <div className="flex items-center gap-1">
-              <p className="text-[12px] font-semibold text-[#202824]">
+              <p className="text-[13px] font-semibold text-[var(--color-ink)]">
                 Initial stage version
               </p>
               <InfoHint
@@ -654,7 +654,7 @@ export function OpportunityFormDrawer({
               <div>
                 <label
                   htmlFor="opp-initial-stage"
-                  className="block text-[12px] font-medium text-[#525E58]"
+                  className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
                 >
                   Initial stage
                 </label>
@@ -667,7 +667,7 @@ export function OpportunityFormDrawer({
                       e.target.value as typeof initialStage
                     )
                   }
-                  className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                  className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                 >
                   {(
                     OPEN_OPPORTUNITY_STAGES as ReadonlyArray<
@@ -684,7 +684,7 @@ export function OpportunityFormDrawer({
               <div>
                 <label
                   htmlFor="opp-initial-proposed"
-                  className="block text-[12px] font-medium text-[#525E58]"
+                  className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
                 >
                   Proposed face value (₹)
                 </label>
@@ -697,7 +697,7 @@ export function OpportunityFormDrawer({
                   value={proposedValue}
                   onChange={(e) => setProposedValue(e.target.value)}
                   placeholder="0"
-                  className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] tabular-nums focus:border-[#315F52] focus:outline-none"
+                  className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] tabular-nums focus:border-[var(--color-accent)] focus:outline-none"
                 />
               </div>
             </div>
@@ -705,7 +705,7 @@ export function OpportunityFormDrawer({
             <div>
               <label
                 htmlFor="opp-initial-owner"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Owner member ID
               </label>
@@ -717,7 +717,7 @@ export function OpportunityFormDrawer({
                 value={ownerMemberId}
                 onChange={(e) => setOwnerMemberId(e.target.value)}
                 placeholder="Team member ID"
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] placeholder:font-sans placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none"
               />
               {ownerChoices.length > 0 ? (
                 <datalist id="opp-owner-suggestions">
@@ -731,17 +731,17 @@ export function OpportunityFormDrawer({
             </div>
           </div>
         ) : (
-          <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Stage, owner, and deal values are versioned separately via{' '}
-            <span className="font-medium text-[#202824]">Update stage</span>.
+            <span className="font-medium text-[var(--color-ink)]">Update stage</span>.
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
@@ -749,7 +749,7 @@ export function OpportunityFormDrawer({
             <button
               type="submit"
               disabled={submitting}
-              className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:opacity-60"
+              className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
               {submitting
                 ? 'Saving...'

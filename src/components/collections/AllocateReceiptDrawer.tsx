@@ -176,35 +176,35 @@ export function AllocateReceiptDrawer({
         {errorMsg ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         ) : null}
 
-        <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-3.5 text-[12px]">
+        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-3.5 text-[13px]">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[#525E58]">Sponsor</span>
-            <span className="font-medium text-[#202824]">
+            <span className="text-[var(--color-ink-muted)]">Sponsor</span>
+            <span className="font-medium text-[var(--color-ink)]">
               {receipt.sponsor_name || receipt.sponsor_id}
             </span>
           </div>
           <div className="mt-1.5 flex items-center justify-between gap-2">
-            <span className="text-[#525E58]">Receipt amount</span>
-            <span className="font-mono font-medium text-[#202824] tabular-nums">
+            <span className="text-[var(--color-ink-muted)]">Receipt amount</span>
+            <span className="font-mono font-medium text-[var(--color-ink)] tabular-nums">
               {formatCollectionsCurrency(receipt.amount)}
             </span>
           </div>
           <div className="mt-1.5 flex items-center justify-between gap-2">
-            <span className="text-[#525E58]">Remaining unallocated</span>
-            <span className="font-mono font-medium text-[#315F52] tabular-nums">
+            <span className="text-[var(--color-ink-muted)]">Remaining unallocated</span>
+            <span className="font-mono font-medium text-[var(--color-accent)] tabular-nums">
               {formatCollectionsCurrency(remainingReceiptAmount)}
             </span>
           </div>
           <div className="mt-1.5 flex items-center justify-between gap-2">
-            <span className="text-[#525E58]">Reconciliation state</span>
-            <span className="font-medium text-[#202824]">
+            <span className="text-[var(--color-ink-muted)]">Reconciliation state</span>
+            <span className="font-medium text-[var(--color-ink)]">
               {receipt.reconciled
                 ? 'Reconciled'
                 : 'Unreconciled (reconcile to count in M-01)'}
@@ -215,7 +215,7 @@ export function AllocateReceiptDrawer({
         <div>
           <label
             htmlFor="alloc-schedule"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Payment schedule item
           </label>
@@ -223,7 +223,7 @@ export function AllocateReceiptDrawer({
             id="alloc-schedule"
             value={scheduleItemId}
             onChange={(e) => setScheduleItemId(e.target.value)}
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
           >
             <option value="">— None —</option>
             {sponsorSchedules.map((s) => (
@@ -237,7 +237,7 @@ export function AllocateReceiptDrawer({
         <div>
           <label
             htmlFor="alloc-invoice"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Issued invoice (optional if schedule selected)
           </label>
@@ -245,7 +245,7 @@ export function AllocateReceiptDrawer({
             id="alloc-invoice"
             value={invoiceId}
             onChange={(e) => setInvoiceId(e.target.value)}
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
           >
             <option value="">— None —</option>
             {sponsorInvoices.map((inv) => (
@@ -259,7 +259,7 @@ export function AllocateReceiptDrawer({
         <div>
           <label
             htmlFor="alloc-amount"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Allocation amount (INR)
           </label>
@@ -270,23 +270,23 @@ export function AllocateReceiptDrawer({
             step="any"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             required
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2.5 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-4 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Allocating...' : 'Save allocation'}
           </button>

@@ -34,6 +34,8 @@ import { PipelineDirectoryPage } from './PipelineDirectoryPage';
 
 interface PipelineWorkspaceProps {
   showDevControls: boolean;
+  createRequest?: boolean;
+  onCreateRequestHandled?: () => void;
   initialOpportunityId?: string | null;
   onClearInitialOpportunityId?: () => void;
   onOpenSponsor?: (sponsorId: string) => void;
@@ -42,6 +44,8 @@ interface PipelineWorkspaceProps {
 
 export function PipelineWorkspace({
   showDevControls,
+  createRequest = false,
+  onCreateRequestHandled,
   initialOpportunityId = null,
   onClearInitialOpportunityId,
   onOpenSponsor,
@@ -284,6 +288,15 @@ export function PipelineWorkspace({
     filters.record_class
   );
 
+  useEffect(() => {
+    if (!createRequest) return;
+    if (!isHistoricalReadOnly) {
+      setEditingOpportunity(null);
+      setFormOpen(true);
+    }
+    onCreateRequestHandled?.();
+  }, [createRequest, isHistoricalReadOnly, onCreateRequestHandled]);
+
   return (
     <>
       {selectedOpportunityId ? (
@@ -410,3 +423,4 @@ export function PipelineWorkspace({
     </>
   );
 }
+

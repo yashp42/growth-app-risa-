@@ -50,7 +50,7 @@ export function InfoHint({ label, content }: InfoHintProps) {
           e.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className="inline-flex h-5 w-5 items-center justify-center rounded text-[#788C83] transition-colors duration-150 hover:text-[#202824]"
+        className="inline-flex h-5 w-5 items-center justify-center rounded text-[var(--color-ink-subtle)] transition-colors duration-150 hover:text-[var(--color-ink)]"
       >
         <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
@@ -59,7 +59,7 @@ export function InfoHint({ label, content }: InfoHintProps) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="absolute bottom-full left-1/2 z-40 mb-1.5 w-60 -translate-x-1/2 rounded-md border border-[#D9D7D0] bg-white px-3 py-2 text-left text-[12px] font-normal leading-snug text-[#202824] shadow-md"
+          className="absolute bottom-full left-1/2 z-40 mb-1.5 w-60 -translate-x-1/2 rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-left text-[13px] font-normal leading-snug text-[var(--color-ink)] shadow-md"
         >
           {content}
         </span>

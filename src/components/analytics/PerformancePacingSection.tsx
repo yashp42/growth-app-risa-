@@ -131,16 +131,16 @@ export function PerformancePacingSection({
           <div>
             <h2
               id="analytics-perf-heading"
-              className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+              className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
             >
               Performance overview
             </h2>
-            <p className="text-[12px] text-[#525E58]">
+            <p className="text-[13px] text-[var(--color-ink-muted)]">
               Confirmed commitments (total, cash-type, in-kind) separated from
               reconciled cash collected and remaining cash obligations.
             </p>
           </div>
-          <span className="font-mono text-[11px] text-[#788C83]">
+          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
             {recordClass} · as of {asOfDate}
           </span>
         </div>
@@ -173,22 +173,22 @@ export function PerformancePacingSection({
           <div>
             <h2
               id="analytics-pacing-heading"
-              className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+              className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
             >
               Growth pacing and target performance
             </h2>
-            <p className="text-[12px] text-[#525E58]">
+            <p className="text-[13px] text-[var(--color-ink-muted)]">
               W1–W10 M-08 cumulative signed-value pacing vs Base (SC-01) and Plan (SC-02) K-G-01 gates, separate from T−7 cash collection gate.
             </p>
           </div>
 
           {latestPassedGateWeek ? (
-            <div className="rounded border border-[#D9D7D0] bg-[#FAF9F6] px-3 py-1.5 text-right font-mono text-[11px]">
-              <span className="text-[#788C83]">
+            <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-1.5 text-right font-mono text-[12px]">
+              <span className="text-[var(--color-ink-subtle)]">
                 Latest passed checkpoint ({latestPassedGateWeek.period} ·{' '}
                 {latestPassedGateWeek.week_end}):{' '}
               </span>
-              <span className="font-semibold text-[#202824]">
+              <span className="font-semibold text-[var(--color-ink)]">
                 {latestPassedGateWeek.status}
               </span>
             </div>
@@ -199,7 +199,7 @@ export function PerformancePacingSection({
           <div
             role="group"
             aria-label="Approved scenario comparison"
-            className="inline-flex rounded-md border border-[#D9D7D0] bg-white p-0.5"
+            className="inline-flex rounded-md border border-[var(--color-border)] bg-white p-0.5"
           >
             {approvedScenarios.map((sc) => {
               const active = selectedScenario?.scenario_id === sc.scenario_id;
@@ -208,10 +208,10 @@ export function PerformancePacingSection({
                   key={sc.scenario_id}
                   type="button"
                   onClick={() => onSelectScenario(sc.scenario_id)}
-                  className={`rounded px-3 py-1 text-[12px] font-medium transition-colors whitespace-nowrap ${
+                  className={`rounded px-3 py-1 text-[13px] font-medium transition-colors whitespace-nowrap ${
                     active
-                      ? 'bg-[#315F52] text-white'
-                      : 'text-[#525E58] hover:text-[#202824]'
+                      ? 'bg-[var(--color-accent)] text-white'
+                      : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                   }`}
                 >
                   {sc.scenario_id} · {sc.name}
@@ -223,22 +223,22 @@ export function PerformancePacingSection({
 
         {/* W1-W10 Signed Value Pacing + Separate T-7 Cash Gate */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5 lg:col-span-8">
-            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#E8E6E0] pb-3">
+          <div className="rounded-md border border-[var(--color-border)] bg-white p-5 lg:col-span-8">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-3">
               <div>
-                <h3 className="text-[14px] font-semibold text-[#202824]">
+                <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                   Cumulative signed value pacing (M-08 series)
                 </h3>
-                <p className="text-[12px] text-[#788C83]">
+                <p className="text-[13px] text-[var(--color-ink-subtle)]">
                   Actual M-08 vs Base (SC-01) and Plan (SC-02) W4–W9 gates · {recordClass} · as of {asOfDate}
                 </p>
               </div>
-              <div className="flex items-center gap-3 font-mono text-[11px] text-[#525E58]">
+              <div className="flex items-center gap-3 font-mono text-[12px] text-[var(--color-ink-muted)]">
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-2 w-3 bg-[#315F52]" /> Actual M-08
+                  <span className="inline-block h-2 w-3 bg-[var(--color-accent)]" /> Actual M-08
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <span className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[#788C83]" /> Base (SC-01)
+                  <span className="inline-block h-0.5 w-3 border-t-2 border-dashed border-[var(--color-ink-subtle)]" /> Base (SC-01)
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <span className="inline-block h-0.5 w-3 border-t-2 border-dotted border-[#B67A2E]" /> Plan (SC-02)
@@ -273,14 +273,14 @@ export function PerformancePacingSection({
                               x2={width - padX}
                               y1={y}
                               y2={y}
-                              stroke="#E8E6E0"
+                              stroke="var(--color-border-subtle)"
                               strokeDasharray="3 3"
                             />
                             <text
                               x={padX - 6}
                               y={y + 4}
                               textAnchor="end"
-                              className="fill-[#788C83] font-mono text-[10px]"
+                              className="fill-[var(--color-ink-subtle)] font-mono text-[12px]"
                             >
                               {labelVal >= 100000
                                 ? `₹${(labelVal / 100000).toFixed(0)}L`
@@ -294,7 +294,7 @@ export function PerformancePacingSection({
                         <path
                           d={basePath}
                           fill="none"
-                          stroke="#788C83"
+                          stroke="var(--color-ink-subtle)"
                           strokeWidth="2"
                           strokeDasharray="4 4"
                         />
@@ -314,7 +314,7 @@ export function PerformancePacingSection({
                         <path
                           d={actualPath}
                           fill="none"
-                          stroke="#315F52"
+                          stroke="var(--color-accent)"
                           strokeWidth="2.5"
                         />
                       ) : null}
@@ -327,7 +327,7 @@ export function PerformancePacingSection({
                               cy={yForVal(p.baseVal)}
                               r="3"
                               fill="#FFFFFF"
-                              stroke="#788C83"
+                              stroke="var(--color-ink-subtle)"
                               strokeWidth="1.5"
                             />
                           ) : null}
@@ -346,14 +346,14 @@ export function PerformancePacingSection({
                               cx={xForIdx(idx)}
                               cy={yForVal(p.actualVal)}
                               r="4"
-                              fill="#315F52"
+                              fill="var(--color-accent)"
                             />
                           ) : null}
                           <text
                             x={xForIdx(idx)}
                             y={height - 4}
                             textAnchor="middle"
-                            className="fill-[#525E58] font-mono text-[10px]"
+                            className="fill-[var(--color-ink-muted)] font-mono text-[12px]"
                           >
                             {p.week}
                           </text>
@@ -362,8 +362,8 @@ export function PerformancePacingSection({
                     </svg>
                   </div>
                 ) : (
-                  <div className="mt-4 flex items-center gap-2 rounded-md border border-[#E8E6E0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-[#788C83]" />
+                  <div className="mt-4 flex items-center gap-2 rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-[var(--color-ink-subtle)]" />
                     <span>
                       No weekly M-08 series or K-G-01 gate values returned for
                       the selected context.
@@ -372,9 +372,9 @@ export function PerformancePacingSection({
                 )}
 
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full border-collapse text-left text-[12px]">
+                  <table className="w-full border-collapse text-left text-[13px]">
                     <thead>
-                      <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[#525E58]">
+                      <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-ink-muted)]">
                         <th className="px-3 py-2 font-medium">Week</th>
                         <th className="px-3 py-2 font-medium">Week end</th>
                         <th className="px-3 py-2 text-right font-medium">
@@ -389,18 +389,18 @@ export function PerformancePacingSection({
                         <th className="px-3 py-2 font-medium">Server status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8E6E0]">
+                    <tbody className="divide-y divide-[var(--color-border-subtle)]">
                       {weeklyPacing.map((row) => {
                         const m = row.metric;
                         return (
                           <tr key={row.week}>
-                            <td className="px-3 py-2 font-mono font-medium text-[#202824]">
+                            <td className="px-3 py-2 font-mono font-medium text-[var(--color-ink)]">
                               {row.week}
                             </td>
-                            <td className="px-3 py-2 font-mono text-[#788C83]">
+                            <td className="px-3 py-2 font-mono text-[var(--color-ink-subtle)]">
                               {row.weekEnd ?? '—'}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[#202824]">
+                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--color-ink)]">
                               {!row.passed
                                 ? 'Upcoming'
                                 : m
@@ -409,17 +409,17 @@ export function PerformancePacingSection({
                                     : m.reason || 'Not computable'
                                   : 'Unavailable'}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[#525E58]">
+                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--color-ink-muted)]">
                               {row.baseTarget !== null
                                 ? `₹${(row.baseTarget / 100000).toFixed(2)}L`
                                 : '—'}
                             </td>
-                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[#525E58]">
+                            <td className="px-3 py-2 text-right font-mono tabular-nums text-[var(--color-ink-muted)]">
                               {row.planTarget !== null
                                 ? `₹${(row.planTarget / 100000).toFixed(2)}L`
                                 : '—'}
                             </td>
-                            <td className="px-3 py-2 text-[#525E58]">
+                            <td className="px-3 py-2 text-[var(--color-ink-muted)]">
                               {row.passed
                                 ? row.serverStatus || '—'
                                 : 'Upcoming checkpoint'}
@@ -436,51 +436,51 @@ export function PerformancePacingSection({
 
           {/* Right column: Separate T-7 Cash Gate + M-24 */}
           <div className="space-y-4 lg:col-span-4">
-            <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-              <div className="flex items-center justify-between border-b border-[#E8E6E0] pb-3">
-                <h3 className="text-[14px] font-semibold text-[#202824]">
+            <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+              <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+                <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                   T−7 cash collection gate
                 </h3>
-                <span className="font-mono text-[11px] text-[#788C83]">
+                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                   M-06 · K-G-02
                 </span>
               </div>
 
               {isCashViewerRestricted ? (
-                <p className="mt-3 text-[12px] text-[#525E58]">
+                <p className="mt-3 text-[13px] text-[var(--color-ink-muted)]">
                   Restricted (viewer role): cash collection metrics are not available.
                 </p>
               ) : (
-                <div className="mt-3 space-y-2.5 text-[13px]">
+                <div className="mt-3 space-y-2.5 text-[14px]">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-[#525E58]">Collected ÷ signed cash</span>
-                    <span className="font-mono text-[18px] font-semibold tabular-nums text-[#315F52]">
+                    <span className="text-[var(--color-ink-muted)]">Collected ÷ signed cash</span>
+                    <span className="font-mono text-[18px] font-semibold tabular-nums text-[var(--color-accent)]">
                       {formatAnalyticsMetricValue(m06, 'ratio')}
                     </span>
                   </div>
                   {m06 && !m06.computable ? (
-                    <p className="text-[12px] text-[#788C83]">
+                    <p className="text-[13px] text-[var(--color-ink-subtle)]">
                       {m06.reason || 'Cash collection ratio is not computable.'}
                     </p>
                   ) : null}
                   {formatNumeratorDenominator(m06) ? (
-                    <p className="font-mono text-[12px] text-[#525E58]">
+                    <p className="font-mono text-[13px] text-[var(--color-ink-muted)]">
                       {formatNumeratorDenominator(m06)}
                     </p>
                   ) : null}
 
-                  <div className="border-t border-[#E8E6E0] pt-2.5 text-[12px]">
+                  <div className="border-t border-[var(--color-border-subtle)] pt-2.5 text-[13px]">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[#525E58]">Gate threshold</span>
-                      <span className="font-mono font-medium text-[#202824]">
+                      <span className="text-[var(--color-ink-muted)]">Gate threshold</span>
+                      <span className="font-mono font-medium text-[var(--color-ink)]">
                         {cashGate
                           ? `≥ ${(cashGate.threshold * 100).toFixed(0)}%`
                           : '≥ 85%'}
                       </span>
                     </div>
                     <div className="mt-1 flex items-center justify-between gap-2">
-                      <span className="text-[#525E58]">Server evaluation</span>
-                      <span className="font-medium text-[#202824]">
+                      <span className="text-[var(--color-ink-muted)]">Server evaluation</span>
+                      <span className="font-medium text-[var(--color-ink)]">
                         {cashGate
                           ? cashGate.is_due === false || cashGate.computable
                             ? cashGate.status
@@ -488,7 +488,7 @@ export function PerformancePacingSection({
                           : 'Unavailable'}
                       </span>
                     </div>
-                    <div className="mt-2 font-mono text-[11px] text-[#788C83]">
+                    <div className="mt-2 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                       {recordClass} · as of {asOfDate}
                     </div>
                   </div>
@@ -509,18 +509,18 @@ export function PerformancePacingSection({
         </div>
 
         {/* Read-Only Approved Scenario Lookup (M-30 & SC-01..SC-03/APPROVED) */}
-        <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#E8E6E0] pb-3">
+        <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-3">
             <div>
-              <h3 className="text-[14px] font-semibold text-[#202824]">
+              <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                 Approved scenarios reference (M-30 lookup)
               </h3>
-              <p className="text-[12px] text-[#788C83]">
+              <p className="text-[13px] text-[var(--color-ink-subtle)]">
                 Frozen D-009 scenario outputs (₹ lakh, pre-fest cash collected;
                 in-kind excluded) alongside server M-30 lookup values.
               </p>
             </div>
-            <div className="font-mono text-[11px] text-[#788C83]">
+            <div className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
               {recordClass} · as of {asOfDate}
             </div>
           </div>
@@ -534,9 +534,9 @@ export function PerformancePacingSection({
             </div>
           ) : (
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full border-collapse text-left text-[12px]">
+              <table className="w-full border-collapse text-left text-[13px]">
                 <thead>
-                  <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[#525E58]">
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-ink-muted)]">
                     <th className="px-3 py-2 font-medium">Scenario</th>
                     <th className="px-3 py-2 font-medium">Status</th>
                     <th className="px-3 py-2 text-right font-medium">
@@ -554,33 +554,33 @@ export function PerformancePacingSection({
                     <th className="px-3 py-2 font-medium">Decision &amp; Checksum</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E6E0]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {approvedScenarios.map((sc) => {
                     const m30Row = m30ByScenario[sc.scenario_id];
                     return (
                       <tr key={sc.scenario_id}>
                         <td className="px-3 py-2.5">
-                          <span className="font-mono font-medium text-[#202824]">
+                          <span className="font-mono font-medium text-[var(--color-ink)]">
                             {sc.scenario_id}
                           </span>{' '}
-                          <span className="font-medium text-[#202824]">
+                          <span className="font-medium text-[var(--color-ink)]">
                             · {sc.name}
                           </span>
                         </td>
-                        <td className="px-3 py-2.5 font-mono text-[#315F52]">
+                        <td className="px-3 py-2.5 font-mono text-[var(--color-accent)]">
                           {sc.status}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono font-semibold tabular-nums text-[#202824]">
+                        <td className="px-3 py-2.5 text-right font-mono font-semibold tabular-nums text-[var(--color-ink)]">
                           ₹{sc.expected_cash.toFixed(2)}L
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[#315F52]">
+                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--color-accent)]">
                           {m30Row
                             ? m30Row.computable
                               ? formatAnalyticsMetricValue(m30Row)
                               : m30Row.reason || 'Not computable'
                             : '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[#525E58]">
+                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--color-ink-muted)]">
                           {sc.p10 !== null &&
                           sc.p10 !== undefined &&
                           sc.p90 !== null &&
@@ -588,12 +588,12 @@ export function PerformancePacingSection({
                             ? `₹${sc.p10.toFixed(1)}L – ₹${sc.p90.toFixed(1)}L`
                             : '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[#525E58]">
+                        <td className="px-3 py-2.5 text-right font-mono tabular-nums text-[var(--color-ink-muted)]">
                           {sc.window_pw !== null && sc.window_pw !== undefined
                             ? `${sc.window_pw}w + ${sc.preseason_pw ?? 0}p`
                             : '—'}
                         </td>
-                        <td className="px-3 py-2.5 font-mono text-[11px] text-[#788C83]">
+                        <td className="px-3 py-2.5 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                           {[sc.decision_id, sc.output_checksum]
                             .filter(Boolean)
                             .join(' · ') || '—'}

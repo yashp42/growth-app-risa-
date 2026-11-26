@@ -126,7 +126,7 @@ export function TopNav({
   return (
     <header
       ref={navRef}
-      className="sticky top-0 z-30 flex h-14 w-full items-center justify-between gap-3 border-b border-[#D9D7D0] bg-white px-4 sm:px-6 lg:px-8"
+      className="sticky top-0 z-30 flex h-16 w-full items-center justify-between gap-3 border-b border-[var(--color-border)] bg-white px-4 sm:px-6 lg:px-8"
     >
       {/* Left zone: Mobile menu + Context breadcrumb + Global season switcher */}
       <div className="flex min-w-0 items-center gap-3">
@@ -134,25 +134,25 @@ export function TopNav({
           type="button"
           onClick={onOpenMobileMenu}
           aria-label="Open navigation menu"
-          className="flex lg:hidden h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#D9D7D0] text-[#202824] hover:bg-[#FAF9F6]"
+          className="flex lg:hidden h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
         >
           <Menu className="h-4 w-4" aria-hidden="true" />
         </button>
 
-        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-[13px]">
-          <span className="hidden xl:inline text-[#788C83] whitespace-nowrap">
+        <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-[14px]">
+          <span className="hidden xl:inline text-[var(--color-ink-subtle)] whitespace-nowrap">
             {currentNav.groupLabel}
           </span>
-          <span className="hidden xl:inline text-[#D9D7D0]" aria-hidden="true">
+          <span className="hidden xl:inline text-[var(--color-border)]" aria-hidden="true">
             /
           </span>
-          <span className="truncate font-medium text-[#202824]">
+          <span className="truncate font-medium text-[var(--color-ink)]">
             {currentNav.label}
           </span>
         </nav>
 
         {/* Global Edition Switcher */}
-        <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-[#E8E6E0]">
+        <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-[var(--color-border-subtle)]">
           <label htmlFor="global-edition-switcher" className="sr-only">
             Festival edition season context
           </label>
@@ -161,7 +161,7 @@ export function TopNav({
             value={editionId}
             onChange={(e) => setEditionId(e.target.value)}
             aria-label="Global edition context"
-            className="h-8 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-2.5 text-[12px] font-medium text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="h-8 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 text-[13px] font-medium text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
           >
             {editions.map((ed) => (
               <option key={ed.edition_id} value={ed.edition_id}>
@@ -169,8 +169,8 @@ export function TopNav({
               </option>
             ))}
           </select>
-          <span className="hidden xl:inline font-mono text-[11px] text-[#788C83] whitespace-nowrap">
-            {recordClass} · as of {asOf}
+          <span className="hidden xl:inline font-mono text-[12px] text-[var(--color-ink-subtle)] whitespace-nowrap">
+            {recordClass === 'historical_synthetic' ? 'Historical data' : recordClass === 'simulated' ? 'Demo data' : 'Live data'}
           </span>
         </div>
       </div>
@@ -179,15 +179,15 @@ export function TopNav({
       <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
         {isReadOnlyHistorical ? (
           <span
-            className="hidden lg:inline-flex items-center gap-1.5 rounded border border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1 text-[11px] font-medium text-[#525E58] whitespace-nowrap shrink-0"
+            className="hidden lg:inline-flex items-center gap-1.5 rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1 text-[12px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap shrink-0"
             title={READ_ONLY_2025_MESSAGE}
           >
-            <Lock className="h-3 w-3 text-[#788C83]" aria-hidden="true" />
+            <Lock className="h-3 w-3 text-[var(--color-ink-subtle)]" aria-hidden="true" />
             {READ_ONLY_2025_MESSAGE}
           </span>
         ) : (
-          <span className="hidden 2xl:inline-flex items-center rounded border border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1 text-[11px] font-medium text-[#525E58] whitespace-nowrap shrink-0">
-            Demo: changes are recorded and audited
+          <span className="hidden 2xl:inline-flex items-center rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1 text-[12px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap shrink-0">
+            Demo workspace
           </span>
         )}
 
@@ -199,14 +199,14 @@ export function TopNav({
             onOpenSearch();
           }}
           aria-label="Search sponsors, campaigns, deals and tasks"
-          className="flex h-9 items-center justify-between gap-2 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-2.5 text-[13px] text-[#788C83] transition-colors duration-150 hover:border-[#788C83] hover:text-[#202824] sm:w-36 xl:w-44"
+          className="flex h-9 items-center justify-between gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 text-[14px] text-[var(--color-ink-subtle)] transition-colors duration-150 hover:border-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] sm:w-10 xl:w-48"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <Search className="h-3.5 w-3.5 shrink-0 text-[#788C83]" aria-hidden="true" />
-            <span className="hidden sm:inline truncate">Search...</span>
-            <span className="sm:hidden">Search</span>
+            <Search className="h-3.5 w-3.5 shrink-0 text-[var(--color-ink-subtle)]" aria-hidden="true" />
+            <span className="hidden xl:inline truncate">Search...</span>
+            <span className="sm:hidden sr-only">Search</span>
           </span>
-          <kbd className="hidden md:inline-block font-mono text-[11px] text-[#788C83]">
+          <kbd className="hidden xl:inline-block font-mono text-[12px] text-[var(--color-ink-subtle)]">
             ⌘K
           </kbd>
         </button>
@@ -223,7 +223,7 @@ export function TopNav({
               if (isReadOnlyHistorical) return;
               setOpenMenu((prev) => (prev === 'quick-add' ? null : 'quick-add'));
             }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:bg-[#E8E6E0] disabled:text-[#788C83] whitespace-nowrap shrink-0"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-subtle)] disabled:text-[var(--color-ink-subtle)] whitespace-nowrap shrink-0"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="hidden sm:inline">Quick add</span>
@@ -234,10 +234,10 @@ export function TopNav({
             <div
               role="menu"
               aria-label="Quick add records"
-              className="absolute right-0 mt-2 w-64 rounded-md border border-[#D9D7D0] bg-white py-1.5 shadow-md"
+              className="absolute right-0 mt-2 w-64 rounded-md border border-[var(--color-border)] bg-white py-1.5 shadow-md"
             >
-              <div className="border-b border-[#E8E6E0] px-3 py-1.5">
-                <p className="text-[11px] font-medium text-[#788C83]">
+              <div className="border-b border-[var(--color-border-subtle)] px-3 py-1.5">
+                <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                   Create sponsorship record
                 </p>
               </div>
@@ -250,12 +250,12 @@ export function TopNav({
                     setOpenMenu(null);
                     onSelectQuickAdd(option.id);
                   }}
-                  className="flex w-full flex-col px-3 py-2 text-left transition-colors duration-150 hover:bg-[#FAF9F6]"
+                  className="flex w-full flex-col px-3 py-2 text-left transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                 >
-                  <span className="text-[13px] font-medium text-[#202824]">
+                  <span className="text-[14px] font-medium text-[var(--color-ink)]">
                     {option.label}
                   </span>
-                  <span className="text-[11px] text-[#788C83]">{option.hint}</span>
+                  <span className="text-[12px] text-[var(--color-ink-subtle)]">{option.hint}</span>
                 </button>
               ))}
             </div>
@@ -276,8 +276,8 @@ export function TopNav({
             }
             className={`flex h-9 w-9 items-center justify-center rounded-md border transition-colors duration-150 ${
               openMenu === 'notifications'
-                ? 'border-[#315F52] bg-[#EBF1EE] text-[#315F52]'
-                : 'border-[#D9D7D0] bg-white text-[#525E58] hover:bg-[#FAF9F6] hover:text-[#202824]'
+                ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                : 'border-[var(--color-border)] bg-white text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-subtle)] hover:text-[var(--color-ink)]'
             }`}
           >
             <Bell className="h-4 w-4" aria-hidden="true" />
@@ -287,20 +287,20 @@ export function TopNav({
             <div
               role="dialog"
               aria-label="Notifications panel"
-              className="absolute right-0 mt-2 w-80 rounded-md border border-[#D9D7D0] bg-white shadow-md"
+              className="absolute right-0 mt-2 w-80 rounded-md border border-[var(--color-border)] bg-white shadow-md"
             >
-              <div className="flex items-center justify-between border-b border-[#E8E6E0] px-4 py-3">
-                <span className="text-[13px] font-semibold text-[#202824]">
+              <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-4 py-3">
+                <span className="text-[14px] font-semibold text-[var(--color-ink)]">
                   Notifications
                 </span>
-                <div className="flex items-center gap-1 rounded border border-[#E8E6E0] bg-[#FAF9F6] p-0.5">
+                <div className="flex items-center gap-1 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-0.5">
                   <button
                     type="button"
                     onClick={() => setNotificationTab('all')}
-                    className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                    className={`rounded px-2 py-0.5 text-[12px] font-medium transition-colors ${
                       notificationTab === 'all'
-                        ? 'bg-white text-[#202824] shadow-xs'
-                        : 'text-[#788C83] hover:text-[#202824]'
+                        ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                        : 'text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)]'
                     }`}
                   >
                     All
@@ -308,10 +308,10 @@ export function TopNav({
                   <button
                     type="button"
                     onClick={() => setNotificationTab('unread')}
-                    className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                    className={`rounded px-2 py-0.5 text-[12px] font-medium transition-colors ${
                       notificationTab === 'unread'
-                        ? 'bg-white text-[#202824] shadow-xs'
-                        : 'text-[#788C83] hover:text-[#202824]'
+                        ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                        : 'text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)]'
                     }`}
                   >
                     Unread
@@ -319,7 +319,7 @@ export function TopNav({
                 </div>
               </div>
               <div className="px-4 py-8 text-center">
-                <p className="text-[13px] font-medium text-[#202824]">
+                <p className="text-[14px] font-medium text-[var(--color-ink)]">
                   {notificationTab === 'unread'
                     ? 'No unread notifications'
                     : 'No notifications'}
@@ -339,46 +339,40 @@ export function TopNav({
             onClick={() =>
               setOpenMenu((prev) => (prev === 'profile' ? null : 'profile'))
             }
-            className="flex h-9 items-center gap-2 rounded-md border border-[#D9D7D0] bg-white px-2.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] shrink-0"
+            className="flex h-9 items-center gap-2 rounded-md border border-[var(--color-border)] bg-white px-2.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] shrink-0"
           >
             <span
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#EBF1EE] text-[11px] font-semibold text-[#315F52]"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--color-accent-soft)] text-[12px] font-semibold text-[var(--color-accent)]"
               aria-hidden="true"
             >
               {initials}
             </span>
-            <span className="hidden md:flex items-center gap-1.5 whitespace-nowrap">
-              <span className="max-w-[120px] truncate font-medium text-[#202824]">
+            <span className="hidden xl:flex items-center gap-1.5 whitespace-nowrap">
+              <span className="max-w-[120px] truncate font-medium text-[var(--color-ink)]">
                 {displayName}
               </span>
-              <span className="text-[#D9D7D0]" aria-hidden="true">
-                ·
-              </span>
-              <span className="max-w-[130px] truncate font-mono text-[11px] text-[#525E58]">
-                {displayRoles}
-              </span>
             </span>
-            <ChevronDown className="h-3.5 w-3.5 text-[#788C83]" aria-hidden="true" />
+            <ChevronDown className="h-3.5 w-3.5 text-[var(--color-ink-subtle)]" aria-hidden="true" />
           </button>
 
           {openMenu === 'profile' ? (
             <div
               role="menu"
               aria-label="Account options"
-              className="absolute right-0 mt-2 w-72 rounded-md border border-[#D9D7D0] bg-white py-1.5 shadow-md"
+              className="absolute right-0 mt-2 w-72 rounded-md border border-[var(--color-border)] bg-white py-1.5 shadow-md"
             >
-              <div className="border-b border-[#E8E6E0] px-3.5 py-2.5">
-                <p className="text-[13px] font-semibold text-[#202824]">
+              <div className="border-b border-[var(--color-border-subtle)] px-3.5 py-2.5">
+                <p className="text-[14px] font-semibold text-[var(--color-ink)]">
                   {displayName}
                 </p>
-                <p className="mt-0.5 font-mono text-[11px] text-[#525E58]">
+                <p className="mt-0.5 font-mono text-[12px] text-[var(--color-ink-muted)]">
                   {member?.member_id ?? ''}
                   {member?.roles.length ? ` · ${member.roles.join(', ')}` : ''}
                 </p>
                 <div className="mt-2 sm:hidden">
                   <label
                     htmlFor="mobile-edition-switcher"
-                    className="block text-[11px] text-[#788C83]"
+                    className="block text-[12px] text-[var(--color-ink-subtle)]"
                   >
                     Festival edition
                   </label>
@@ -386,7 +380,7 @@ export function TopNav({
                     id="mobile-edition-switcher"
                     value={editionId}
                     onChange={(e) => setEditionId(e.target.value)}
-                    className="mt-1 h-8 w-full rounded border border-[#D9D7D0] bg-[#FAF9F6] px-2 text-[12px]"
+                    className="mt-1 h-8 w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2 text-[13px]"
                   >
                     {editions.map((ed) => (
                       <option key={ed.edition_id} value={ed.edition_id}>
@@ -403,17 +397,17 @@ export function TopNav({
                   setOpenMenu(null);
                   onNavigateSection('team-settings');
                 }}
-                className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-[13px] text-[#202824] hover:bg-[#FAF9F6]"
+                className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-[14px] text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
               >
                 <SlidersHorizontal
-                  className="h-3.5 w-3.5 text-[#788C83]"
+                  className="h-3.5 w-3.5 text-[var(--color-ink-subtle)]"
                   aria-hidden="true"
                 />
                 Team &amp; Settings
               </button>
 
               {import.meta.env.DEV && onToggleDevControls ? (
-                <div className="mt-1 border-t border-[#E8E6E0] pt-1">
+                <div className="mt-1 border-t border-[var(--color-border-subtle)] pt-1">
                   <button
                     type="button"
                     role="menuitemcheckbox"
@@ -422,17 +416,17 @@ export function TopNav({
                       onToggleDevControls();
                       setOpenMenu(null);
                     }}
-                    className="flex w-full items-center justify-between px-3.5 py-2 text-left text-[12px] text-[#525E58] hover:bg-[#FAF9F6]"
+                    className="flex w-full items-center justify-between px-3.5 py-2 text-left text-[13px] text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-subtle)]"
                   >
                     <span>Developer state preview</span>
-                    <span className="font-mono text-[11px] text-[#315F52]">
+                    <span className="font-mono text-[12px] text-[var(--color-accent)]">
                       {devControlsEnabled ? 'On' : 'Off'}
                     </span>
                   </button>
                 </div>
               ) : null}
 
-              <div className="mt-1 border-t border-[#E8E6E0] pt-1">
+              <div className="mt-1 border-t border-[var(--color-border-subtle)] pt-1">
                 <button
                   type="button"
                   role="menuitem"
@@ -440,7 +434,7 @@ export function TopNav({
                     setOpenMenu(null);
                     void signOut();
                   }}
-                  className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-[13px] text-[#991B1B] hover:bg-[#FAF9F6]"
+                  className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-[14px] text-[#991B1B] hover:bg-[var(--color-surface-subtle)]"
                 >
                   <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                   Sign out
@@ -450,16 +444,8 @@ export function TopNav({
           ) : null}
         </div>
 
-        {/* Direct Sign out button in header */}
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] whitespace-nowrap shrink-0"
-        >
-          <LogOut className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
-          <span className="hidden sm:inline">Sign out</span>
-        </button>
       </div>
     </header>
   );
 }
+

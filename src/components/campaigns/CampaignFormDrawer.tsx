@@ -173,7 +173,7 @@ export function CampaignFormDrawer({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {readOnly ? (
-          <div className="rounded border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Historical synthetic records are read-only and cannot be modified.
           </div>
         ) : null}
@@ -181,7 +181,7 @@ export function CampaignFormDrawer({
         {formError ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{formError}</span>
@@ -191,7 +191,7 @@ export function CampaignFormDrawer({
         <div>
           <label
             htmlFor="campaign-name"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Campaign name
           </label>
@@ -203,7 +203,7 @@ export function CampaignFormDrawer({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Alumni founder outreach"
-            className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           />
         </div>
 
@@ -211,7 +211,7 @@ export function CampaignFormDrawer({
           <div>
             <label
               htmlFor="campaign-record-class"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Record class
             </label>
@@ -222,7 +222,7 @@ export function CampaignFormDrawer({
               onChange={(e) =>
                 handleRecordClassChange(e.target.value as 'simulated' | 'live')
               }
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               <option value="simulated">Simulated (demo)</option>
               <option value="live">Live</option>
@@ -232,7 +232,7 @@ export function CampaignFormDrawer({
           <div>
             <label
               htmlFor="campaign-edition"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Festival edition
             </label>
@@ -241,7 +241,7 @@ export function CampaignFormDrawer({
               disabled={readOnly || submitting || isEditing}
               value={editionId}
               onChange={(e) => setEditionId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {editionOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -256,7 +256,7 @@ export function CampaignFormDrawer({
           <div>
             <label
               htmlFor="campaign-channel"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Channel
             </label>
@@ -265,7 +265,7 @@ export function CampaignFormDrawer({
               disabled={readOnly || submitting}
               value={channelId}
               onChange={(e) => setChannelId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {CANONICAL_CHANNELS.map((ch) => (
                 <option key={ch.channel_id} value={ch.channel_id}>
@@ -274,7 +274,7 @@ export function CampaignFormDrawer({
               ))}
             </select>
             {isColdInactiveChannel ? (
-              <p className="mt-1 text-[11px] text-[#9A6B2F]">
+              <p className="mt-1 text-[12px] text-[#9A6B2F]">
                 Cold outreach channels are inactive under the approved strategy.
               </p>
             ) : null}
@@ -283,7 +283,7 @@ export function CampaignFormDrawer({
           <div>
             <label
               htmlFor="campaign-bet"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Strategic bet
             </label>
@@ -292,7 +292,7 @@ export function CampaignFormDrawer({
               disabled={readOnly || submitting}
               value={betId}
               onChange={(e) => setBetId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               <option value="">None linked</option>
               {CANONICAL_BETS.map((bet) => (
@@ -308,7 +308,7 @@ export function CampaignFormDrawer({
           <div>
             <label
               htmlFor="campaign-owner"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Owner member ID
             </label>
@@ -319,14 +319,14 @@ export function CampaignFormDrawer({
               value={ownerMemberId}
               onChange={(e) => setOwnerMemberId(e.target.value)}
               placeholder="e.g. TM-01"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] placeholder:font-sans placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
 
           <div>
             <label
               htmlFor="campaign-status"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Status
             </label>
@@ -335,7 +335,7 @@ export function CampaignFormDrawer({
               disabled={readOnly || submitting}
               value={status}
               onChange={(e) => setStatus(e.target.value as CampaignStatus)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {STATUS_INPUT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -350,7 +350,7 @@ export function CampaignFormDrawer({
           <div>
             <label
               htmlFor="campaign-start-date"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Planned start
             </label>
@@ -360,14 +360,14 @@ export function CampaignFormDrawer({
               disabled={readOnly || submitting}
               value={plannedStart}
               onChange={(e) => setPlannedStart(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
 
           <div>
             <label
               htmlFor="campaign-end-date"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Planned end
             </label>
@@ -377,7 +377,7 @@ export function CampaignFormDrawer({
               disabled={readOnly || submitting}
               value={plannedEnd}
               onChange={(e) => setPlannedEnd(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
         </div>
@@ -385,7 +385,7 @@ export function CampaignFormDrawer({
         <div>
           <label
             htmlFor="campaign-objective"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Objective
           </label>
@@ -396,15 +396,15 @@ export function CampaignFormDrawer({
             value={objective}
             onChange={(e) => setObjective(e.target.value)}
             placeholder="Target brands, scope, or deliverable"
-            className="mt-1 w-full rounded-md border border-[#D9D7D0] bg-white px-3 py-2 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
@@ -412,7 +412,7 @@ export function CampaignFormDrawer({
             <button
               type="submit"
               disabled={submitting}
-              className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:opacity-60"
+              className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
               {submitting
                 ? 'Saving...'

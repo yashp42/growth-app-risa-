@@ -56,15 +56,15 @@ export function FunnelDiagnosticsSection({
           <div>
             <h2
               id="funnel-engagement-heading"
-              className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+              className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
             >
               Outreach engagement and proposal reach (brand grain)
             </h2>
-            <p className="text-[12px] text-[#525E58]">
+            <p className="text-[13px] text-[var(--color-ink-muted)]">
               Brand-level response, meeting, and qualification-to-opportunity rates.
             </p>
           </div>
-          <span className="font-mono text-[11px] text-[#788C83]">
+          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
             {recordClass} · as of {asOfDate}
           </span>
         </div>
@@ -121,24 +121,24 @@ export function FunnelDiagnosticsSection({
           <div>
             <h2
               id="funnel-by-channel-heading"
-              className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+              className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
             >
               Funnel by channel group vs 2025 synthetic
             </h2>
-            <p className="text-[12px] text-[#525E58]">
+            <p className="text-[13px] text-[var(--color-ink-muted)]">
               M-23, M-11, M-12, M-13, M-09, and M-02 per channel_group. Active edition ({recordClass} · as of {asOfDate}) is queried separately from the ED-2025 historical_synthetic baseline (&ldquo;2025 synthetic&rdquo;).
             </p>
           </div>
-          <span className="font-mono text-[11px] text-[#788C83]">
+          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
             Separate queries · Never mixed
           </span>
         </div>
 
         {channelFunnelLoading ? (
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
+          <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
             <div className="space-y-2.5">
               {[0, 1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-9 animate-pulse rounded bg-[#FAF9F6]" />
+                <div key={i} className="h-9 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
               ))}
             </div>
           </div>
@@ -148,24 +148,24 @@ export function FunnelDiagnosticsSection({
             description="Adjust filters or verify metrics service connectivity."
           />
         ) : (
-          <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+          <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-[12px]">
+              <table className="w-full border-collapse text-left text-[13px]">
                 <thead>
-                  <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[#525E58]">
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-ink-muted)]">
                     <th className="px-4 py-3 font-medium">Channel group</th>
                     <th className="px-4 py-3 font-medium">Series</th>
                     {CHANNEL_FUNNEL_COLUMNS.map((col) => (
                       <th key={col.id} className="px-4 py-3 text-right font-medium">
                         <div>{col.label}</div>
-                        <div className="font-mono text-[10px] font-normal text-[#788C83]">
+                        <div className="font-mono text-[12px] font-normal text-[var(--color-ink-subtle)]">
                           {col.id}
                         </div>
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E6E0]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
                   {channelGroupFunnel.map((row) => (
                     <FragmentRowGroup
                       key={row.channel_group}
@@ -186,11 +186,11 @@ export function FunnelDiagnosticsSection({
         <div>
           <h2
             id="funnel-handoff-heading"
-            className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+            className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
           >
             Qualification handoff and SLA timing (qualified-lead grain)
           </h2>
-          <p className="text-[12px] text-[#525E58]">
+          <p className="text-[13px] text-[var(--color-ink-muted)]">
             Scoped to warm and inbound qualified brands unless stated otherwise;
             excludes cold outreach and respects cohort timing eligibility.
           </p>
@@ -250,12 +250,12 @@ export function FunnelDiagnosticsSection({
         <div>
           <h2
             id="funnel-conversion-heading"
-            className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+            className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
           >
             Conversion and sales-cycle diagnostics (opportunity and won-deal
             grains)
           </h2>
-          <p className="text-[12px] text-[#525E58]">
+          <p className="text-[13px] text-[var(--color-ink-muted)]">
             Separate grains: opportunity win rates and counts (M-13, M-09) vs
             first-touch brand win rate (M-14) vs mean confirmation cycle days
             (M-20).
@@ -343,14 +343,14 @@ function FragmentRowGroup({
   ) => {
     if (error) {
       return (
-        <td className="px-4 py-2.5 text-right text-[11px] text-[#9B3B32]">
+        <td className="px-4 py-2.5 text-right text-[12px] text-[#9B3B32]">
           Error
         </td>
       );
     }
     if (!result) {
       return (
-        <td className="px-4 py-2.5 text-right font-mono text-[11px] text-[#788C83]">
+        <td className="px-4 py-2.5 text-right font-mono text-[12px] text-[var(--color-ink-subtle)]">
           —
         </td>
       );
@@ -358,7 +358,7 @@ function FragmentRowGroup({
     if (!result.computable) {
       return (
         <td
-          className="px-4 py-2.5 text-right text-[11px] text-[#788C83]"
+          className="px-4 py-2.5 text-right text-[12px] text-[var(--color-ink-subtle)]"
           title={result.reason || 'Not computable'}
         >
           {result.reason || 'Not computable'}
@@ -368,11 +368,11 @@ function FragmentRowGroup({
     const ratio = formatNumeratorDenominator(result);
     return (
       <td className="px-4 py-2.5 text-right font-mono tabular-nums">
-        <div className="font-medium text-[#202824]">
+        <div className="font-medium text-[var(--color-ink)]">
           {formatAnalyticsMetricValue(result)}
         </div>
         {ratio ? (
-          <div className="text-[10px] text-[#788C83]">{ratio}</div>
+          <div className="text-[12px] text-[var(--color-ink-subtle)]">{ratio}</div>
         ) : null}
       </td>
     );
@@ -380,16 +380,16 @@ function FragmentRowGroup({
 
   return (
     <>
-      <tr className="bg-white hover:bg-[#FAF9F6]">
-        <td className="px-4 py-2.5 font-medium text-[#202824]" rowSpan={2}>
+      <tr className="bg-white hover:bg-[var(--color-surface-subtle)]">
+        <td className="px-4 py-2.5 font-medium text-[var(--color-ink)]" rowSpan={2}>
           <div>{row.label}</div>
-          <div className="font-mono text-[10px] text-[#788C83]">
+          <div className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
             channel_group: {row.channel_group}
           </div>
         </td>
-        <td className="px-4 py-2.5 font-mono text-[11px] text-[#315F52]">
+        <td className="px-4 py-2.5 font-mono text-[12px] text-[var(--color-accent)]">
           <div>Active ({recordClass})</div>
-          <div className="text-[10px] text-[#788C83]">as of {asOfDate}</div>
+          <div className="text-[12px] text-[var(--color-ink-subtle)]">as of {asOfDate}</div>
         </td>
         {CHANNEL_FUNNEL_COLUMNS.map((col) => (
           <FragmentCell
@@ -398,10 +398,10 @@ function FragmentRowGroup({
           />
         ))}
       </tr>
-      <tr className="bg-[#FAF9F6]/80">
-        <td className="px-4 py-2 font-mono text-[11px] text-[#525E58]">
+      <tr className="bg-[var(--color-surface-subtle)]/80">
+        <td className="px-4 py-2 font-mono text-[12px] text-[var(--color-ink-muted)]">
           <div>2025 synthetic</div>
-          <div className="text-[10px] text-[#788C83]">
+          <div className="text-[12px] text-[var(--color-ink-subtle)]">
             ED-2025 · historical_synthetic
           </div>
         </td>

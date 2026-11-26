@@ -35,18 +35,18 @@ export function TargetPacingSection({
 
   const skeleton = (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-      <div className="rounded-md border border-[#D9D7D0] bg-white p-5 lg:col-span-8">
-        <div className="h-4 w-48 rounded bg-[#E8E6E0]" />
+      <div className="rounded-md border border-[var(--color-border)] bg-white p-5 lg:col-span-8">
+        <div className="h-4 w-48 rounded bg-[var(--color-border-subtle)]" />
         <div className="mt-4 grid grid-cols-3 gap-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-16 rounded bg-[#FAF9F6]" />
+            <div key={i} className="h-16 rounded bg-[var(--color-surface-subtle)]" />
           ))}
         </div>
-        <div className="mt-5 h-24 rounded bg-[#FAF9F6]" />
+        <div className="mt-5 h-24 rounded bg-[var(--color-surface-subtle)]" />
       </div>
-      <div className="rounded-md border border-[#D9D7D0] bg-white p-5 lg:col-span-4">
-        <div className="h-4 w-40 rounded bg-[#E8E6E0]" />
-        <div className="mt-4 h-24 rounded bg-[#FAF9F6]" />
+      <div className="rounded-md border border-[var(--color-border)] bg-white p-5 lg:col-span-4">
+        <div className="h-4 w-40 rounded bg-[var(--color-border-subtle)]" />
+        <div className="mt-4 h-24 rounded bg-[var(--color-surface-subtle)]" />
       </div>
     </div>
   );
@@ -62,17 +62,17 @@ export function TargetPacingSection({
           <div
             role="group"
             aria-label="Approved pacing scenario"
-            className="inline-flex rounded-md border border-[#D9D7D0] bg-white p-0.5"
+            className="inline-flex rounded-md border border-[var(--color-border)] bg-white p-0.5"
           >
             {SCENARIO_ORDER.map((key) => (
               <button
                 key={key}
                 type="button"
                 onClick={() => onSelectScenario(key)}
-                className={`rounded px-3 py-1 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+                className={`rounded px-3 py-1 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                   selectedScenario === key
-                    ? 'bg-[#315F52] text-white'
-                    : 'text-[#525E58] hover:text-[#202824]'
+                    ? 'bg-[var(--color-accent)] text-white'
+                    : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                 }`}
               >
                 {pacing.scenarioTargets[key].shortLabel ??
@@ -91,19 +91,19 @@ export function TargetPacingSection({
       >
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           {/* Left: Signed value scenario & W1..W10 series + Base/Plan gates */}
-          <div className="flex flex-col justify-between rounded-md border border-[#D9D7D0] bg-white p-5 lg:col-span-8">
+          <div className="flex flex-col justify-between rounded-md border border-[var(--color-border)] bg-white p-5 lg:col-span-8">
             <div>
-              <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-[#E8E6E0] pb-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-[var(--color-border-subtle)] pb-4">
                 <div>
-                  <p className="text-[12px] font-medium text-[#788C83]">
+                  <p className="text-[13px] font-medium text-[var(--color-ink-subtle)]">
                     Actual signed value (M-02)
                   </p>
                   {pacing.actualSignedFormatted ? (
-                    <p className="mt-1 text-[26px] font-semibold tracking-[-0.02em] text-[#202824] tabular-nums">
+                    <p className="mt-1 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
                       {pacing.actualSignedFormatted}
                     </p>
                   ) : (
-                    <p className="mt-1 text-[14px] font-medium text-[#788C83]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink-subtle)]">
                       {pacing.actualSignedReason || 'Not computable'}
                     </p>
                   )}
@@ -111,23 +111,23 @@ export function TargetPacingSection({
 
                 {pacing.latestGateStatusLabel ? (
                   <div className="text-left sm:text-center">
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Latest passed checkpoint ({pacing.latestGateWeekLabel})
                     </p>
-                    <p className="mt-1 font-mono text-[13px] font-semibold text-[#9B3B32]">
+                    <p className="mt-1 font-mono text-[14px] font-semibold text-[#9B3B32]">
                       {pacing.latestGateStatusLabel}
                     </p>
                   </div>
                 ) : null}
 
                 <div className="text-left sm:text-right">
-                  <p className="text-[12px] font-medium text-[#788C83]">
+                  <p className="text-[13px] font-medium text-[var(--color-ink-subtle)]">
                     {activeScenarioData.label}
                   </p>
-                  <p className="mt-1 font-mono text-[16px] font-semibold text-[#202824] tabular-nums">
+                  <p className="mt-1 font-mono text-[16px] font-semibold text-[var(--color-ink)] tabular-nums">
                     {activeScenarioData.targetFormatted ?? '—'}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-[#525E58] tabular-nums">
+                  <p className="mt-0.5 text-[12px] text-[var(--color-ink-muted)] tabular-nums">
                     Collected (M-01):{' '}
                     {activeScenarioData.cashCollectedFormatted ??
                       activeScenarioData.cashCollectedReason ??
@@ -151,31 +151,31 @@ export function TargetPacingSection({
                       onClick={() => onSelectScenario(key)}
                       className={`rounded border px-3.5 py-2.5 text-left transition-colors duration-150 ${
                         isActive
-                          ? 'border-[#315F52] bg-[#EBF1EE]/40'
-                          : 'border-[#E8E6E0] bg-[#FAF9F6] hover:border-[#788C83]'
+                          ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]/40'
+                          : 'border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] hover:border-[var(--color-ink-subtle)]'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-[#202824]">
+                        <span className="text-[13px] font-semibold text-[var(--color-ink)]">
                           {item.label}
                         </span>
                         {isActive ? (
-                          <span className="font-mono text-[11px] text-[#315F52] shrink-0">
+                          <span className="font-mono text-[12px] text-[var(--color-accent)] shrink-0">
                             Active
                           </span>
                         ) : null}
                       </div>
                       <div className="mt-1.5 flex items-baseline justify-between gap-2">
-                        <span className="font-mono text-[14px] font-semibold text-[#202824] tabular-nums">
+                        <span className="font-mono text-[14px] font-semibold text-[var(--color-ink)] tabular-nums">
                           {item.targetFormatted ?? '—'}
                         </span>
                         {item.p50Formatted ? (
-                          <span className="font-mono text-[11px] text-[#788C83] tabular-nums">
+                          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums">
                             {item.p50Formatted}
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-0.5 text-[11px] text-[#525E58] tabular-nums">
+                      <p className="mt-0.5 text-[12px] text-[var(--color-ink-muted)] tabular-nums">
                         Collected (M-01):{' '}
                         {item.cashCollectedFormatted ??
                           item.cashCollectedReason ??
@@ -189,10 +189,10 @@ export function TargetPacingSection({
               {/* Weekly milestones track (W1..W10 M-08 series + Base & Plan gate lines) */}
               <div className="mt-5">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[12px] font-medium text-[#525E58]">
+                  <p className="text-[13px] font-medium text-[var(--color-ink-muted)]">
                     Weekly signed pacing series (M-08) &amp; K-G-01 Base / Plan gates
                   </p>
-                  <span className="font-mono text-[11px] text-[#788C83]">
+                  <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                     Base (SC-01) · Plan (SC-02)
                   </span>
                 </div>
@@ -204,24 +204,24 @@ export function TargetPacingSection({
                         key={week.weekId}
                         className={`rounded border px-2.5 py-2 ${
                           week.passed
-                            ? 'border-[#D9D7D0] bg-[#FAF9F6]'
-                            : 'border-[#E8E6E0] bg-white opacity-75'
+                            ? 'border-[var(--color-border)] bg-[var(--color-surface-subtle)]'
+                            : 'border-[var(--color-border-subtle)] bg-white opacity-75'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className="font-mono text-[11px] font-semibold text-[#202824]">
+                          <span className="font-mono text-[12px] font-semibold text-[var(--color-ink)]">
                             {week.label}
                           </span>
-                          <span className="font-mono text-[10px] text-[#788C83]">
+                          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                             {week.weekEnd ? week.weekEnd.slice(5) : ''}
                           </span>
                         </div>
                         <div
-                          className="mt-1.5 h-1.5 w-full overflow-hidden rounded-xs bg-[#E8E6E0]"
+                          className="mt-1.5 h-1.5 w-full overflow-hidden rounded-xs bg-[var(--color-border-subtle)]"
                           aria-hidden="true"
                         >
                           <div
-                            className="h-full bg-[#315F52]"
+                            className="h-full bg-[var(--color-accent)]"
                             style={{
                               width:
                                 week.progressRatio !== null
@@ -230,11 +230,11 @@ export function TargetPacingSection({
                             }}
                           />
                         </div>
-                        <p className="mt-1.5 font-mono text-[11px] font-medium text-[#202824] tabular-nums">
+                        <p className="mt-1.5 font-mono text-[12px] font-medium text-[var(--color-ink)] tabular-nums">
                           {week.actualFormatted ?? week.reason ?? '—'}
                         </p>
                         {week.baseTargetFormatted || week.planTargetFormatted ? (
-                          <p className="mt-0.5 font-mono text-[10px] text-[#788C83] tabular-nums">
+                          <p className="mt-0.5 font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums">
                             B {week.baseTargetFormatted ?? '—'} · P{' '}
                             {week.planTargetFormatted ?? '—'}
                           </p>
@@ -243,7 +243,7 @@ export function TargetPacingSection({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[12px] text-[#788C83]">
+                  <p className="text-[13px] text-[var(--color-ink-subtle)]">
                     No weekly checkpoint schedule configured for this edition.
                   </p>
                 )}
@@ -252,11 +252,11 @@ export function TargetPacingSection({
           </div>
 
           {/* Right: Separate T−7 Cash Collection Gate */}
-          <div className="flex flex-col justify-between rounded-md border border-[#315F52]/60 bg-white p-5 lg:col-span-4">
+          <div className="flex flex-col justify-between rounded-md border border-[var(--color-accent)]/60 bg-white p-5 lg:col-span-4">
             <div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5">
-                  <h3 className="text-[14px] font-semibold text-[#202824]">
+                  <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                     {pacing.cashCollectionGate.gateLabel}
                   </h3>
                   <InfoHint
@@ -264,50 +264,50 @@ export function TargetPacingSection({
                     content="Cash collection gate evaluated 7 days before festival start (M-06 ≥ 85%), tracked separately from W4–W9 signed-value milestones."
                   />
                 </div>
-                <span className="font-mono text-[11px] text-[#315F52] whitespace-nowrap">
+                <span className="font-mono text-[12px] text-[var(--color-accent)] whitespace-nowrap">
                   Separate gate
                 </span>
               </div>
 
-              <div className="mt-5 space-y-3.5 border-t border-[#E8E6E0] pt-4">
+              <div className="mt-5 space-y-3.5 border-t border-[var(--color-border-subtle)] pt-4">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[12px] text-[#788C83]">
+                  <span className="text-[13px] text-[var(--color-ink-subtle)]">
                     Cash collected (M-01)
                   </span>
-                  <span className="text-[18px] font-semibold text-[#202824] tabular-nums text-right">
+                  <span className="text-[18px] font-semibold text-[var(--color-ink)] tabular-nums text-right">
                     {pacing.cashCollectionGate.collectedFormatted ?? '—'}
                   </span>
                 </div>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[12px] text-[#788C83]">
+                  <span className="text-[13px] text-[var(--color-ink-subtle)]">
                     Collection rate (M-06)
                   </span>
-                  <span className="font-mono text-[14px] font-medium text-[#315F52] tabular-nums text-right">
+                  <span className="font-mono text-[14px] font-medium text-[var(--color-accent)] tabular-nums text-right">
                     {pacing.cashCollectionGate.collectionRateFormatted ?? '—'}
                   </span>
                 </div>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[12px] text-[#788C83]">
+                  <span className="text-[13px] text-[var(--color-ink-subtle)]">
                     Outstanding cash (M-07)
                   </span>
-                  <span className="font-mono text-[13px] text-[#525E58] tabular-nums text-right">
+                  <span className="font-mono text-[14px] text-[var(--color-ink-muted)] tabular-nums text-right">
                     {pacing.cashCollectionGate.outstandingFormatted ?? '—'}
                   </span>
                 </div>
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[12px] text-[#788C83]">
+                  <span className="text-[13px] text-[var(--color-ink-subtle)]">
                     Gate target
                   </span>
-                  <span className="font-mono text-[13px] text-[#525E58] tabular-nums text-right">
+                  <span className="font-mono text-[14px] text-[var(--color-ink-muted)] tabular-nums text-right">
                     {pacing.cashCollectionGate.gateTargetFormatted ?? '—'}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-2 rounded border border-[#E8E6E0] bg-[#FAF9F6] px-3 py-2">
-              <span className="text-[12px] text-[#788C83]">Status</span>
-              <span className="font-mono text-[12px] font-medium text-[#202824] text-right">
+            <div className="mt-5 flex items-center justify-between gap-2 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3 py-2">
+              <span className="text-[13px] text-[var(--color-ink-subtle)]">Status</span>
+              <span className="font-mono text-[13px] font-medium text-[var(--color-ink)] text-right">
                 {pacing.cashCollectionGate.gateStatusLabel ?? '—'}
               </span>
             </div>

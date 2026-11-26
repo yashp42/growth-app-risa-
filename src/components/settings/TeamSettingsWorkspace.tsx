@@ -323,12 +323,12 @@ export function TeamSettingsWorkspace() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="border-b border-[#D9D7D0] pb-5">
-        <p className="font-mono text-[11px] text-[#788C83]">Workspace</p>
-        <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.025em] text-[#202824]">
+      <div className="border-b border-[var(--color-border)] pb-5">
+        <p className="font-mono text-[12px] text-[var(--color-ink-subtle)]">Workspace</p>
+        <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.025em] text-[var(--color-ink)]">
           Team &amp; Settings
         </h1>
-        <p className="mt-1 text-[13px] text-[#525E58]">
+        <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
           Verified team identity, live backend system health, and 2025 metric
           parity verification.
         </p>
@@ -337,18 +337,18 @@ export function TeamSettingsWorkspace() {
       {/* Signed-in identity from GET /api/me */}
       <section
         aria-labelledby="signed-in-identity-heading"
-        className="rounded-md border border-[#D9D7D0] bg-white p-6"
+        className="rounded-md border border-[var(--color-border)] bg-white p-6"
       >
         <h2
           id="signed-in-identity-heading"
-          className="text-[16px] font-semibold text-[#202824]"
+          className="text-[16px] font-semibold text-[var(--color-ink)]"
         >
           Signed-in team member
         </h2>
         {member ? (
-          <dl className="mt-4 grid grid-cols-1 gap-4 border-t border-[#E8E6E0] pt-4 sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="mt-4 grid grid-cols-1 gap-4 border-t border-[var(--color-border-subtle)] pt-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <dt className="text-[12px] text-[#788C83]">Name</dt>
+              <dt className="text-[13px] text-[var(--color-ink-subtle)]">Name</dt>
               {editingName ? (
                 <dd className="mt-1 space-y-1.5">
                   <div className="flex items-center gap-1.5">
@@ -367,7 +367,7 @@ export function TeamSettingsWorkspace() {
                       disabled={savingName}
                       aria-label="Team member name"
                       maxLength={120}
-                      className="h-8 w-full min-w-[140px] rounded border border-[#D9D7D0] bg-white px-2.5 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                      className="h-8 w-full min-w-[140px] rounded border border-[var(--color-border)] bg-white px-2.5 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                     />
                     <button
                       type="button"
@@ -375,7 +375,7 @@ export function TeamSettingsWorkspace() {
                       disabled={savingName}
                       title="Save name"
                       aria-label="Save name"
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[#315F52] bg-[#315F52] text-white hover:bg-[#264B40] disabled:opacity-50"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--color-accent)] bg-[var(--color-accent)] text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                     >
                       <Check className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
@@ -385,24 +385,24 @@ export function TeamSettingsWorkspace() {
                       disabled={savingName}
                       title="Cancel"
                       aria-label="Cancel editing name"
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[#D9D7D0] bg-white text-[#525E58] hover:bg-[#FAF9F6] disabled:opacity-50"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[var(--color-border)] bg-white text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-subtle)] disabled:opacity-50"
                     >
                       <X className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   </div>
                   {nameError ? (
-                    <p className="text-[11px] text-[#991B1B]">{nameError}</p>
+                    <p className="text-[12px] text-[#991B1B]">{nameError}</p>
                   ) : null}
                 </dd>
               ) : (
-                <dd className="mt-1 flex items-center gap-2 text-[14px] font-medium text-[#202824]">
+                <dd className="mt-1 flex items-center gap-2 text-[14px] font-medium text-[var(--color-ink)]">
                   <span>{member.full_name ?? '—'}</span>
                   <button
                     type="button"
                     onClick={handleStartEditName}
                     title="Edit name"
                     aria-label="Edit name"
-                    className="inline-flex h-6 w-6 items-center justify-center rounded text-[#788C83] transition-colors hover:bg-[#F3F1EB] hover:text-[#202824]"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--color-ink-subtle)] transition-colors hover:bg-[var(--color-canvas)] hover:text-[var(--color-ink)]"
                   >
                     <Pencil className="h-3 w-3" aria-hidden="true" />
                   </button>
@@ -410,26 +410,26 @@ export function TeamSettingsWorkspace() {
               )}
             </div>
             <div>
-              <dt className="text-[12px] text-[#788C83]">Member ID</dt>
-              <dd className="mt-1 font-mono text-[13px] text-[#202824]">
+              <dt className="text-[13px] text-[var(--color-ink-subtle)]">Member ID</dt>
+              <dd className="mt-1 font-mono text-[14px] text-[var(--color-ink)]">
                 {member.member_id}
               </dd>
             </div>
             <div>
-              <dt className="text-[12px] text-[#788C83]">Roles</dt>
-              <dd className="mt-1 font-mono text-[13px] text-[#202824]">
+              <dt className="text-[13px] text-[var(--color-ink-subtle)]">Roles</dt>
+              <dd className="mt-1 font-mono text-[14px] text-[var(--color-ink)]">
                 {member.roles.length > 0 ? member.roles.join(', ') : '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-[12px] text-[#788C83]">Edition</dt>
-              <dd className="mt-1 font-mono text-[13px] text-[#202824]">
+              <dt className="text-[13px] text-[var(--color-ink-subtle)]">Edition</dt>
+              <dd className="mt-1 font-mono text-[14px] text-[var(--color-ink)]">
                 {member.edition_id ?? '—'}
               </dd>
             </div>
           </dl>
         ) : (
-          <p className="mt-3 text-[13px] text-[#525E58]">
+          <p className="mt-3 text-[14px] text-[var(--color-ink-muted)]">
             No verified member profile loaded.
           </p>
         )}
@@ -438,23 +438,23 @@ export function TeamSettingsWorkspace() {
       {/* Edition team roster from GET /api/team */}
       <section
         aria-labelledby="team-roster-heading"
-        className="rounded-md border border-[#D9D7D0] bg-white p-6"
+        className="rounded-md border border-[var(--color-border)] bg-white p-6"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2
               id="team-roster-heading"
-              className="text-[16px] font-semibold text-[#202824]"
+              className="text-[16px] font-semibold text-[var(--color-ink)]"
             >
               Edition team directory
             </h2>
-            <p className="mt-1 font-mono text-[11px] text-[#788C83]">
+            <p className="mt-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               {recordClass} · {editionId} · As of {asOf}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 font-mono text-[12px] text-[#525E58]">
+            <span className="mr-1 font-mono text-[13px] text-[var(--color-ink-muted)]">
               {teamLoading ? 'Loading…' : `${teamRoster.length} members`}
             </span>
             {canManageTeam ? (
@@ -468,9 +468,9 @@ export function TeamSettingsWorkspace() {
                     setShowAssignRole(false);
                     setAdminError(null);
                   }}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Plus className="h-3.5 w-3.5 text-[#315F52]" />
+                  <Plus className="h-3.5 w-3.5 text-[var(--color-accent)]" />
                   Add member
                 </button>
                 <button
@@ -482,7 +482,7 @@ export function TeamSettingsWorkspace() {
                     setShowAddMember(false);
                     setAdminError(null);
                   }}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <ShieldPlus className="h-3.5 w-3.5" />
                   Assign role
@@ -495,7 +495,7 @@ export function TeamSettingsWorkspace() {
         {adminError ? (
           <div
             role="alert"
-            className="mt-4 flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-4 py-3 text-[13px] text-[#9B3B32]"
+            className="mt-4 flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-4 py-3 text-[14px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{adminError}</span>
@@ -503,7 +503,7 @@ export function TeamSettingsWorkspace() {
         ) : null}
 
         {adminSuccess ? (
-          <div className="mt-4 rounded-md border border-[#315F52]/30 bg-[#315F52]/5 px-4 py-2.5 text-[12px] text-[#315F52]">
+          <div className="mt-4 rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-accent)]/5 px-4 py-2.5 text-[13px] text-[var(--color-accent)]">
             {adminSuccess}
           </div>
         ) : null}
@@ -511,9 +511,9 @@ export function TeamSettingsWorkspace() {
         {canManageTeam && showAddMember ? (
           <form
             onSubmit={handleCreateMember}
-            className="mt-4 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-4"
+            className="mt-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4"
           >
-            <h3 className="text-[13px] font-semibold text-[#202824]">
+            <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
               New team member ({editionId})
             </h3>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -522,7 +522,7 @@ export function TeamSettingsWorkspace() {
                 value={newMemberName}
                 onChange={(e) => setNewMemberName(e.target.value)}
                 placeholder="Full name (required)"
-                className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                 required
               />
               <input
@@ -530,21 +530,21 @@ export function TeamSettingsWorkspace() {
                 value={newMemberEmail}
                 onChange={(e) => setNewMemberEmail(e.target.value)}
                 placeholder="Email (optional)"
-                className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               />
             </div>
             <div className="mt-3 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowAddMember(false)}
-                className="h-8 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                className="h-8 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={creatingMember}
-                className="h-8 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:opacity-50"
+                className="h-8 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:opacity-50"
               >
                 {creatingMember ? 'Creating...' : 'Create member'}
               </button>
@@ -555,9 +555,9 @@ export function TeamSettingsWorkspace() {
         {canManageTeam && showAssignRole ? (
           <form
             onSubmit={handleAssignRole}
-            className="mt-4 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-4"
+            className="mt-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4"
           >
-            <h3 className="text-[13px] font-semibold text-[#202824]">
+            <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
               Assign role in {editionId}
             </h3>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -565,7 +565,7 @@ export function TeamSettingsWorkspace() {
                 value={assignTargetMemberId}
                 onChange={(e) => setAssignTargetMemberId(e.target.value)}
                 aria-label="Member"
-                className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               >
                 {teamRoster.map((tm) => (
                   <option key={tm.member_id} value={tm.member_id}>
@@ -579,7 +579,7 @@ export function TeamSettingsWorkspace() {
                   setAssignRoleChoice(e.target.value as CanonicalRole)
                 }
                 aria-label="Role"
-                className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               >
                 {ALL_CANONICAL_ROLE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -592,14 +592,14 @@ export function TeamSettingsWorkspace() {
               <button
                 type="button"
                 onClick={() => setShowAssignRole(false)}
-                className="h-8 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                className="h-8 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={assigningRole}
-                className="h-8 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:opacity-50"
+                className="h-8 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:opacity-50"
               >
                 {assigningRole ? 'Assigning...' : 'Save role assignment'}
               </button>
@@ -610,12 +610,12 @@ export function TeamSettingsWorkspace() {
         {canManageTeam && linkingMemberId ? (
           <form
             onSubmit={handleLinkAuthUser}
-            className="mt-4 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-4"
+            className="mt-4 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4"
           >
-            <h3 className="text-[13px] font-semibold text-[#202824]">
+            <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
               Link Supabase Auth User ID for {linkingMemberId}
             </h3>
-            <p className="mt-1 text-[12px] text-[#525E58]">
+            <p className="mt-1 text-[13px] text-[var(--color-ink-muted)]">
               Once linked, this member can authenticate via Supabase and claim
               their assigned roles. Linking is one-time per member.
             </p>
@@ -625,7 +625,7 @@ export function TeamSettingsWorkspace() {
                 value={linkAuthUuid}
                 onChange={(e) => setLinkAuthUuid(e.target.value)}
                 placeholder="Supabase auth_user_id UUID (e.g. 550e8400-e29b-41d4-a716-446655440000)"
-                className="h-9 flex-1 rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[12px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                className="h-9 flex-1 rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[13px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                 required
               />
               <div className="flex items-center gap-2">
@@ -635,14 +635,14 @@ export function TeamSettingsWorkspace() {
                     setLinkingMemberId(null);
                     setLinkAuthUuid('');
                   }}
-                  className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                  className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={linkingAuth}
-                  className="h-9 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:opacity-50"
+                  className="h-9 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:opacity-50"
                 >
                   {linkingAuth ? 'Linking...' : 'Link login'}
                 </button>
@@ -654,23 +654,23 @@ export function TeamSettingsWorkspace() {
         {teamError ? (
           <div
             role="alert"
-            className="mt-4 rounded-md border border-[#DC2626]/30 bg-[#DC2626]/5 px-4 py-3 text-[13px] text-[#991B1B]"
+            className="mt-4 rounded-md border border-[#DC2626]/30 bg-[#DC2626]/5 px-4 py-3 text-[14px] text-[#991B1B]"
           >
             {teamError}
           </div>
         ) : teamLoading ? (
-          <div className="mt-4 space-y-2 border-t border-[#E8E6E0] pt-4">
-            <div className="h-8 animate-pulse rounded bg-[#FAF9F6]" />
-            <div className="h-8 animate-pulse rounded bg-[#FAF9F6]" />
+          <div className="mt-4 space-y-2 border-t border-[var(--color-border-subtle)] pt-4">
+            <div className="h-8 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
+            <div className="h-8 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
           </div>
         ) : teamRoster.length === 0 ? (
-          <p className="mt-4 border-t border-[#E8E6E0] pt-4 text-[13px] text-[#525E58]">
+          <p className="mt-4 border-t border-[var(--color-border-subtle)] pt-4 text-[14px] text-[var(--color-ink-muted)]">
             No team role assignments found for {editionId}.
           </p>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded border border-[#E8E6E0]">
-            <table className="min-w-full divide-y divide-[#E8E6E0] text-left text-[13px]">
-              <thead className="bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+          <div className="mt-4 overflow-x-auto rounded border border-[var(--color-border-subtle)]">
+            <table className="min-w-full divide-y divide-[var(--color-border-subtle)] text-left text-[14px]">
+              <thead className="bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                 <tr>
                   <th className="px-4 py-2.5">Member</th>
                   <th className="px-4 py-2.5">Member ID</th>
@@ -679,26 +679,26 @@ export function TeamSettingsWorkspace() {
                   <th className="px-4 py-2.5">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8E6E0] bg-white">
+              <tbody className="divide-y divide-[var(--color-border-subtle)] bg-white">
                 {teamRoster.map((tm) => {
                   const assignments = tm.role_assignments ?? [];
                   const isUnlinked = tm.auth_linked === false;
                   return (
-                    <tr key={tm.member_id} className="hover:bg-[#FAF9F6]">
+                    <tr key={tm.member_id} className="hover:bg-[var(--color-surface-subtle)]">
                       <td className="px-4 py-2.5">
-                        <div className="font-medium text-[#202824]">
+                        <div className="font-medium text-[var(--color-ink)]">
                           {tm.full_name}
                         </div>
                         {tm.email ? (
-                          <div className="text-[11px] text-[#788C83]">
+                          <div className="text-[12px] text-[var(--color-ink-subtle)]">
                             {tm.email}
                           </div>
                         ) : null}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-[12px] text-[#525E58]">
+                      <td className="px-4 py-2.5 font-mono text-[13px] text-[var(--color-ink-muted)]">
                         {tm.member_id}
                       </td>
-                      <td className="px-4 py-2.5 text-[12px]">
+                      <td className="px-4 py-2.5 text-[13px]">
                         {isUnlinked ? (
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-[#9B6B2E]">
@@ -718,7 +718,7 @@ export function TeamSettingsWorkspace() {
                                   setLinkAuthUuid('');
                                   setAdminError(null);
                                 }}
-                                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#315F52] hover:underline disabled:opacity-50"
+                                className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-accent)] hover:underline disabled:opacity-50"
                               >
                                 <Link2 className="h-3 w-3" />
                                 Link Auth ID
@@ -726,16 +726,16 @@ export function TeamSettingsWorkspace() {
                             ) : null}
                           </div>
                         ) : (
-                          <span className="text-[#315F52]">Linked</span>
+                          <span className="text-[var(--color-accent)]">Linked</span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 font-mono text-[12px] text-[#315F52]">
+                      <td className="px-4 py-2.5 font-mono text-[13px] text-[var(--color-accent)]">
                         {assignments.length > 0 ? (
                           <div className="flex flex-wrap items-center gap-2">
                             {assignments.map((a) => (
                               <span
                                 key={a.role_assignment_id}
-                                className="inline-flex items-center gap-1.5 rounded border border-[#D9D7D0] bg-[#FAF9F6] px-2 py-0.5 text-[11px] text-[#202824]"
+                                className="inline-flex items-center gap-1.5 rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2 py-0.5 text-[12px] text-[var(--color-ink)]"
                               >
                                 <span>{a.role}</span>
                                 {canManageTeam ? (
@@ -764,7 +764,7 @@ export function TeamSettingsWorkspace() {
                           '—'
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-[12px] text-[#525E58]">
+                      <td className="px-4 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
                         {tm.is_active === false ? 'Inactive' : 'Active'}
                       </td>
                     </tr>
@@ -782,23 +782,23 @@ export function TeamSettingsWorkspace() {
       {/* System check panel */}
       <section
         aria-labelledby="system-check-heading"
-        className="rounded-md border border-[#D9D7D0] bg-white p-6"
+        className="rounded-md border border-[var(--color-border)] bg-white p-6"
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2
               id="system-check-heading"
-              className="text-[16px] font-semibold text-[#202824]"
+              className="text-[16px] font-semibold text-[var(--color-ink)]"
             >
               System check
             </h2>
-            <p className="mt-1 text-[13px] text-[#525E58]">
+            <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Live diagnostics from{' '}
-              <code className="font-mono text-[12px] text-[#202824]">
+              <code className="font-mono text-[13px] text-[var(--color-ink)]">
                 GET /api/admin/health
               </code>{' '}
               and{' '}
-              <code className="font-mono text-[12px] text-[#202824]">
+              <code className="font-mono text-[13px] text-[var(--color-ink)]">
                 POST /api/admin/parity
               </code>
               .
@@ -810,10 +810,10 @@ export function TeamSettingsWorkspace() {
               type="button"
               onClick={() => void loadHealth()}
               disabled={healthLoading}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] disabled:opacity-60 whitespace-nowrap shrink-0"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] disabled:opacity-60 whitespace-nowrap shrink-0"
             >
               <RefreshCw
-                className={`h-3.5 w-3.5 text-[#525E58] ${healthLoading ? 'animate-spin' : ''}`}
+                className={`h-3.5 w-3.5 text-[var(--color-ink-muted)] ${healthLoading ? 'animate-spin' : ''}`}
                 aria-hidden="true"
               />
               <span>Refresh health</span>
@@ -823,7 +823,7 @@ export function TeamSettingsWorkspace() {
               type="button"
               onClick={() => void handleRunParity()}
               disabled={parityLoading}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:opacity-60 whitespace-nowrap shrink-0"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60 whitespace-nowrap shrink-0"
             >
               <Play className="h-3.5 w-3.5" aria-hidden="true" />
               <span>
@@ -836,23 +836,23 @@ export function TeamSettingsWorkspace() {
         {healthError ? (
           <div
             role="alert"
-            className="mt-4 rounded-md border border-[#DC2626]/30 bg-[#DC2626]/5 px-4 py-3 text-[13px] text-[#991B1B]"
+            className="mt-4 rounded-md border border-[#DC2626]/30 bg-[#DC2626]/5 px-4 py-3 text-[14px] text-[#991B1B]"
           >
             {healthError}
           </div>
         ) : null}
 
         {healthLoading && !health ? (
-          <div className="mt-5 grid grid-cols-1 gap-4 border-t border-[#E8E6E0] pt-5 sm:grid-cols-3">
-            <div className="h-16 animate-pulse rounded bg-[#FAF9F6]" />
-            <div className="h-16 animate-pulse rounded bg-[#FAF9F6]" />
-            <div className="h-16 animate-pulse rounded bg-[#FAF9F6]" />
+          <div className="mt-5 grid grid-cols-1 gap-4 border-t border-[var(--color-border-subtle)] pt-5 sm:grid-cols-3">
+            <div className="h-16 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
+            <div className="h-16 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
+            <div className="h-16 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
           </div>
         ) : health ? (
-          <div className="mt-5 space-y-5 border-t border-[#E8E6E0] pt-5">
+          <div className="mt-5 space-y-5 border-t border-[var(--color-border-subtle)] pt-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-4">
-                <p className="text-[12px] text-[#788C83]">Database</p>
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-4">
+                <p className="text-[13px] text-[var(--color-ink-subtle)]">Database</p>
                 <p
                   className={`mt-1 text-[16px] font-semibold ${
                     dbConnected ? 'text-[#16A34A]' : 'text-[#DC2626]'
@@ -860,14 +860,14 @@ export function TeamSettingsWorkspace() {
                 >
                   {dbConnected ? 'Connected' : 'Disconnected'}
                 </p>
-                <p className="mt-1 font-mono text-[11px] text-[#525E58]">
+                <p className="mt-1 font-mono text-[12px] text-[var(--color-ink-muted)]">
                   status: {health.database.status}
                   {healthHttpStatus ? ` · HTTP ${healthHttpStatus}` : ''}
                 </p>
               </div>
 
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-4">
-                <p className="text-[12px] text-[#788C83]">Metrics functions</p>
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-4">
+                <p className="text-[13px] text-[var(--color-ink-subtle)]">Metrics functions</p>
                 <p
                   className={`mt-1 font-mono text-[18px] font-semibold tabular-nums ${
                     metricsHealthy ? 'text-[#16A34A]' : 'text-[#D97706]'
@@ -876,27 +876,27 @@ export function TeamSettingsWorkspace() {
                   {metricsCount !== undefined ? `${metricsCount}` : '—'} /{' '}
                   {metricsExpected}
                 </p>
-                <p className="mt-1 font-mono text-[11px] text-[#525E58]">
+                <p className="mt-1 font-mono text-[12px] text-[var(--color-ink-muted)]">
                   status: {health.metrics?.status ?? 'unknown'}
                 </p>
               </div>
 
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-4">
-                <p className="text-[12px] text-[#788C83]">Canonical schema</p>
-                <p className="mt-1 text-[16px] font-semibold text-[#202824]">
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-4">
+                <p className="text-[13px] text-[var(--color-ink-subtle)]">Canonical schema</p>
+                <p className="mt-1 text-[16px] font-semibold text-[var(--color-ink)]">
                   {health.database.schema_ready ? 'Ready' : 'Not ready'}
                 </p>
-                <p className="mt-1 font-mono text-[11px] text-[#525E58]">
+                <p className="mt-1 font-mono text-[12px] text-[var(--color-ink-muted)]">
                   missing tables: {health.database.missing_tables.length}
                 </p>
               </div>
 
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-4">
-                <p className="text-[12px] text-[#788C83]">2025 parity check</p>
-                <p className="mt-1 font-mono text-[18px] font-semibold tabular-nums text-[#202824]">
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-4">
+                <p className="text-[13px] text-[var(--color-ink-subtle)]">2025 parity check</p>
+                <p className="mt-1 font-mono text-[18px] font-semibold tabular-nums text-[var(--color-ink)]">
                   {parity ? `${parity.passed} / ${parity.total}` : 'Not run'}
                 </p>
-                <p className="mt-1 font-mono text-[11px] text-[#525E58]">
+                <p className="mt-1 font-mono text-[12px] text-[var(--color-ink-muted)]">
                   {parity
                     ? parity.passed === parity.total
                       ? 'all checks passed'
@@ -907,9 +907,9 @@ export function TeamSettingsWorkspace() {
             </div>
 
             {!dbConnected && (health.database.error_detail || health.database.reason) ? (
-              <div className="rounded border border-[#D97706]/30 bg-[#D97706]/5 px-4 py-3 text-[13px] text-[#92400E]">
+              <div className="rounded border border-[#D97706]/30 bg-[#D97706]/5 px-4 py-3 text-[14px] text-[#92400E]">
                 <p>
-                  <span className="font-mono text-[12px] font-medium">
+                  <span className="font-mono text-[13px] font-medium">
                     {health.database.error_detail?.code ??
                       health.database.error_code ??
                       'DB_ERROR'}
@@ -919,12 +919,12 @@ export function TeamSettingsWorkspace() {
                     health.database.reason}
                 </p>
                 {health.database.error_detail?.hint ? (
-                  <p className="mt-1 text-[12px]">
+                  <p className="mt-1 text-[13px]">
                     Hint: {health.database.error_detail.hint}
                   </p>
                 ) : null}
                 {health.database.tls ? (
-                  <p className="mt-1 font-mono text-[11px]">
+                  <p className="mt-1 font-mono text-[12px]">
                     TLS: {health.database.tls}
                   </p>
                 ) : null}
@@ -934,7 +934,7 @@ export function TeamSettingsWorkspace() {
             {parityError ? (
               <div
                 role="alert"
-                className="rounded border border-[#DC2626]/30 bg-[#DC2626]/5 px-4 py-3 text-[13px] text-[#991B1B]"
+                className="rounded border border-[#DC2626]/30 bg-[#DC2626]/5 px-4 py-3 text-[14px] text-[#991B1B]"
               >
                 {parityError}
               </div>
@@ -943,17 +943,17 @@ export function TeamSettingsWorkspace() {
             {parity ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[14px] font-semibold text-[#202824]">
+                  <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                     Parity result ({parity.passed} / {parity.total})
                   </h3>
-                  <span className="font-mono text-[12px] tabular-nums text-[#525E58]">
+                  <span className="font-mono text-[13px] tabular-nums text-[var(--color-ink-muted)]">
                     {parity.rows.length} rows returned
                   </span>
                 </div>
 
-                <div className="overflow-x-auto rounded border border-[#E8E6E0]">
-                  <table className="min-w-full divide-y divide-[#E8E6E0] text-left text-[12px]">
-                    <thead className="bg-[#FAF9F6] text-[#525E58]">
+                <div className="overflow-x-auto rounded border border-[var(--color-border-subtle)]">
+                  <table className="min-w-full divide-y divide-[var(--color-border-subtle)] text-left text-[13px]">
+                    <thead className="bg-[var(--color-surface-subtle)] text-[var(--color-ink-muted)]">
                       <tr>
                         {parityColumns.map((col) => (
                           <th
@@ -965,13 +965,13 @@ export function TeamSettingsWorkspace() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8E6E0] bg-white">
+                    <tbody className="divide-y divide-[var(--color-border-subtle)] bg-white">
                       {parity.rows.map((row, idx) => (
-                        <tr key={idx} className="hover:bg-[#FAF9F6]">
+                        <tr key={idx} className="hover:bg-[var(--color-surface-subtle)]">
                           {parityColumns.map((col) => (
                             <td
                               key={col}
-                              className="px-3 py-2 font-mono tabular-nums text-[#202824] whitespace-nowrap"
+                              className="px-3 py-2 font-mono tabular-nums text-[var(--color-ink)] whitespace-nowrap"
                             >
                               {formatCellValue(row[col])}
                             </td>

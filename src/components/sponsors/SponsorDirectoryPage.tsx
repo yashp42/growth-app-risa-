@@ -151,18 +151,18 @@ export function SponsorDirectoryPage({
   }, [sponsors, sortKey, sortDirection]);
 
   const skeleton = (
-    <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
-      <div className="border-b border-[#E8E6E0] bg-[#FAF9F6] px-4 py-3">
-        <div className="h-3.5 w-full rounded bg-[#E8E6E0]" />
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
+      <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-4 py-3">
+        <div className="h-3.5 w-full rounded bg-[var(--color-border-subtle)]" />
       </div>
       {[0, 1, 2, 3].map((idx) => (
         <div
           key={idx}
-          className="flex items-center gap-4 border-b border-[#E8E6E0] px-4 py-3.5 last:border-b-0"
+          className="flex items-center gap-4 border-b border-[var(--color-border-subtle)] px-4 py-3.5 last:border-b-0"
         >
-          <div className="h-3.5 w-44 rounded bg-[#E8E6E0]" />
-          <div className="h-3.5 w-24 rounded bg-[#F3F1EB]" />
-          <div className="ml-auto h-3.5 w-20 rounded bg-[#E8E6E0]" />
+          <div className="h-3.5 w-44 rounded bg-[var(--color-border-subtle)]" />
+          <div className="h-3.5 w-24 rounded bg-[var(--color-canvas)]" />
+          <div className="ml-auto h-3.5 w-20 rounded bg-[var(--color-border-subtle)]" />
         </div>
       ))}
     </div>
@@ -171,13 +171,13 @@ export function SponsorDirectoryPage({
   return (
     <div className="space-y-8 pb-8">
       {/* Header & Filters */}
-      <section className="border-b border-[#D9D7D0] pb-6">
+      <section className="border-b border-[var(--color-border)] pb-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-[#202824]">
+            <h1 className="page-heading text-[var(--color-ink)]">
               Sponsors
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[11px] text-[#788C83]">
+            <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{filters.record_class==='historical_synthetic'?'Historical data':filters.record_class==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatSponsorRecordClass(filters.record_class)}</span>
               {filters.edition_id !== 'all' ? (
                 <>
@@ -190,24 +190,24 @@ export function SponsorDirectoryPage({
               {isReadOnlyClass ? (
                 <>
                   <span aria-hidden="true">·</span>
-                  <span className="font-medium text-[#525E58]">
+                  <span className="font-medium text-[var(--color-ink-muted)]">
                     {isHistorical2025 ? READ_ONLY_2025_MESSAGE : 'Read-only'}
                   </span>
                 </>
               ) : null}
-            </div>
+            </div></details>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             {showDevControls ? (
-              <div className="flex items-center gap-2 rounded-md border border-dashed border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1">
-                <span className="font-mono text-[11px] text-[#788C83]">
+              <div className="flex items-center gap-2 rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1">
+                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                   Dev state
                 </span>
                 <div
                   role="group"
                   aria-label="Developer preview sponsors data state"
-                  className="inline-flex rounded border border-[#D9D7D0] bg-white p-0.5"
+                  className="inline-flex rounded border border-[var(--color-border)] bg-white p-0.5"
                 >
                   {(
                     [
@@ -220,10 +220,10 @@ export function SponsorDirectoryPage({
                       key={mode.id}
                       type="button"
                       onClick={() => onChangePreviewMode(mode.id)}
-                      className={`rounded px-2 py-0.5 text-[12px] font-medium transition-colors duration-150 ${
+                      className={`rounded px-2 py-0.5 text-[13px] font-medium transition-colors duration-150 ${
                         previewMode === mode.id
-                          ? 'bg-[#315F52] text-white'
-                          : 'text-[#525E58] hover:text-[#202824]'
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                       }`}
                     >
                       {mode.label}
@@ -236,9 +236,9 @@ export function SponsorDirectoryPage({
             <button
               type="button"
               onClick={onRefresh}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] whitespace-nowrap"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] whitespace-nowrap"
             >
-              <RefreshCw className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
+              <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
               Refresh
             </button>
 
@@ -248,7 +248,7 @@ export function SponsorDirectoryPage({
                 onClick={onCreateSponsor}
                 disabled={!canCreate}
                 title={isHistorical2025 ? READ_ONLY_2025_MESSAGE : undefined}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-3.5 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 New sponsor
@@ -262,13 +262,13 @@ export function SponsorDirectoryPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="sponsors-search"
-              className="text-[11px] font-medium text-[#788C83]"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
             >
               Search
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[#788C83]"
+                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-ink-subtle)]"
                 aria-hidden="true"
               />
               <input
@@ -279,7 +279,7 @@ export function SponsorDirectoryPage({
                   onChangeFilters({ ...filters, search: e.target.value })
                 }
                 placeholder="Search by sponsor name..."
-                className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white pr-3 pl-8 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none"
+                className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white pr-3 pl-8 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none"
               />
             </div>
           </div>
@@ -359,11 +359,11 @@ export function SponsorDirectoryPage({
           onRetry={onRetry}
           loadingSkeleton={skeleton}
         >
-          <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6]">
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
                     {COLUMNS.map((col) => {
                       const isActive = sortKey === col.key;
                       const SortIcon = !isActive
@@ -382,19 +382,19 @@ export function SponsorDirectoryPage({
                                 : 'descending'
                               : 'none'
                           }
-                          className="px-4 py-3 text-[12px] font-medium text-[#525E58] whitespace-nowrap"
+                          className="px-4 py-3 text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap"
                         >
                           <button
                             type="button"
                             onClick={() => handleSort(col.key)}
-                            className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[#202824] ${
-                              isActive ? 'font-semibold text-[#315F52]' : ''
+                            className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[var(--color-ink)] ${
+                              isActive ? 'font-semibold text-[var(--color-accent)]' : ''
                             }`}
                           >
                             <span>{col.label}</span>
                             <SortIcon
                               className={`h-3 w-3 ${
-                                isActive ? 'text-[#315F52]' : 'text-[#788C83]'
+                                isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-ink-subtle)]'
                               }`}
                               aria-hidden="true"
                             />
@@ -404,14 +404,14 @@ export function SponsorDirectoryPage({
                     })}
                     <th
                       scope="col"
-                      className="px-4 py-3 text-right text-[12px] font-medium text-[#525E58] whitespace-nowrap"
+                      className="px-4 py-3 text-right text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap"
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                   {sortedSponsors.length > 0 ? (
                     sortedSponsors.map((sponsor) => {
                       const readOnly = isSponsorReadOnly(sponsor);
@@ -419,24 +419,24 @@ export function SponsorDirectoryPage({
                       return (
                         <tr
                           key={sponsor.sponsor_id}
-                          className="transition-colors duration-150 hover:bg-[#FAF9F6]"
+                          className="transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                         >
                           <td className="px-4 py-3">
                             <button
                               type="button"
                               onClick={() => onOpenSponsor(sponsor)}
-                              className="text-left font-medium text-[#202824] hover:text-[#315F52] hover:underline"
+                              className="text-left font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)] hover:underline"
                             >
-                              {sponsor.display_name}
+                              <span aria-hidden="true" className="mr-3 inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] align-middle text-xs font-semibold text-[var(--color-accent)]">{(sponsor.display_name||'S').slice(0,2).toUpperCase()}</span>{sponsor.display_name}
                             </button>
                             {sponsor.legal_name &&
                             sponsor.legal_name !== sponsor.display_name ? (
-                              <span className="mt-0.5 block text-[12px] text-[#788C83]">
+                              <span className="mt-0.5 block text-[13px] text-[var(--color-ink-subtle)]">
                                 {sponsor.legal_name}
                               </span>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {sponsor.category_name || sponsor.category_id || '—'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
@@ -445,23 +445,23 @@ export function SponsorDirectoryPage({
                                 sponsor.lifecycle_status === 'do_not_contact'
                                   ? 'font-medium text-[#9B3B32]'
                                   : sponsor.lifecycle_status === 'active'
-                                    ? 'font-medium text-[#315F52]'
-                                    : 'text-[#202824]'
+                                    ? 'font-medium text-[var(--color-accent)]'
+                                    : 'text-[var(--color-ink)]'
                               }
                             >
                               {formatLifecycleStatus(sponsor.lifecycle_status)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {formatFirstSource(sponsor.first_source)}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {sponsor.city || '—'}
                           </td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)] whitespace-nowrap">
                             {formatSponsorRecordClass(sponsor.record_class)}
                             {readOnly ? (
-                              <span className="ml-1.5 text-[11px] text-[#788C83]">
+                              <span className="ml-1.5 text-[12px] text-[var(--color-ink-subtle)]">
                                 · Read-only
                               </span>
                             ) : null}
@@ -478,7 +478,7 @@ export function SponsorDirectoryPage({
                                       : undefined
                                   }
                                   onClick={() => onEditSponsor(sponsor)}
-                                  className="text-[12px] font-medium text-[#525E58] hover:text-[#202824] disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="text-[13px] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Edit
                                 </button>
@@ -486,7 +486,7 @@ export function SponsorDirectoryPage({
                               <button
                                 type="button"
                                 onClick={() => onOpenSponsor(sponsor)}
-                                className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                               >
                                 Open
                                 <ArrowUpRight
@@ -502,7 +502,7 @@ export function SponsorDirectoryPage({
                   ) : (
                     <tr>
                       <td colSpan={7} className="px-6 py-10 text-center">
-                        <p className="text-[13px] font-medium text-[#202824]">
+                        <p className="text-[14px] font-medium text-[var(--color-ink)]">
                           No sponsors yet
                         </p>
                         {roleAllowsWrite ? (
@@ -516,10 +516,10 @@ export function SponsorDirectoryPage({
                                   : undefined
                               }
                               onClick={onCreateSponsor}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 py-1.5 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <Plus
-                                className="h-3.5 w-3.5 text-[#315F52]"
+                                className="h-3.5 w-3.5 text-[var(--color-accent)]"
                                 aria-hidden="true"
                               />
                               Register sponsor
@@ -538,3 +538,4 @@ export function SponsorDirectoryPage({
     </div>
   );
 }
+

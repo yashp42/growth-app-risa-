@@ -258,7 +258,7 @@ export function TaskDetailView({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#525E58] transition-colors duration-150 hover:text-[#202824]"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--color-ink-muted)] transition-colors duration-150 hover:text-[var(--color-ink)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back to Tasks
@@ -270,20 +270,20 @@ export function TaskDetailView({
         error={taskError}
         onRetry={triggerReload}
         loadingSkeleton={
-          <div className="border-b border-[#D9D7D0] pb-6">
-            <div className="h-7 w-72 rounded bg-[#E8E6E0]" />
-            <div className="mt-2 h-4 w-64 rounded bg-[#F3F1EB]" />
+          <div className="border-b border-[var(--color-border)] pb-6">
+            <div className="h-7 w-72 rounded bg-[var(--color-border-subtle)]" />
+            <div className="mt-2 h-4 w-64 rounded bg-[var(--color-canvas)]" />
           </div>
         }
       >
         {task ? (
           <>
             {/* Header */}
-            <div className="border-b border-[#D9D7D0] pb-5">
+            <div className="border-b border-[var(--color-border)] pb-5">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-[#788C83]">
-                    <span className="font-mono text-[#525E58]">
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[var(--color-ink-subtle)]">
+                    <span className="font-mono text-[var(--color-ink-muted)]">
                       {task.task_id}
                     </span>
                     <span aria-hidden="true">·</span>
@@ -292,10 +292,10 @@ export function TaskDetailView({
                     <span
                       className={
                         task.status === 'done'
-                          ? 'font-medium text-[#315F52]'
+                          ? 'font-medium text-[var(--color-accent)]'
                           : task.status === 'blocked'
                             ? 'font-medium text-[#9B3B32]'
-                            : 'font-medium text-[#202824]'
+                            : 'font-medium text-[var(--color-ink)]'
                       }
                     >
                       {formatTaskStatus(task.status)}
@@ -313,24 +313,24 @@ export function TaskDetailView({
                     {task.record_class ? (
                       <>
                         <span aria-hidden="true">·</span>
-                        <span className="font-mono text-[11px]">
+                        <span className="font-mono text-[12px]">
                           {task.record_class}
                           {task.edition_id ? ` · ${task.edition_id}` : ''}
                         </span>
                       </>
                     ) : null}
                     <span aria-hidden="true">·</span>
-                    <span className="font-mono text-[11px]">As of {asOf}</span>
+                    <span className="font-mono text-[12px]">As of {asOf}</span>
                     {isHistorical2025 ? (
                       <>
                         <span aria-hidden="true">·</span>
-                        <span className="font-mono text-[11px] text-[#525E58]">
+                        <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                           {READ_ONLY_2025_MESSAGE}
                         </span>
                       </>
                     ) : null}
                   </div>
-                  <h1 className="mt-1.5 text-[26px] font-semibold leading-tight tracking-[-0.025em] text-[#202824]">
+                  <h1 className="mt-1.5 text-[26px] font-semibold leading-tight tracking-[-0.025em] text-[var(--color-ink)]">
                     {task.title}
                   </h1>
                 </div>
@@ -339,10 +339,10 @@ export function TaskDetailView({
                   <button
                     type="button"
                     onClick={triggerReload}
-                    className="inline-flex h-10 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] whitespace-nowrap"
+                    className="inline-flex h-10 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] whitespace-nowrap"
                   >
                     <RefreshCw
-                      className="h-3.5 w-3.5 text-[#525E58]"
+                      className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                       aria-hidden="true"
                     />
                     Refresh
@@ -358,10 +358,10 @@ export function TaskDetailView({
                           if (isHistorical2025 || !editable) return;
                           onEditTask(task);
                         }}
-                        className="inline-flex h-10 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+                        className="inline-flex h-10 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
                       >
                         <Pencil
-                          className="h-3.5 w-3.5 text-[#525E58]"
+                          className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                           aria-hidden="true"
                         />
                         Edit task
@@ -373,7 +373,7 @@ export function TaskDetailView({
                           disabled={actionBusy || isHistorical2025 || !editable}
                           title={isHistorical2025 ? READ_ONLY_2025_MESSAGE : undefined}
                           onClick={() => handleQuickUpdate({ status: 'done' })}
-                          className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[#315F52] px-3.5 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+                          className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
                         >
                           <Check className="h-3.5 w-3.5" aria-hidden="true" />
                           {actionBusy ? 'Updating...' : 'Mark as done'}
@@ -387,7 +387,7 @@ export function TaskDetailView({
               {actionError ? (
                 <div
                   role="alert"
-                  className="mt-4 flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+                  className="mt-4 flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
                 >
                   <AlertCircle
                     className="mt-0.5 h-3.5 w-3.5 shrink-0"
@@ -399,12 +399,12 @@ export function TaskDetailView({
             </div>
 
             {/* Canonical Task Details & Quick Actions */}
-            <section className="rounded-md border border-[#D9D7D0] bg-white p-5">
+            <section className="rounded-md border border-[var(--color-border)] bg-white p-5">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <label
                     htmlFor="detail-task-status"
-                    className="block text-[11px] font-medium text-[#788C83]"
+                    className="block text-[12px] font-medium text-[var(--color-ink-subtle)]"
                   >
                     Status
                   </label>
@@ -419,7 +419,7 @@ export function TaskDetailView({
                           status: e.target.value as TaskStatus,
                         })
                       }
-                      className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-2.5 text-[13px] font-medium text-[#202824] focus:border-[#315F52] focus:outline-none disabled:cursor-not-allowed disabled:bg-[#FAF9F6] disabled:opacity-60"
+                      className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-2.5 text-[14px] font-medium text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)] disabled:opacity-60"
                     >
                       {ALL_TASK_STATUSES.map((st) => (
                         <option key={st} value={st}>
@@ -428,17 +428,17 @@ export function TaskDetailView({
                       ))}
                     </select>
                   ) : (
-                    <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                       {formatTaskStatus(task.status)}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Task type
                   </p>
-                  <p className="mt-1 text-[14px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {formatTaskType(task.task_type)}
                   </p>
                 </div>
@@ -446,7 +446,7 @@ export function TaskDetailView({
                 <div>
                   <label
                     htmlFor="detail-task-owner"
-                    className="block text-[11px] font-medium text-[#788C83]"
+                    className="block text-[12px] font-medium text-[var(--color-ink-subtle)]"
                   >
                     Owner
                   </label>
@@ -461,7 +461,7 @@ export function TaskDetailView({
                       onChange={(e) =>
                         handleQuickUpdate({ owner_member_id: e.target.value })
                       }
-                      className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-2.5 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:cursor-not-allowed disabled:bg-[#FAF9F6] disabled:opacity-60"
+                      className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-2.5 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:cursor-not-allowed disabled:bg-[var(--color-surface-subtle)] disabled:opacity-60"
                     >
                       {ownerChoices.map((o) => (
                         <option key={o.id} value={o.id}>
@@ -470,7 +470,7 @@ export function TaskDetailView({
                       ))}
                     </select>
                   ) : (
-                    <p className="mt-1 text-[14px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {task.owner_name || task.owner_member_id}
                     </p>
                   )}
@@ -478,7 +478,7 @@ export function TaskDetailView({
 
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-medium text-[#788C83]">
+                    <span className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Due date & time
                     </span>
                     {(editable || (isHistorical2025 && permissionProfile.canCreate)) &&
@@ -494,7 +494,7 @@ export function TaskDetailView({
                           setDeadlineTime(dt.time);
                           setEditingDeadline(true);
                         }}
-                        className="text-[11px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                        className="text-[12px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Change
                       </button>
@@ -511,28 +511,28 @@ export function TaskDetailView({
                           required
                           value={deadlineDate}
                           onChange={(e) => setDeadlineDate(e.target.value)}
-                          className="h-8 min-w-0 flex-1 rounded border border-[#D9D7D0] px-2 font-mono text-[12px]"
+                          className="h-8 min-w-0 flex-1 rounded border border-[var(--color-border)] px-2 font-mono text-[13px]"
                         />
                         <input
                           type="time"
                           required
                           value={deadlineTime}
                           onChange={(e) => setDeadlineTime(e.target.value)}
-                          className="h-8 w-24 rounded border border-[#D9D7D0] px-2 font-mono text-[12px]"
+                          className="h-8 w-24 rounded border border-[var(--color-border)] px-2 font-mono text-[13px]"
                         />
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           type="submit"
                           disabled={actionBusy}
-                          className="h-7 rounded bg-[#315F52] px-2.5 text-[11px] font-medium text-white hover:bg-[#264B40]"
+                          className="h-7 rounded bg-[var(--color-accent)] px-2.5 text-[12px] font-medium text-white hover:bg-[var(--color-accent-hover)]"
                         >
                           Save
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingDeadline(false)}
-                          className="h-7 rounded border border-[#D9D7D0] px-2.5 text-[11px] font-medium text-[#525E58]"
+                          className="h-7 rounded border border-[var(--color-border)] px-2.5 text-[12px] font-medium text-[var(--color-ink-muted)]"
                         >
                           Cancel
                         </button>
@@ -540,11 +540,11 @@ export function TaskDetailView({
                     </form>
                   ) : (
                     <div className="mt-1">
-                      <p className="font-mono text-[13px] tabular-nums text-[#202824]">
+                      <p className="font-mono text-[14px] tabular-nums text-[var(--color-ink)]">
                         {formatTaskDueDisplay(task.due_at)}
                       </p>
                       {overdueInfo.isOverdue ? (
-                        <p className="mt-0.5 text-[12px] font-medium text-[#9B3B32]">
+                        <p className="mt-0.5 text-[13px] font-medium text-[#9B3B32]">
                           {overdueInfo.isCancelledAnomaly
                             ? 'Overdue · cancelled task past due date'
                             : 'Overdue'}
@@ -555,19 +555,19 @@ export function TaskDetailView({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Linked record
                   </p>
                   {task.linked_type && task.linked_id ? (
                     <div className="mt-1">
-                      <span className="block text-[11px] text-[#788C83]">
+                      <span className="block text-[12px] text-[var(--color-ink-subtle)]">
                         {formatTaskLinkedType(task.linked_type)}
                       </span>
                       {canDrillLinkedRecord ? (
                         <button
                           type="button"
                           onClick={handleOpenLinkedRecord}
-                          className="inline-flex items-center gap-1 text-[13px] font-medium text-[#315F52] hover:underline"
+                          className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-accent)] hover:underline"
                         >
                           <span>{task.linked_label || task.linked_id}</span>
                           <ArrowUpRight
@@ -576,21 +576,21 @@ export function TaskDetailView({
                           />
                         </button>
                       ) : (
-                        <p className="font-mono text-[13px] text-[#202824]">
+                        <p className="font-mono text-[14px] text-[var(--color-ink)]">
                           {task.linked_label || task.linked_id}
                         </p>
                       )}
                     </div>
                   ) : (
-                    <p className="mt-1 text-[13px] text-[#788C83]">Unlinked</p>
+                    <p className="mt-1 text-[14px] text-[var(--color-ink-subtle)]">Unlinked</p>
                   )}
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Strategic bet
                   </p>
-                  <p className="mt-1 text-[13px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {task.bet_id
                       ? formatBetDisplay(task.bet_id, task.bet_name)
                       : '—'}
@@ -598,24 +598,24 @@ export function TaskDetailView({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Origin
                   </p>
-                  <p className="mt-1 text-[13px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {formatTaskOrigin(task.origin)}
                   </p>
                   {task.ai_action_id ? (
-                    <p className="mt-0.5 font-mono text-[11px] text-[#788C83]">
+                    <p className="mt-0.5 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                       Action: {task.ai_action_id}
                     </p>
                   ) : null}
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Completion & provenance
                   </p>
-                  <p className="mt-1 font-mono text-[12px] text-[#525E58]">
+                  <p className="mt-1 font-mono text-[13px] text-[var(--color-ink-muted)]">
                     {task.completed_at
                       ? `Done ${formatTaskDueDisplay(task.completed_at)}`
                       : task.status === 'done'
@@ -627,9 +627,9 @@ export function TaskDetailView({
             </section>
 
             {/* Dependencies (read-only if supplied) */}
-            <section className="rounded-md border border-[#D9D7D0] bg-white p-5">
+            <section className="rounded-md border border-[var(--color-border)] bg-white p-5">
               <div className="flex items-center gap-1.5">
-                <h2 className="text-[15px] font-semibold text-[#202824]">
+                <h2 className="text-[15px] font-semibold text-[var(--color-ink)]">
                   Task dependencies
                 </h2>
                 <InfoHint
@@ -639,32 +639,32 @@ export function TaskDetailView({
               </div>
 
               {task.dependencies && task.dependencies.length > 0 ? (
-                <ul className="mt-3 divide-y divide-[#E8E6E0] border-t border-[#E8E6E0]">
+                <ul className="mt-3 divide-y divide-[var(--color-border-subtle)] border-t border-[var(--color-border-subtle)]">
                   {task.dependencies.map((dep) => (
                     <li
                       key={dep.dependency_id}
-                      className="flex items-center justify-between gap-4 py-2.5 text-[13px]"
+                      className="flex items-center justify-between gap-4 py-2.5 text-[14px]"
                     >
                       <div className="min-w-0">
                         {onOpenTask ? (
                           <button
                             type="button"
                             onClick={() => onOpenTask(dep.depends_on_task_id)}
-                            className="font-medium text-[#315F52] hover:underline"
+                            className="font-medium text-[var(--color-accent)] hover:underline"
                           >
                             {dep.depends_on_title || dep.depends_on_task_id}
                           </button>
                         ) : (
-                          <span className="font-medium text-[#202824]">
+                          <span className="font-medium text-[var(--color-ink)]">
                             {dep.depends_on_title || dep.depends_on_task_id}
                           </span>
                         )}
-                        <span className="ml-2 font-mono text-[11px] text-[#788C83]">
+                        <span className="ml-2 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                           {dep.depends_on_task_id}
                         </span>
                       </div>
                       {dep.depends_on_status ? (
-                        <span className="text-[12px] text-[#525E58]">
+                        <span className="text-[13px] text-[var(--color-ink-muted)]">
                           {formatTaskStatus(dep.depends_on_status)}
                         </span>
                       ) : null}
@@ -672,7 +672,7 @@ export function TaskDetailView({
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 text-[13px] text-[#525E58]">
+                <p className="mt-2 text-[14px] text-[var(--color-ink-muted)]">
                   No prerequisite dependencies recorded. Managing task
                   dependencies is not yet available in this workspace.
                 </p>
@@ -680,13 +680,13 @@ export function TaskDetailView({
             </section>
 
             {/* Audit History */}
-            <section className="rounded-md border border-[#D9D7D0] bg-white p-5">
-              <h2 className="text-[15px] font-semibold text-[#202824]">
+            <section className="rounded-md border border-[var(--color-border)] bg-white p-5">
+              <h2 className="text-[15px] font-semibold text-[var(--color-ink)]">
                 Audit history
               </h2>
 
               {!permissionProfile.canViewAudit ? (
-                <p className="mt-2 text-[13px] text-[#525E58]">
+                <p className="mt-2 text-[14px] text-[var(--color-ink-muted)]">
                   Audit log access is restricted to Coordination lead roles.
                 </p>
               ) : (
@@ -697,40 +697,40 @@ export function TaskDetailView({
                     onRetry={triggerReload}
                     loadingSkeleton={
                       <div className="space-y-2">
-                        <div className="h-8 rounded bg-[#FAF9F6]" />
-                        <div className="h-8 rounded bg-[#FAF9F6]" />
+                        <div className="h-8 rounded bg-[var(--color-surface-subtle)]" />
+                        <div className="h-8 rounded bg-[var(--color-surface-subtle)]" />
                       </div>
                     }
                   >
                     {auditEvents.length > 0 ? (
-                      <div className="overflow-x-auto border-t border-[#E8E6E0]">
+                      <div className="overflow-x-auto border-t border-[var(--color-border-subtle)]">
                         <table className="w-full border-collapse text-left">
                           <thead>
-                            <tr className="border-b border-[#E8E6E0] text-[12px] font-medium text-[#525E58]">
+                            <tr className="border-b border-[var(--color-border-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                               <th className="py-2.5 pr-4">Timestamp</th>
                               <th className="py-2.5 pr-4">Operation</th>
                               <th className="py-2.5 pr-4">Actor</th>
                               <th className="py-2.5">Details</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-[#E8E6E0] text-[12px]">
+                          <tbody className="divide-y divide-[var(--color-border-subtle)] text-[13px]">
                             {auditEvents.map((ev) => (
                               <tr key={ev.audit_id}>
-                                <td className="py-2.5 pr-4 font-mono tabular-nums text-[#525E58] whitespace-nowrap">
+                                <td className="py-2.5 pr-4 font-mono tabular-nums text-[var(--color-ink-muted)] whitespace-nowrap">
                                   {formatTaskDueDisplay(ev.at)}
                                 </td>
-                                <td className="py-2.5 pr-4 font-medium capitalize text-[#202824] whitespace-nowrap">
+                                <td className="py-2.5 pr-4 font-medium capitalize text-[var(--color-ink)] whitespace-nowrap">
                                   {ev.operation.replace(/_/g, ' ')}
                                 </td>
-                                <td className="py-2.5 pr-4 text-[#525E58] whitespace-nowrap">
+                                <td className="py-2.5 pr-4 text-[var(--color-ink-muted)] whitespace-nowrap">
                                   {ev.actor_name || ev.actor_id}
                                   {ev.ai_action_id ? (
-                                    <span className="ml-1.5 font-mono text-[11px] text-[#788C83]">
+                                    <span className="ml-1.5 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                       ({ev.ai_action_id})
                                     </span>
                                   ) : null}
                                 </td>
-                                <td className="py-2.5 font-mono text-[11px] text-[#525E58]">
+                                <td className="py-2.5 font-mono text-[12px] text-[var(--color-ink-muted)]">
                                   {ev.after ? JSON.stringify(ev.after) : '—'}
                                 </td>
                               </tr>
@@ -739,7 +739,7 @@ export function TaskDetailView({
                         </table>
                       </div>
                     ) : (
-                      <p className="text-[13px] text-[#525E58]">
+                      <p className="text-[14px] text-[var(--color-ink-muted)]">
                         No audit events recorded for this task yet.
                       </p>
                     )}

@@ -28,6 +28,8 @@ import { SponsorFormDrawer } from './SponsorFormDrawer';
 
 interface SponsorsWorkspaceProps {
   showDevControls: boolean;
+  createRequest?: boolean;
+  onCreateRequestHandled?: () => void;
   initialSponsorId?: string | null;
   onClearInitialSponsorId?: () => void;
   onOpenCampaign?: (campaignId: string) => void;
@@ -35,6 +37,8 @@ interface SponsorsWorkspaceProps {
 
 export function SponsorsWorkspace({
   showDevControls,
+  createRequest = false,
+  onCreateRequestHandled,
   initialSponsorId = null,
   onClearInitialSponsorId,
   onOpenCampaign,
@@ -220,6 +224,16 @@ export function SponsorsWorkspace({
     filters.record_class
   );
 
+  useEffect(() => {
+    if (!createRequest) return;
+    if (!isHistoricalReadOnly) {
+      setEditingSponsor(null);
+      setEditRulesContext({ hasNamedInteraction: false, hasPriorContract: false });
+      setFormOpen(true);
+    }
+    onCreateRequestHandled?.();
+  }, [createRequest, isHistoricalReadOnly, onCreateRequestHandled]);
+
   return (
     <>
       {selectedSponsorId ? (
@@ -314,3 +328,4 @@ export function SponsorsWorkspace({
     </>
   );
 }
+

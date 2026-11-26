@@ -1,5 +1,7 @@
 import { Lock, PanelRightOpen } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { stopSpeaking } from '../../lib/speech';
+import { VoiceMode } from './VoiceMode';
 import type { UseGrowthAnalystSessionResult } from '../../hooks/useGrowthAnalystSession';
 import type { AiActionRecord, AiViewSpec } from '../../types/analyst';
 import type { NavSectionId } from '../../types/overview';
@@ -9,7 +11,6 @@ import { DataContextHeader } from './DataContextHeader';
 import { EvidencePanel } from './EvidencePanel';
 import { GrowthAnalystChat } from './GrowthAnalystChat';
 import { OrbStage } from './OrbStage';
-import { ProposedBatchCard } from './ProposedActionCard';
 
 interface GrowthAnalystWorkspaceProps {
   session: UseGrowthAnalystSessionResult;
@@ -38,8 +39,15 @@ export function GrowthAnalystWorkspace({
   onOpenRecord,
   onOpenAiViewScreen,
 }: GrowthAnalystWorkspaceProps) {
+  const [voiceMode,setVoiceMode]=useState(false);
+  const [micError,setMicError]=useState<string|null>(null);
+  useEffect(()=>{const listen=(e:Event)=>setMicError((e as CustomEvent<string|null>).detail);window.addEventListener('analyst:voice-error',listen);return()=>window.removeEventListener('analyst:voice-error',listen);},[]);
+  useEffect(()=>{session.setVoiceModeActive(voiceMode);return()=>session.setVoiceModeActive(false);},[voiceMode,session.setVoiceModeActive]);
+  useEffect(()=>{if(autoStartVoiceNonce>0)setVoiceMode(true);},[autoStartVoiceNonce]);
+  const openVoice=()=>{stopSpeaking();setVoiceMode(true);setMicError(null);if(!session.voiceListening)setToggleVoiceNonce(n=>n+1);};
+  const closeVoice=()=>{if(session.voiceListening)setToggleVoiceNonce(n=>n+1);stopSpeaking();setVoiceMode(false);};
   const [toggleVoiceNonce, setToggleVoiceNonce] = useState(0);
-  const [evidenceOpen, setEvidenceOpen] = useState(true);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<'chat' | 'evidence' | 'actions'>(
     'chat'
   );
@@ -50,34 +58,13 @@ export function GrowthAnalystWorkspace({
     (a) => a.status === 'proposed'
   ).length;
 
-  const groupedSidebarActions: Array<{
-    key: string;
-    batchId: string | null;
-    items: AiActionRecord[];
-  }> = [];
-  const groupIdxByKey = new Map<string, number>();
-  for (const act of session.actions) {
-    const key = act.batch_id || act.ai_action_id;
-    const idx = groupIdxByKey.get(key);
-    if (idx !== undefined) {
-      groupedSidebarActions[idx].items.push(act);
-    } else {
-      groupIdxByKey.set(key, groupedSidebarActions.length);
-      groupedSidebarActions.push({
-        key,
-        batchId: act.batch_id ?? null,
-        items: [act],
-      });
-    }
-  }
-
   const handleConfirmSubmit = async (actionId: string) => {
     await session.confirmAction(actionId);
     setPendingConfirmAction(null);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="analyst-conversation space-y-6">
       <DataContextHeader
         filters={session.filters}
         onChangeRecordClass={session.setRecordClass}
@@ -103,40 +90,40 @@ export function GrowthAnalystWorkspace({
       !session.permissionProfile.canUseAnalyst ? (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-md border border-[#D9D7D0] bg-white p-5"
+          className="flex items-start gap-3 rounded-md border border-[var(--color-border)] bg-white p-5"
         >
           <Lock
             className="mt-0.5 h-4 w-4 shrink-0 text-[#9B3B32]"
             aria-hidden="true"
           />
           <div>
-            <h2 className="text-[14px] font-semibold text-[#202824]">
+            <h2 className="text-[14px] font-semibold text-[var(--color-ink)]">
               Growth Analyst access restricted (403)
             </h2>
-            <p className="mt-1 text-[13px] text-[#525E58]">
+            <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Your account does not carry a sponsorship operations or viewer
               role required for Growth Analyst queries.
             </p>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="flex flex-col gap-5">
           {/* Main Conversation Area */}
           <section
             aria-label="Growth Analyst conversation"
             className={`${
-              mobilePanel === 'chat' ? 'block' : 'hidden lg:block'
-            } ${evidenceOpen ? 'lg:col-span-8' : 'lg:col-span-12'}`}
+              'block'
+            } w-full`}
           >
-            {!evidenceOpen ? (
-              <div className="mb-3 hidden justify-end lg:flex">
+            {!evidenceOpen && session.latestStructured ? (
+              <div className="mb-1 flex justify-end">
                 <button
                   type="button"
                   onClick={() => setEvidenceOpen(true)}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                 >
-                  <PanelRightOpen className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
-                  <span>Show evidence &amp; actions</span>
+                  <PanelRightOpen className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
+                  <span>Evidence & sources</span>
                 </button>
               </div>
             ) : null}
@@ -147,7 +134,9 @@ export function GrowthAnalystWorkspace({
               steps={session.progressSteps}
               transcript={session.interimTranscript}
               errorText={session.error?.message ?? null}
-              onToggleMic={() => setToggleVoiceNonce((n) => n + 1)}
+              onToggleMic={openVoice}
+              onVoiceMode={openVoice}
+              onStopSpeaking={stopSpeaking}
               onActivate={() => {
                 const el = document.querySelector<HTMLTextAreaElement>(
                   'textarea[aria-label="Growth Analyst question"]'
@@ -202,11 +191,11 @@ export function GrowthAnalystWorkspace({
           </section>
 
           {/* Right Side Workspace: Evidence & Context + Action Workspace */}
-          {evidenceOpen ? (
-            <div className="space-y-4 lg:col-span-4">
+          {evidenceOpen && session.latestStructured ? (
+            <div className="space-y-4">
               <div
                 className={
-                  mobilePanel === 'evidence' ? 'block' : 'hidden lg:block'
+                  'block'
                 }
               >
                 <EvidencePanel
@@ -220,79 +209,12 @@ export function GrowthAnalystWorkspace({
                   onOpenLinkedRecord={onOpenRecord}
                 />
               </div>
-
-              <section
-                aria-label="Action workspace"
-                className={`space-y-3 rounded-md border border-[#D9D7D0] bg-white p-4 ${
-                  mobilePanel === 'actions' ? 'block' : 'hidden lg:block'
-                }`}
-              >
-                <div className="flex items-center justify-between border-b border-[#E8E6E0] pb-2.5">
-                  <h2 className="text-[14px] font-semibold text-[#202824]">
-                    Action workspace
-                  </h2>
-                  <span className="font-mono text-[11px] text-[#788C83]">
-                    {pendingCount} pending
-                  </span>
-                </div>
-
-                {groupedSidebarActions.length === 0 ? (
-                  <p className="text-[12px] text-[#788C83]">
-                    Proposed tasks, interactions, meetings, pipeline moves, or
-                    deal confirmations will appear here for explicit confirmation
-                    before any write occurs.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {groupedSidebarActions.map((group) => {
-                      const batchId = group.batchId;
-                      const busy =
-                        (batchId ? session.batchProcessingId === batchId : false) ||
-                        group.items.some(
-                          (a) => session.actionProcessingId === a.ai_action_id
-                        );
-                      const groupError =
-                        (batchId ? session.batchErrorById[batchId] : null) ??
-                        group.items
-                          .map((a) => session.actionErrorById[a.ai_action_id])
-                          .find((e) => Boolean(e)) ??
-                        null;
-
-                      return (
-                        <ProposedBatchCard
-                          key={group.key}
-                          actions={group.items}
-                          permissionProfile={session.permissionProfile}
-                          processing={busy}
-                          errorMessage={groupError}
-                          onConfirmAll={(acts) => {
-                            if (batchId && acts.length >= 2) {
-                              void session.confirmBatch(batchId);
-                            } else if (acts[0]) {
-                              setPendingConfirmAction(acts[0]);
-                            }
-                          }}
-                          onCancelAll={(acts) => {
-                            if (batchId && acts.length >= 2) {
-                              void session.cancelBatch(batchId);
-                            } else if (acts[0]) {
-                              void session.cancelAction(acts[0].ai_action_id);
-                            }
-                          }}
-                          onEditAction={onEditAction}
-                          onOpenRecord={onOpenRecord}
-                          compact
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
             </div>
           ) : null}
         </div>
       )}
 
+      <VoiceMode open={voiceMode} state={session.orbState} listening={session.voiceListening} transcript={session.interimTranscript} answer={[...session.messages].reverse().find(m=>m.role==='assistant')?.content??''} error={micError??session.error?.message} step={session.progressSteps.at(-1)} onToggleMic={()=>{stopSpeaking();setToggleVoiceNonce(n=>n+1);}} onStopSpeaking={stopSpeaking} onClose={closeVoice}/>
       <ActionConfirmationDialog
         action={pendingConfirmAction}
         processing={
@@ -306,3 +228,4 @@ export function GrowthAnalystWorkspace({
     </div>
   );
 }
+

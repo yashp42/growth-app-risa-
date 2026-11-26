@@ -494,7 +494,7 @@ export function CampaignDetailView({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#525E58] transition-colors duration-150 hover:text-[#202824]"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--color-ink-muted)] transition-colors duration-150 hover:text-[var(--color-ink)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back to Campaigns
@@ -507,17 +507,17 @@ export function CampaignDetailView({
         error={campaignError}
         onRetry={triggerReload}
         loadingSkeleton={
-          <div className="border-b border-[#D9D7D0] pb-6">
-            <div className="h-7 w-64 rounded bg-[#E8E6E0]" />
-            <div className="mt-2 h-4 w-80 rounded bg-[#F3F1EB]" />
+          <div className="border-b border-[var(--color-border)] pb-6">
+            <div className="h-7 w-64 rounded bg-[var(--color-border-subtle)]" />
+            <div className="mt-2 h-4 w-80 rounded bg-[var(--color-canvas)]" />
           </div>
         }
       >
         {campaign ? (
-          <div className="border-b border-[#D9D7D0] pb-5">
+          <div className="border-b border-[var(--color-border)] pb-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-[#788C83]">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[var(--color-ink-subtle)]">
                   <span>
                     {formatChannelDisplay(
                       campaign.channel_id,
@@ -527,24 +527,24 @@ export function CampaignDetailView({
                   <span aria-hidden="true">·</span>
                   <span>{formatCampaignStatus(campaign.status)}</span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono text-[11px]">
+                  <span className="font-mono text-[12px]">
                     {formatRecordClassLabel(campaign.record_class)} ·{' '}
                     {campaign.edition_id}
                   </span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono text-[11px]">
+                  <span className="font-mono text-[12px]">
                     As of {asOfDate}
                   </span>
                   {readOnly ? (
                     <>
                       <span aria-hidden="true">·</span>
-                      <span className="font-mono text-[11px] text-[#525E58]">
+                      <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                         {isHistorical2025 ? READ_ONLY_2025_MESSAGE : 'Read-only'}
                       </span>
                     </>
                   ) : null}
                 </div>
-                <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.025em] text-[#202824]">
+                <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.025em] text-[var(--color-ink)]">
                   {campaign.name}
                 </h1>
               </div>
@@ -553,9 +553,9 @@ export function CampaignDetailView({
                 <button
                   type="button"
                   onClick={triggerReload}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                 >
-                  <RefreshCw className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
+                  <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
                   Refresh
                 </button>
                 {!readOnly || isHistorical2025 ? (
@@ -566,9 +566,9 @@ export function CampaignDetailView({
                     onClick={() => {
                       if (!readOnly) onEditCampaign(campaign);
                     }}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Pencil className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
+                    <Pencil className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
                     Edit
                   </button>
                 ) : null}
@@ -579,7 +579,7 @@ export function CampaignDetailView({
             <div
               role="tablist"
               aria-label="Campaign workspace sections"
-              className="mt-6 flex flex-wrap gap-1 border-t border-[#E8E6E0] pt-4"
+              className="mt-6 flex flex-wrap gap-1 border-t border-[var(--color-border-subtle)] pt-4"
             >
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -590,17 +590,17 @@ export function CampaignDetailView({
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
+                    className={`rounded-md px-3 py-1.5 text-[14px] font-medium transition-colors duration-150 whitespace-nowrap ${
                       isActive
-                        ? 'bg-[#315F52] text-white'
-                        : 'text-[#525E58] hover:bg-white hover:text-[#202824]'
+                        ? 'bg-[var(--color-accent)] text-white'
+                        : 'text-[var(--color-ink-muted)] hover:bg-white hover:text-[var(--color-ink)]'
                     }`}
                   >
                     <span>{tab.label}</span>
                     {tab.count !== undefined ? (
                       <span
-                        className={`ml-1.5 font-mono text-[11px] tabular-nums ${
-                          isActive ? 'text-white/80' : 'text-[#788C83]'
+                        className={`ml-1.5 font-mono text-[12px] tabular-nums ${
+                          isActive ? 'text-white/80' : 'text-[var(--color-ink-subtle)]'
                         }`}
                       >
                         {tab.count}
@@ -620,21 +620,21 @@ export function CampaignDetailView({
           {/* 1. Overview tab */}
           {activeTab === 'overview' ? (
             <div className="space-y-6">
-              <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
+              <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Owner
                     </p>
-                    <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                       {campaign.owner_name || campaign.owner_member_id || '—'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Channel
                     </p>
-                    <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                       {formatChannelDisplay(
                         campaign.channel_id,
                         campaign.channel_name
@@ -642,18 +642,18 @@ export function CampaignDetailView({
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Strategic bet
                     </p>
-                    <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                       {formatBetDisplay(campaign.bet_id, campaign.bet_name)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Planned window
                     </p>
-                    <p className="mt-1 font-mono text-[13px] text-[#202824]">
+                    <p className="mt-1 font-mono text-[14px] text-[var(--color-ink)]">
                       {campaign.planned_start || campaign.planned_end
                         ? `${campaign.planned_start ?? '—'} → ${campaign.planned_end ?? '—'}`
                         : '—'}
@@ -662,11 +662,11 @@ export function CampaignDetailView({
                 </div>
 
                 {campaign.objective ? (
-                  <div className="mt-4 border-t border-[#E8E6E0] pt-4">
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                  <div className="mt-4 border-t border-[var(--color-border-subtle)] pt-4">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Objective
                     </p>
-                    <p className="mt-1 text-[13px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {campaign.objective}
                     </p>
                   </div>
@@ -675,7 +675,7 @@ export function CampaignDetailView({
 
               {/* Canonical campaign metrics: M-23, M-11, M-13, M-09, M-02, M-17 */}
               <div>
-                <h2 className="mb-3 text-[15px] font-semibold text-[#202824]">
+                <h2 className="mb-3 text-[15px] font-semibold text-[var(--color-ink)]">
                   Campaign performance metrics
                 </h2>
                 {metricsLoading ? (
@@ -683,10 +683,10 @@ export function CampaignDetailView({
                     {[0, 1, 2, 3, 4, 5].map((i) => (
                       <div
                         key={i}
-                        className="rounded-md border border-[#D9D7D0] bg-white p-4"
+                        className="rounded-md border border-[var(--color-border)] bg-white p-4"
                       >
-                        <div className="h-3 w-24 rounded bg-[#E8E6E0]" />
-                        <div className="mt-3 h-7 w-20 rounded bg-[#E8E6E0]" />
+                        <div className="h-3 w-24 rounded bg-[var(--color-border-subtle)]" />
+                        <div className="mt-3 h-7 w-20 rounded bg-[var(--color-border-subtle)]" />
                       </div>
                     ))}
                   </div>
@@ -705,26 +705,26 @@ export function CampaignDetailView({
                       return (
                         <div
                           key={metricId}
-                          className="rounded-md border border-[#D9D7D0] bg-white p-4"
+                          className="rounded-md border border-[var(--color-border)] bg-white p-4"
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[#525E58]">
+                            <span className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-ink-muted)]">
                               <span>{def.name}</span>
                               <InfoHint
                                 label={`${def.metric_id} ${def.name}`}
                                 content={`${def.formula}. ${def.inclusion_exclusion}`}
                               />
                             </span>
-                            <span className="font-mono text-[11px] text-[#788C83]">
+                            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                               {metricId}
                             </span>
                           </div>
 
-                          <p className="mt-2.5 text-[24px] font-semibold tracking-[-0.02em] text-[#202824] tabular-nums">
+                          <p className="mt-2.5 text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
                             {formatMetricValue(entry)}
                           </p>
 
-                          <div className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[11px] text-[#788C83]">
+                          <div className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                             <span>
                               {hasRatioParts
                                 ? `${entry.numerator} / ${entry.denominator}`
@@ -755,27 +755,27 @@ export function CampaignDetailView({
               error={activityError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="space-y-3 rounded-md border border-[#D9D7D0] bg-white p-5">
+                <div className="space-y-3 rounded-md border border-[var(--color-border)] bg-white p-5">
                   {[0, 1, 2].map((i) => (
-                    <div key={i} className="h-10 rounded bg-[#FAF9F6]" />
+                    <div key={i} className="h-10 rounded bg-[var(--color-surface-subtle)]" />
                   ))}
                 </div>
               }
             >
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                 {timelineEntries.length > 0 ? (
-                  <ul className="divide-y divide-[#E8E6E0]">
+                  <ul className="divide-y divide-[var(--color-border-subtle)]">
                     {timelineEntries.map((item) => (
                       <li key={item.key} className="px-5 py-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#788C83]">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-[var(--color-ink-subtle)]">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium capitalize text-[#315F52]">
+                            <span className="font-medium capitalize text-[var(--color-accent)]">
                               {item.event_type}
                             </span>
                             {item.sponsor_label ? (
                               <>
                                 <span aria-hidden="true">·</span>
-                                <span className="font-medium text-[#202824]">
+                                <span className="font-medium text-[var(--color-ink)]">
                                   {item.sponsor_label}
                                 </span>
                               </>
@@ -789,23 +789,23 @@ export function CampaignDetailView({
                             {item.outcome ? (
                               <>
                                 <span aria-hidden="true">·</span>
-                                <span className="font-mono text-[11px] text-[#525E58]">
+                                <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                                   {item.outcome.replace(/_/g, ' ')}
                                 </span>
                               </>
                             ) : null}
                           </div>
-                          <span className="font-mono text-[11px] tabular-nums">
+                          <span className="font-mono text-[12px] tabular-nums">
                             {item.occurred_at}
                           </span>
                         </div>
                         {item.summary ? (
-                          <p className="mt-1.5 text-[13px] text-[#202824]">
+                          <p className="mt-1.5 text-[14px] text-[var(--color-ink)]">
                             {item.summary}
                           </p>
                         ) : null}
                         {item.actor_label ? (
-                          <p className="mt-1 text-[12px] text-[#788C83]">
+                          <p className="mt-1 text-[13px] text-[var(--color-ink-subtle)]">
                             {item.actor_label}
                           </p>
                         ) : null}
@@ -814,7 +814,7 @@ export function CampaignDetailView({
                   </ul>
                 ) : (
                   <div className="px-6 py-10 text-center">
-                    <p className="text-[13px] font-medium text-[#202824]">
+                    <p className="text-[14px] font-medium text-[var(--color-ink)]">
                       No activity yet
                     </p>
                   </div>
@@ -837,13 +837,13 @@ export function CampaignDetailView({
               error={activityError ?? opportunitiesError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <div className="h-24 rounded bg-[#FAF9F6]" />
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                 </div>
               }
             >
               <div className="space-y-3">
-                <div className="flex items-center gap-1.5 text-[12px] text-[#788C83]">
+                <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-subtle)]">
                   <span>Associated organisations</span>
                   <InfoHint
                     label="Cross-campaign sponsor attribution"
@@ -851,12 +851,12 @@ export function CampaignDetailView({
                   />
                 </div>
 
-                <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+                <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                   {sponsorAssociations.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-left">
                         <thead>
-                          <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                          <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                             <th className="px-4 py-3">Organisation</th>
                             <th className="px-4 py-3">Contacts</th>
                             <th className="px-4 py-3 text-right">Attempts</th>
@@ -868,18 +868,18 @@ export function CampaignDetailView({
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                        <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                           {sponsorAssociations.map((sp) => (
                             <tr
                               key={sp.sponsor_key}
-                              className="hover:bg-[#FAF9F6]"
+                              className="hover:bg-[var(--color-surface-subtle)]"
                             >
-                              <td className="px-4 py-3 font-medium text-[#202824]">
+                              <td className="px-4 py-3 font-medium text-[var(--color-ink)]">
                                 {sp.sponsor_id && onOpenSponsor ? (
                                   <button
                                     type="button"
                                     onClick={() => onOpenSponsor(sp.sponsor_id!)}
-                                    className="text-left hover:text-[#315F52] hover:underline"
+                                    className="text-left hover:text-[var(--color-accent)] hover:underline"
                                   >
                                     {sp.sponsor_name}
                                   </button>
@@ -887,7 +887,7 @@ export function CampaignDetailView({
                                   sp.sponsor_name
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-[#525E58]">
+                              <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                                 {sp.contacts.length > 0
                                   ? sp.contacts
                                       .map((c) =>
@@ -896,13 +896,13 @@ export function CampaignDetailView({
                                       .join(', ')
                                   : '—'}
                               </td>
-                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                                 {sp.attempt_count}
                               </td>
-                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                                 {sp.interaction_count}
                               </td>
-                              <td className="px-4 py-3 text-right font-mono text-[12px] tabular-nums text-[#788C83]">
+                              <td className="px-4 py-3 text-right font-mono text-[13px] tabular-nums text-[var(--color-ink-subtle)]">
                                 {sp.latest_activity_at ?? '—'}
                               </td>
                             </tr>
@@ -912,7 +912,7 @@ export function CampaignDetailView({
                     </div>
                   ) : (
                     <div className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No associated sponsors yet
                       </p>
                     </div>
@@ -929,13 +929,13 @@ export function CampaignDetailView({
               error={opportunitiesError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <div className="h-24 rounded bg-[#FAF9F6]" />
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                 </div>
               }
             >
               <div className="space-y-3">
-                <div className="flex items-center gap-1.5 text-[12px] text-[#788C83]">
+                <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-subtle)]">
                   <span>Originated opportunities</span>
                   <InfoHint
                     label="Support type and monetary separation"
@@ -943,12 +943,12 @@ export function CampaignDetailView({
                   />
                 </div>
 
-                <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+                <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                   {opportunities.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-left">
                         <thead>
-                          <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                          <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                             <th className="px-4 py-3">Opportunity</th>
                             <th className="px-4 py-3">Sponsor</th>
                             <th className="px-4 py-3">Support type</th>
@@ -961,28 +961,28 @@ export function CampaignDetailView({
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                        <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                           {opportunities.map((opp) => (
                             <tr
                               key={opp.opportunity_id}
-                              className="hover:bg-[#FAF9F6]"
+                              className="hover:bg-[var(--color-surface-subtle)]"
                             >
-                              <td className="px-4 py-3 font-medium text-[#202824]">
+                              <td className="px-4 py-3 font-medium text-[var(--color-ink)]">
                                 {opp.name || opp.opportunity_id}
                               </td>
-                              <td className="px-4 py-3 text-[#525E58]">
+                              <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                                 {opp.sponsor_name || opp.sponsor_id}
                               </td>
-                              <td className="px-4 py-3 text-[#525E58]">
+                              <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                                 {formatSupportType(opp.support_type)}
                               </td>
-                              <td className="px-4 py-3 text-[#202824]">
+                              <td className="px-4 py-3 text-[var(--color-ink)]">
                                 {formatOpportunityStage(opp.stage)}
                               </td>
-                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                                 {formatCurrencyInr(opp.proposed_value)}
                               </td>
-                              <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[#315F52]">
+                              <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[var(--color-accent)]">
                                 {formatCurrencyInr(opp.confirmed_value)}
                               </td>
                             </tr>
@@ -992,7 +992,7 @@ export function CampaignDetailView({
                     </div>
                   ) : (
                     <div className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No opportunities yet
                       </p>
                     </div>
@@ -1016,7 +1016,7 @@ export function CampaignDetailView({
                       setTaskFormError(null);
                       setShowTaskForm((prev) => !prev);
                     }}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                     New task
@@ -1027,12 +1027,12 @@ export function CampaignDetailView({
               {showTaskForm && !readOnly ? (
                 <form
                   onSubmit={handleCreateTask}
-                  className="space-y-3 rounded-md border border-[#D9D7D0] bg-white p-4"
+                  className="space-y-3 rounded-md border border-[var(--color-border)] bg-white p-4"
                 >
                   {taskFormError ? (
                     <div
                       role="alert"
-                      className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3 py-2 text-[12px] text-[#9B3B32]"
+                      className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3 py-2 text-[13px] text-[#9B3B32]"
                     >
                       <AlertCircle
                         className="mt-0.5 h-3.5 w-3.5 shrink-0"
@@ -1046,7 +1046,7 @@ export function CampaignDetailView({
                     <div>
                       <label
                         htmlFor="campaign-task-title"
-                        className="block text-[11px] font-medium text-[#788C83]"
+                        className="block text-[12px] font-medium text-[var(--color-ink-subtle)]"
                       >
                         Task title
                       </label>
@@ -1057,14 +1057,14 @@ export function CampaignDetailView({
                         value={taskTitle}
                         onChange={(e) => setTaskTitle(e.target.value)}
                         placeholder="Follow up on proposal"
-                        className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                        className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                       />
                     </div>
 
                     <div>
                       <label
                         htmlFor="campaign-task-type"
-                        className="block text-[11px] font-medium text-[#788C83]"
+                        className="block text-[12px] font-medium text-[var(--color-ink-subtle)]"
                       >
                         Task type
                       </label>
@@ -1074,7 +1074,7 @@ export function CampaignDetailView({
                         onChange={(e) =>
                           setTaskType(e.target.value as CanonicalTaskType)
                         }
-                        className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                        className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                       >
                         {CANONICAL_TASK_TYPE_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
@@ -1087,7 +1087,7 @@ export function CampaignDetailView({
                     <div>
                       <label
                         htmlFor="campaign-task-owner"
-                        className="block text-[11px] font-medium text-[#788C83]"
+                        className="block text-[12px] font-medium text-[var(--color-ink-subtle)]"
                       >
                         Owner member ID
                       </label>
@@ -1098,14 +1098,14 @@ export function CampaignDetailView({
                         value={taskOwnerId}
                         onChange={(e) => setTaskOwnerId(e.target.value)}
                         placeholder="e.g. TM-01"
-                        className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] placeholder:font-sans focus:border-[#315F52] focus:outline-none"
+                        className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans focus:border-[var(--color-accent)] focus:outline-none"
                       />
                     </div>
 
                     <div>
                       <label
                         htmlFor="campaign-task-due"
-                        className="block text-[11px] font-medium text-[#788C83]"
+                        className="block text-[12px] font-medium text-[var(--color-ink-subtle)]"
                       >
                         Due date
                       </label>
@@ -1115,7 +1115,7 @@ export function CampaignDetailView({
                         required
                         value={taskDueAt}
                         onChange={(e) => setTaskDueAt(e.target.value)}
-                        className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                        className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1124,14 +1124,14 @@ export function CampaignDetailView({
                     <button
                       type="button"
                       onClick={() => setShowTaskForm(false)}
-                      className="h-8 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                      className="h-8 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={taskSubmitting}
-                      className="h-8 rounded-md bg-[#315F52] px-3.5 text-[12px] font-medium text-white hover:bg-[#264B40] disabled:opacity-60"
+                      className="h-8 rounded-md bg-[var(--color-accent)] px-3.5 text-[13px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
                     >
                       {taskSubmitting ? 'Saving...' : 'Create task'}
                     </button>
@@ -1144,14 +1144,14 @@ export function CampaignDetailView({
                 error={tasksError}
                 onRetry={triggerReload}
                 loadingSkeleton={
-                  <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                    <div className="h-20 rounded bg-[#FAF9F6]" />
+                  <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                    <div className="h-20 rounded bg-[var(--color-surface-subtle)]" />
                   </div>
                 }
               >
-                <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+                <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                   {tasks.length > 0 ? (
-                    <ul className="divide-y divide-[#E8E6E0]">
+                    <ul className="divide-y divide-[var(--color-border-subtle)]">
                       {tasks.map((task) => {
                         const completed = task.status === 'done';
                         return (
@@ -1172,8 +1172,8 @@ export function CampaignDetailView({
                                 }
                                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
                                   completed
-                                    ? 'border-[#315F52] bg-[#315F52] text-white'
-                                    : 'border-[#D9D7D0] bg-white hover:border-[#315F52]'
+                                    ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
+                                    : 'border-[var(--color-border)] bg-white hover:border-[var(--color-accent)]'
                                 } disabled:cursor-not-allowed disabled:opacity-60`}
                               >
                                 {completed ? (
@@ -1182,26 +1182,26 @@ export function CampaignDetailView({
                               </button>
                               <div className="min-w-0">
                                 <p
-                                  className={`truncate text-[13px] font-medium ${
+                                  className={`truncate text-[14px] font-medium ${
                                     completed
-                                      ? 'line-through text-[#788C83]'
-                                      : 'text-[#202824]'
+                                      ? 'line-through text-[var(--color-ink-subtle)]'
+                                      : 'text-[var(--color-ink)]'
                                   }`}
                                 >
                                   {task.title}
                                 </p>
-                                <p className="text-[12px] text-[#788C83]">
+                                <p className="text-[13px] text-[var(--color-ink-subtle)]">
                                   {task.task_type.replace(/_/g, ' ')} ·{' '}
                                   {task.owner_name || task.owner_member_id}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-4 shrink-0 text-[12px]">
-                              <span className="font-mono text-[#525E58] tabular-nums">
+                            <div className="flex items-center gap-4 shrink-0 text-[13px]">
+                              <span className="font-mono text-[var(--color-ink-muted)] tabular-nums">
                                 {task.due_at ? task.due_at.slice(0, 10) : '—'}
                               </span>
-                              <span className="font-mono text-[11px] text-[#788C83]">
+                              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                 {task.status.replace(/_/g, ' ')}
                               </span>
                             </div>
@@ -1211,7 +1211,7 @@ export function CampaignDetailView({
                     </ul>
                   ) : (
                     <div className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No tasks yet
                       </p>
                     </div>

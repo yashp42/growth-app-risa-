@@ -131,7 +131,7 @@ export function ReceiptFormDrawer({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {!permissionProfile.verifiedByServer ? (
-          <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Unverified session preview: Finance &amp; Collections role is
             required on the server to log receipts.
           </div>
@@ -140,7 +140,7 @@ export function ReceiptFormDrawer({
         {errorMsg ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
@@ -150,7 +150,7 @@ export function ReceiptFormDrawer({
         <div>
           <label
             htmlFor="receipt-sponsor"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Sponsor
           </label>
@@ -159,7 +159,7 @@ export function ReceiptFormDrawer({
               id="receipt-sponsor"
               value={sponsorId}
               onChange={(e) => setSponsorId(e.target.value)}
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             >
               {sponsorOptions.map((s) => (
@@ -175,7 +175,7 @@ export function ReceiptFormDrawer({
               value={sponsorId}
               onChange={(e) => setSponsorId(e.target.value)}
               placeholder="Enter sponsor_id"
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           )}
@@ -185,7 +185,7 @@ export function ReceiptFormDrawer({
           <div>
             <label
               htmlFor="receipt-date"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Received date
             </label>
@@ -194,7 +194,7 @@ export function ReceiptFormDrawer({
               type="date"
               value={receivedAt}
               onChange={(e) => setReceivedAt(e.target.value)}
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           </div>
@@ -202,7 +202,7 @@ export function ReceiptFormDrawer({
           <div>
             <label
               htmlFor="receipt-method"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Payment method
             </label>
@@ -210,7 +210,7 @@ export function ReceiptFormDrawer({
               id="receipt-method"
               value={method}
               onChange={(e) => setMethod(e.target.value as ReceiptMethod)}
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             >
               {ALL_RECEIPT_METHODS.map((m) => (
                 <option key={m} value={m}>
@@ -225,7 +225,7 @@ export function ReceiptFormDrawer({
           <div>
             <label
               htmlFor="receipt-amount"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Amount received (INR)
             </label>
@@ -237,7 +237,7 @@ export function ReceiptFormDrawer({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="e.g. 125000"
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           </div>
@@ -245,7 +245,7 @@ export function ReceiptFormDrawer({
           <div>
             <label
               htmlFor="receipt-bank-ref"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Bank reference (unique)
             </label>
@@ -255,35 +255,35 @@ export function ReceiptFormDrawer({
               value={bankReference}
               onChange={(e) => setBankReference(e.target.value)}
               placeholder="e.g. UTR402918374"
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           </div>
         </div>
 
-        <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-3 text-[12px] text-[#202824]">
+        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-3 text-[13px] text-[var(--color-ink)]">
           <span className="font-medium">
             Step 1 of 2 — Logged as unreconciled
           </span>
-          <span className="mt-0.5 block text-[#525E58]">
+          <span className="mt-0.5 block text-[var(--color-ink-muted)]">
             New receipts always start unreconciled (received, not yet counted
             toward collected cash). After saving, allocate the receipt to an
             invoice or schedule item and mark it reconciled on the Receipts tab.
           </span>
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2.5 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-4 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Recording...' : 'Save receipt'}
           </button>

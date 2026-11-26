@@ -33,10 +33,10 @@ function ChannelBadge({ channel }: { channel: AuditLogEvent['channel'] }) {
   const isAi = channel === 'ai_action';
   return (
     <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] ${
+      className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[12px] ${
         isAi
-          ? 'border border-[#BFD3CB] bg-[#EEF5F2] text-[#264B40]'
-          : 'border border-[#E8E6E0] bg-[#FAF9F6] text-[#525E58]'
+          ? 'border border-[#BFD3CB] bg-[#EEF5F2] text-[var(--color-accent-hover)]'
+          : 'border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] text-[var(--color-ink-muted)]'
       }`}
     >
       {channel}
@@ -64,16 +64,16 @@ export function AuditLogPanel() {
     <section
       id={AUDIT_LOG_ANCHOR_ID}
       aria-labelledby="audit-log-heading"
-      className="scroll-mt-6 rounded-md border border-[#D9D7D0] bg-white p-6"
+      className="scroll-mt-6 rounded-md border border-[var(--color-border)] bg-white p-6"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 id="audit-log-heading" className="text-[16px] font-semibold text-[#202824]">
+          <h2 id="audit-log-heading" className="text-[16px] font-semibold text-[var(--color-ink)]">
             Audit log
           </h2>
-          <p className="mt-1 text-[13px] text-[#525E58]">
+          <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
             Latest {AUDIT_LOG_LIMIT} writes, read-only. Channel{' '}
-            <code className="font-mono text-[12px]">ai_action</code> marks changes applied
+            <code className="font-mono text-[13px]">ai_action</code> marks changes applied
             after a person accepted an analyst proposal.
           </p>
         </div>
@@ -81,7 +81,7 @@ export function AuditLogPanel() {
           type="button"
           onClick={() => void query.refetch()}
           disabled={query.isFetching}
-          className="inline-flex items-center gap-1.5 rounded-md border border-[#D9D7D0] px-3 py-1.5 text-[12px] font-medium text-[#525E58] hover:border-[#788C83] hover:text-[#202824] disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-ink-muted)] hover:border-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] disabled:opacity-50"
         >
           <RefreshCw
             className={`h-3.5 w-3.5 ${query.isFetching ? 'animate-spin' : ''}`}
@@ -93,21 +93,21 @@ export function AuditLogPanel() {
 
       <div className="mt-4">
         {forbidden ? (
-          <p className="text-[13px] text-[#788C83]">
+          <p className="text-[14px] text-[var(--color-ink-subtle)]">
             The audit log needs the coordination lead or admin role.
           </p>
         ) : query.isLoading ? (
-          <p className="text-[13px] text-[#788C83]">Loading audit log…</p>
+          <p className="text-[14px] text-[var(--color-ink-subtle)]">Loading audit log…</p>
         ) : query.isError ? (
-          <p className="text-[13px] text-[#9B3B32]">
+          <p className="text-[14px] text-[#9B3B32]">
             Couldn't load the audit log: {(query.error as Error).message}
           </p>
         ) : events.length === 0 ? (
-          <p className="text-[13px] text-[#788C83]">No audit events yet.</p>
+          <p className="text-[14px] text-[var(--color-ink-subtle)]">No audit events yet.</p>
         ) : (
-          <div className="overflow-x-auto rounded-md border border-[#E8E6E0]">
-            <table className="min-w-full divide-y divide-[#E8E6E0] text-left text-[12px]">
-              <thead className="bg-[#FAF9F6] text-[11px] uppercase tracking-wide text-[#788C83]">
+          <div className="overflow-x-auto rounded-md border border-[var(--color-border-subtle)]">
+            <table className="min-w-full divide-y divide-[var(--color-border-subtle)] text-left text-[13px]">
+              <thead className="bg-[var(--color-surface-subtle)] text-[12px] uppercase tracking-wide text-[var(--color-ink-subtle)]">
                 <tr>
                   <th scope="col" className="px-3 py-2 font-medium">Time (IST)</th>
                   <th scope="col" className="px-3 py-2 font-medium">Actor</th>
@@ -119,25 +119,25 @@ export function AuditLogPanel() {
               <tbody className="divide-y divide-[#F0EEE8]">
                 {events.map((ev) => (
                   <tr key={ev.audit_id}>
-                    <td className="whitespace-nowrap px-3 py-2 font-mono tabular-nums text-[#525E58]">
+                    <td className="whitespace-nowrap px-3 py-2 font-mono tabular-nums text-[var(--color-ink-muted)]">
                       {formatIstTime(ev.at)}
                     </td>
-                    <td className="px-3 py-2 text-[#202824]">
+                    <td className="px-3 py-2 text-[var(--color-ink)]">
                       {ev.actor_name ?? ev.actor_id}
-                      <span className="ml-1 font-mono text-[11px] text-[#788C83]">
+                      <span className="ml-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                         {ev.actor_id}
                       </span>
                     </td>
                     <td className="px-3 py-2">
                       <ChannelBadge channel={ev.channel} />
                     </td>
-                    <td className="px-3 py-2 text-[#202824]">
+                    <td className="px-3 py-2 text-[var(--color-ink)]">
                       {ev.entity.toLowerCase().replace(/_/g, ' ')}
-                      <span className="ml-1 font-mono text-[11px] text-[#788C83]">
+                      <span className="ml-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                         {ev.entity_id}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-[#202824]">
+                    <td className="px-3 py-2 text-[var(--color-ink)]">
                       {OPERATION_LABEL[ev.operation] ?? ev.operation}
                     </td>
                   </tr>

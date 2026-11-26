@@ -42,13 +42,7 @@ function formatMetricValue(value: number | null, unit: string | null): string {
 }
 
 function SourceChip({ source, dataVersion }: { source: string; dataVersion: number | string | null }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded border border-[#E8E6E0] bg-[#FAF9F6] px-1.5 py-0.5 font-mono text-[10px] text-[#525E58]">
-      <Database className="h-3 w-3" aria-hidden="true" />
-      {source}
-      {dataVersion !== null && dataVersion !== undefined ? ` · data v${String(dataVersion)}` : ''}
-    </span>
-  );
+ return <details className="relative text-xs text-[var(--color-ink-subtle)]"><summary className="inline-flex cursor-pointer items-center gap-1"><Database size={12} aria-hidden="true"/>Source</summary><div className="absolute right-0 z-20 mt-2 min-w-48 max-w-80 break-words rounded-lg border bg-white p-3 shadow-lg">{source}{dataVersion!==null&&dataVersion!==undefined?` · data v${String(dataVersion)}`:''}</div></details>;
 }
 
 function BlockFrame({
@@ -63,9 +57,9 @@ function BlockFrame({
   children: React.ReactNode;
 }) {
   return (
-    <figure className="rounded-md border border-[#D9D7D0] bg-white p-3.5">
+    <figure className="rounded-md border border-[var(--color-border)] bg-white p-3.5">
       <figcaption className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2">
-        <span className="text-[13px] font-semibold text-[#202824]">{title}</span>
+        <span className="text-[14px] font-semibold text-[var(--color-ink)]">{title}</span>
         <SourceChip source={source} dataVersion={dataVersion} />
       </figcaption>
       {children}
@@ -99,11 +93,11 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
 
   return (
     <BlockFrame title={block.title} source={block.source} dataVersion={block.data_version}>
-      {block.status ? <p className="mb-2 text-[11px] text-[#525E58]">{block.status}</p> : null}
-      {block.source_path ? <p className="mb-2 break-all text-[10px] text-[#788C83]">{block.source_path}{block.source_sha256 ? ' · SHA-256 ' + block.source_sha256 : ''}</p> : null}
-      <div className="overflow-x-auto rounded border border-[#E8E6E0]">
-        <table className="min-w-full divide-y divide-[#E8E6E0] text-left text-[12px]">
-          <thead className="bg-[#FAF9F6] text-[11px] text-[#788C83]">
+      {block.status ? <p className="mb-2 text-[12px] text-[var(--color-ink-muted)]">{block.status}</p> : null}
+      {block.source_path ? <p className="mb-2 break-all text-[12px] text-[var(--color-ink-subtle)]">{block.source_path}{block.source_sha256 ? ' · SHA-256 ' + block.source_sha256 : ''}</p> : null}
+      <div className="overflow-x-auto rounded border border-[var(--color-border-subtle)]">
+        <table className="min-w-full divide-y divide-[var(--color-border-subtle)] text-left text-[13px]">
+          <thead className="bg-[var(--color-surface-subtle)] text-[12px] text-[var(--color-ink-subtle)]">
             <tr>
               {block.columns.map((c) => {
                 const active = sort?.key === c.key;
@@ -118,7 +112,7 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
                     <button
                       type="button"
                       onClick={() => toggle(c.key)}
-                      className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[#202824]"
+                      className="inline-flex items-center gap-1 whitespace-nowrap hover:text-[var(--color-ink)]"
                     >
                       {c.label}
                       {active ? (
@@ -144,7 +138,7 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
                   return (
                     <td
                       key={c.key}
-                      className={`px-3 py-1.5 text-[#202824] ${numeric ? 'text-right font-mono tabular-nums' : ''}`}
+                      className={`px-3 py-1.5 text-[var(--color-ink)] ${numeric ? 'text-right font-mono tabular-nums' : ''}`}
                     >
                       {c.key === 'stage' ? ({ negotiating: 'Negotiating', proposal_sent: 'Proposal sent', prospecting: 'Prospecting', contacted: 'Contacted', partner_confirmed: 'Partner confirmed' }[String(row[c.key])] ?? formatCell(row[c.key], c.format)) : formatCell(row[c.key], c.format)}
                     </td>
@@ -155,7 +149,7 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
           </tbody>
         </table>
       </div>
-      <p className="mt-1.5 text-[11px] text-[#788C83]">
+      <p className="mt-1.5 text-[12px] text-[var(--color-ink-subtle)]">
         {block.rows.length} {block.rows.length === 1 ? 'row' : 'rows'}{block.truncated ? ' shown; more rows available — narrow the filter' : ''}
         {block.edition_id ? ` · ${block.edition_id}` : ''} · click a column to sort
       </p>
@@ -168,8 +162,8 @@ export function BarBlockView({ block }: { block: AnswerBarBlock }) {
   return (
     <BlockFrame title={block.title} source={block.source} dataVersion={block.data_version}>
       {block.total !== null && block.total !== undefined ? (
-        <p className="mb-2 text-[11px] text-[#525E58]">
-          Total [{block.metric_id}]: <span className="font-mono font-semibold text-[#202824]">{formatMetricValue(block.total, block.unit)}</span>
+        <p className="mb-2 text-[12px] text-[var(--color-ink-muted)]">
+          Total [{block.metric_id}]: <span className="font-mono font-semibold text-[var(--color-ink)]">{formatMetricValue(block.total, block.unit)}</span>
         </p>
       ) : null}
       <ul className="space-y-2" aria-label={`${block.title} bar chart`}>
@@ -177,14 +171,14 @@ export function BarBlockView({ block }: { block: AnswerBarBlock }) {
           const pct = max > 0 && s.value !== null && s.value > 0 ? Math.max(3, (s.value / max) * 100) : 0;
           return (
             <li key={`${s.label}-${i}`} className="space-y-1">
-              <div className="flex items-baseline justify-between gap-3 text-[12px]">
-                <span className="truncate text-[#202824]">{s.label}</span>
-                <span className="shrink-0 font-mono tabular-nums text-[#202824]">
+              <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                <span className="truncate text-[var(--color-ink)]">{s.label}</span>
+                <span className="shrink-0 font-mono tabular-nums text-[var(--color-ink)]">
                   {s.computable ? formatMetricValue(s.value, block.unit) : s.reason || 'Not computable'}
                 </span>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-sm bg-[#F3F1EB]">
-                <div className="h-full origin-left bg-[#315F52]" style={{ width: `${pct}%` }} />
+              <div className="h-2 w-full overflow-hidden rounded-sm bg-[var(--color-canvas)]">
+                <div className="h-full origin-left bg-[var(--color-accent)]" style={{ width: `${pct}%` }} />
               </div>
             </li>
           );
@@ -217,26 +211,26 @@ export function LineBlockView({ block }: { block: AnswerLineBlock }) {
   return (
     <BlockFrame title={block.title} source={block.source} dataVersion={block.data_version}>
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${block.title} line chart`}>
-        <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} stroke="#E8E6E0" />
-        {paths.map((points, i) => <polyline key={i} points={points} fill="none" stroke="#315F52" strokeWidth={2} strokeLinejoin="round" />)}
+        <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} stroke="var(--color-border-subtle)" />
+        {paths.map((points, i) => <polyline key={i} points={points} fill="none" stroke="var(--color-accent)" strokeWidth={2} strokeLinejoin="round" />)}
         {points.map((p, i) =>
           p.y === null ? null : (
-            <circle key={p.x} cx={x(i)} cy={y(p.y)} r={3} fill="#315F52">
+            <circle key={p.x} cx={x(i)} cy={y(p.y)} r={3} fill="var(--color-accent)">
               <title>{`${p.x}: ${formatMetricValue(p.y, block.unit)}`}</title>
             </circle>
           )
         )}
         {points.map((p, i) =>
           i === 0 || i === points.length - 1 || points.length <= 6 ? (
-            <text key={`t-${p.x}`} x={x(i)} y={H - 6} fontSize={10} fill="#788C83" textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'}>
+            <text key={`t-${p.x}`} x={x(i)} y={H - 6} fontSize={10} fill="var(--color-ink-subtle)" textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'}>
               {p.x.slice(5)}
             </text>
           ) : null
         )}
       </svg>
       {last ? (
-        <p className="mt-1 text-[11px] text-[#525E58]">
-          Latest ({last.x}): <span className="font-mono font-semibold text-[#202824]">{formatMetricValue(last.y, block.unit)}</span>
+        <p className="mt-1 text-[12px] text-[var(--color-ink-muted)]">
+          Latest ({last.x}): <span className="font-mono font-semibold text-[var(--color-ink)]">{formatMetricValue(last.y, block.unit)}</span>
         </p>
       ) : null}
     </BlockFrame>
@@ -245,17 +239,17 @@ export function LineBlockView({ block }: { block: AnswerLineBlock }) {
 
 export function KpiBlockView({ block }: { block: AnswerKpiBlock }) {
   return (
-    <div className="rounded-md border border-[#D9D7D0] bg-white p-3">
-      <p className="text-[11px] text-[#525E58]">
+    <div className="rounded-md border border-[var(--color-border)] bg-white p-3">
+      <p className="text-[12px] text-[var(--color-ink-muted)]">
         {block.label} <span className="font-mono">[{block.metric_id}]</span>
       </p>
-      <p className="mt-0.5 font-mono text-[18px] font-semibold tabular-nums text-[#202824]">
+      <p className="mt-0.5 font-mono text-[18px] font-semibold tabular-nums text-[var(--color-ink)]">
         {block.computable ? (block.unit === 'INR' && block.value !== null && Math.abs(block.value) >= 1e5 ? formatInrLakh(block.value) : formatMetricValue(block.value, block.unit)) : 'Not computable'}
       </p>
       {block.computable && block.unit === 'INR' && block.value !== null && Math.abs(block.value) >= 1e5 ? (
-        <p className="font-mono text-[11px] text-[#788C83]">{formatInr(block.value)}</p>
+        <p className="font-mono text-[12px] text-[var(--color-ink-subtle)]">{formatInr(block.value)}</p>
       ) : null}
-      {!block.computable && block.reason ? <p className="mt-0.5 text-[11px] text-[#525E58]">{block.reason}</p> : null}
+      {!block.computable && block.reason ? <p className="mt-0.5 text-[12px] text-[var(--color-ink-muted)]">{block.reason}</p> : null}
       <div className="mt-1.5">
         <SourceChip source={block.source} dataVersion={block.data_version} />
       </div>
@@ -288,4 +282,5 @@ export function AnswerBlocks({ blocks }: { blocks: AnswerBlock[] }) {
     </div>
   );
 }
+
 

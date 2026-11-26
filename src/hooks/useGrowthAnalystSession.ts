@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSeason } from '../contexts/SeasonContext';
 import { ANSWERING_MS, deriveOrbState, ERROR_FLASH_MS, type OrbState } from '../lib/orbState';
 import {
+  SPEECH_ACTIVITY_EVENT,
   isSpeechSynthesisSupported,
   loadAutoReadPreference,
   saveAutoReadPreference,
@@ -182,6 +183,9 @@ export interface UseGrowthAnalystSessionResult {
   interimTranscript: string;
   setInterimTranscript: (text: string) => void;
   /** Speaker toggle: read each new answer aloud (en-IN, answer text only). */
+  speaking: boolean;
+  voiceModeActive: boolean;
+  setVoiceModeActive: (active:boolean)=>void;
   autoReadAloud: boolean;
   setAutoReadAloud: (on: boolean) => void;
   readAloudSupported: boolean;
@@ -889,6 +893,10 @@ export function useGrowthAnalystSession(
 
   // Speaker toggle. Only answers that arrive after the toggle is on are read;
   // existing history is never read back on load.
+  useEffect(()=>{if(sending)stopSpeaking();},[sending]);
+  const [speaking,setSpeaking]=useState(false);
+  const [voiceModeActive,setVoiceModeActive]=useState(false);
+  useEffect(()=>{const listener=(e:Event)=>setSpeaking(Boolean((e as CustomEvent<{speaking:boolean}>).detail.speaking));window.addEventListener(SPEECH_ACTIVITY_EVENT,listener);return()=>window.removeEventListener(SPEECH_ACTIVITY_EVENT,listener);},[]);
   const readAloudSupported = isSpeechSynthesisSupported();
   const [autoReadAloud, setAutoReadAloudState] = useState<boolean>(
     () => readAloudSupported && loadAutoReadPreference()
@@ -908,14 +916,14 @@ export function useGrowthAnalystSession(
     const last = messages[messages.length - 1];
     const previousLastId = lastSeenMessageIdRef.current;
     lastSeenMessageIdRef.current = last?.message_id ?? null;
-    if (!autoReadAloud || !last || last.role !== 'assistant') return;
+    if ((!autoReadAloud && !voiceModeActive) || !last || last.role !== 'assistant') return;
     // First render after load: remember where history ends, read nothing.
     if (previousLastId === null && messages.length > 1) return;
     if (last.message_id === previousLastId) return;
     if (last.message_id === lastSpokenMessageIdRef.current) return;
     lastSpokenMessageIdRef.current = last.message_id;
     speakAnswer(last.content);
-  }, [messages, autoReadAloud]);
+  }, [messages, autoReadAloud, voiceModeActive]);
   useEffect(() => () => stopSpeaking(), []);
 
   // ---- Orb: state from real events only.
@@ -944,6 +952,7 @@ export function useGrowthAnalystSession(
     () =>
       deriveOrbState({
         micOn: voiceListening,
+        speaking,
         sending,
         pendingConfirm,
         lastErrorAt,
@@ -952,7 +961,7 @@ export function useGrowthAnalystSession(
       }),
     // orbTick re-evaluates when a transition window ends.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [voiceListening, sending, pendingConfirm, lastErrorAt, lastAnsweredAt, orbTick]
+    [voiceListening, speaking, sending, pendingConfirm, lastErrorAt, lastAnsweredAt, orbTick]
   );
 
   const actions = useMemo(() => Object.values(actionsMap), [actionsMap]);
@@ -997,6 +1006,9 @@ export function useGrowthAnalystSession(
     resetConversation,
     dismissError: () => setError(null),
     clearDataVersionChanged: () => setDataVersionChanged(false),
+    speaking,
+    voiceModeActive,
+    setVoiceModeActive,
     autoReadAloud,
     setAutoReadAloud,
     readAloudSupported,
@@ -1008,3 +1020,4 @@ export function useGrowthAnalystSession(
     setInterimTranscript,
   };
 }
+

@@ -174,9 +174,9 @@ export function ConfirmOpportunityDrawer({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+        <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
           Creates the active contract, contract lines, and{' '}
-          <span className="font-mono text-[#315F52]">partner_confirmed</span>{' '}
+          <span className="font-mono text-[var(--color-accent)]">partner_confirmed</span>{' '}
           stage version in a single transaction. Contract line values must equal
           signed total.
         </div>
@@ -184,7 +184,7 @@ export function ConfirmOpportunityDrawer({
         {formError ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle
               className="mt-0.5 h-3.5 w-3.5 shrink-0"
@@ -198,7 +198,7 @@ export function ConfirmOpportunityDrawer({
           <div>
             <label
               htmlFor="confirm-signed-at"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Signed date
             </label>
@@ -209,14 +209,14 @@ export function ConfirmOpportunityDrawer({
               disabled={readOnly || submitting}
               value={signedAt}
               onChange={(e) => setSignedAt(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             />
           </div>
 
           <div>
             <label
               htmlFor="confirm-payment-terms"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Payment terms
             </label>
@@ -227,7 +227,7 @@ export function ConfirmOpportunityDrawer({
               onChange={(e) =>
                 setPaymentTerms(e.target.value as PaymentTermsCode)
               }
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             >
               <option value="standard_50_50">Standard 50 / 50</option>
               <option value="100_upfront">100% upfront</option>
@@ -240,7 +240,7 @@ export function ConfirmOpportunityDrawer({
           <div>
             <label
               htmlFor="confirm-signatory"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Signatory contact
             </label>
@@ -249,7 +249,7 @@ export function ConfirmOpportunityDrawer({
               disabled={readOnly || submitting}
               value={signatoryContactId}
               onChange={(e) => setSignatoryContactId(e.target.value)}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             >
               <option value="">None / optional</option>
               {contacts.map((c) => (
@@ -264,7 +264,7 @@ export function ConfirmOpportunityDrawer({
           <div>
             <label
               htmlFor="confirm-signed-total"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Signed value total (₹)
             </label>
@@ -278,14 +278,14 @@ export function ConfirmOpportunityDrawer({
               value={signedValueTotal}
               onChange={(e) => setSignedValueTotal(e.target.value)}
               placeholder="e.g. 110000"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] tabular-nums focus:border-[#315F52] focus:outline-none"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] tabular-nums focus:border-[var(--color-accent)] focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="border-t border-[#E8E6E0] pt-4 space-y-3">
+        <div className="border-t border-[var(--color-border-subtle)] pt-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] font-medium text-[#202824]">
+            <span className="text-[13px] font-medium text-[var(--color-ink)]">
               Contract lines
             </span>
             <button
@@ -297,9 +297,9 @@ export function ConfirmOpportunityDrawer({
                   { considerationType: 'cash', value: '', assetId: '' },
                 ])
               }
-              className="inline-flex h-7 items-center gap-1 rounded border border-[#D9D7D0] bg-white px-2.5 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+              className="inline-flex h-7 items-center gap-1 rounded border border-[var(--color-border)] bg-white px-2.5 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
             >
-              <Plus className="h-3.5 w-3.5 text-[#315F52]" aria-hidden="true" />
+              <Plus className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
               Add line
             </button>
           </div>
@@ -308,10 +308,10 @@ export function ConfirmOpportunityDrawer({
             {lines.map((line, index) => (
               <div
                 key={index}
-                className="grid grid-cols-1 gap-2 rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3 sm:grid-cols-12 sm:items-end"
+                className="grid grid-cols-1 gap-2 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3 sm:grid-cols-12 sm:items-end"
               >
                 <div className="sm:col-span-3">
-                  <label className="block text-[11px] font-medium text-[#525E58]">
+                  <label className="block text-[12px] font-medium text-[var(--color-ink-muted)]">
                     Type
                   </label>
                   <select
@@ -327,7 +327,7 @@ export function ConfirmOpportunityDrawer({
                         )
                       );
                     }}
-                    className="mt-1 h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 text-[12px] text-[#202824]"
+                    className="mt-1 h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 text-[13px] text-[var(--color-ink)]"
                   >
                     <option value="cash">Cash</option>
                     <option value="in_kind">In-kind</option>
@@ -335,7 +335,7 @@ export function ConfirmOpportunityDrawer({
                 </div>
 
                 <div className="sm:col-span-4">
-                  <label className="block text-[11px] font-medium text-[#525E58]">
+                  <label className="block text-[12px] font-medium text-[var(--color-ink-muted)]">
                     Value (₹)
                   </label>
                   <input
@@ -353,12 +353,12 @@ export function ConfirmOpportunityDrawer({
                         )
                       );
                     }}
-                    className="mt-1 h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 font-mono text-[12px] text-[#202824] tabular-nums"
+                    className="mt-1 h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 font-mono text-[13px] text-[var(--color-ink)] tabular-nums"
                   />
                 </div>
 
                 <div className="sm:col-span-4">
-                  <label className="block text-[11px] font-medium text-[#525E58]">
+                  <label className="block text-[12px] font-medium text-[var(--color-ink-muted)]">
                     Asset (optional)
                   </label>
                   <select
@@ -372,7 +372,7 @@ export function ConfirmOpportunityDrawer({
                         )
                       );
                     }}
-                    className="mt-1 h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 text-[12px] text-[#202824]"
+                    className="mt-1 h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 text-[13px] text-[var(--color-ink)]"
                   >
                     <option value="">General sponsorship</option>
                     {assets.map((a) => (
@@ -393,7 +393,7 @@ export function ConfirmOpportunityDrawer({
                           prev.filter((_, idx) => idx !== index)
                         )
                       }
-                      className="inline-flex h-8 w-8 items-center justify-center rounded border border-[#D9D7D0] bg-white text-[#9B3B32] hover:bg-[#FAF9F6]"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded border border-[var(--color-border)] bg-white text-[#9B3B32] hover:bg-[var(--color-surface-subtle)]"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
@@ -403,16 +403,16 @@ export function ConfirmOpportunityDrawer({
             ))}
           </div>
 
-          <div className="flex items-center justify-between rounded border border-[#E8E6E0] bg-white px-3 py-2 text-[12px]">
-            <span className="text-[#525E58]">
+          <div className="flex items-center justify-between rounded border border-[var(--color-border-subtle)] bg-white px-3 py-2 text-[13px]">
+            <span className="text-[var(--color-ink-muted)]">
               Sum of lines:{' '}
-              <span className="font-mono font-semibold text-[#202824] tabular-nums">
+              <span className="font-mono font-semibold text-[var(--color-ink)] tabular-nums">
                 {formatCurrencyInr(lineSum)}
               </span>
             </span>
             <span
-              className={`font-mono text-[11px] ${
-                totalMatchesLines ? 'text-[#315F52]' : 'text-[#9B3B32]'
+              className={`font-mono text-[12px] ${
+                totalMatchesLines ? 'text-[var(--color-accent)]' : 'text-[#9B3B32]'
               }`}
             >
               {totalMatchesLines
@@ -422,18 +422,18 @@ export function ConfirmOpportunityDrawer({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={readOnly || submitting}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white hover:bg-[#264B40] disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
           >
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
             {submitting ? 'Confirming...' : 'Confirm deal & sign'}
