@@ -7,12 +7,8 @@ import {
   Pencil,
   XCircle,
 } from 'lucide-react';
-import {
-  formatContractLine,
-  formatFieldLabel,
-  formatFieldValue,
-  isContractLineArray,
-} from '../../lib/displayFormat';
+import { formatFieldLabel, formatFieldValue } from '../../lib/displayFormat';
+import { FieldValue } from './FieldValue';
 import {
   canUserConfirmActionType,
   formatAiActionStatus,
@@ -42,21 +38,6 @@ interface ProposedBatchCardProps {
   onEditAction?: (action: AiActionRecord) => void;
   onOpenRecord?: (recordType: string, recordId: string) => void;
   compact?: boolean;
-}
-
-function FieldValue({ field, value }: { field: string; value: unknown }) {
-  if (isContractLineArray(value)) {
-    return (
-      <span className="inline-flex flex-col gap-0.5">
-        {value.map((line, i) => (
-          <span key={i} className="tabular-nums">
-            {formatContractLine(line)}
-          </span>
-        ))}
-      </span>
-    );
-  }
-  return <span className="tabular-nums">{formatFieldValue(field, value)}</span>;
 }
 
 export function ProposedBatchCard({

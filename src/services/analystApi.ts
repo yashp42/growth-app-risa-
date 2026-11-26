@@ -85,6 +85,12 @@ export function isAllowedAiActionType(
   );
 }
 
+/** "Confirm deal" (not "Confirm confirm deal"); "Confirm: Create task" otherwise. */
+export function confirmDialogTitle(actionType: AllowedAiActionType | string): string {
+  const label = formatAiActionType(actionType);
+  return /^confirm\b/i.test(label) ? label : `Confirm: ${label}`;
+}
+
 export function formatAiActionType(actionType: AllowedAiActionType | string): string {
   switch (actionType) {
     case 'create_task':

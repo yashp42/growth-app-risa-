@@ -32,7 +32,7 @@ import {
   runWriteTransaction,
 } from '../writeUtils.ts';
 import type { OpenRouterToolDefinition } from './openrouter.ts';
-import { resolvePayloadDates, type DateResolution } from './relativeDates.ts';
+import { formatIstDisplay, resolvePayloadDates, type DateResolution } from './relativeDates.ts';
 import type { QueryablePool } from './tools.ts';
 
 export const ALLOWED_AI_ACTION_TYPES = [
@@ -1881,7 +1881,13 @@ async function fetchBeforeSnapshot(
         {
           field: 'contract_lines',
           before: [],
-          after: lines.map((l) => `${String(l.consideration_type)}: ₹${Number(l.value ?? 0).toLocaleString('en-IN')}`),
+          after: lines.map((l) => ({
+            consideration_type: String(l.consideration_type ?? 'cash'),
+            value: Number(l.value ?? 0),
+            ...(typeof l.description === 'string' && l.description.trim()
+              ? { description: l.description.trim() }
+              : {}),
+          })),
         }
       );
       impactedNote =
@@ -1896,7 +1902,7 @@ async function fetchBeforeSnapshot(
 
     const summary =
       actionType === 'change_stage'
-        ? `Move ${label} from ${String(opp?.stage ?? 'current stage')} to ${String(payload.stage)}`
+        ? `Move ${label} from ${humanizeEnum(opp?.stage ?? 'current stage')} to ${humanizeEnum(payload.stage)}`
         : actionType === 'confirm_deal'
           ? `Confirm deal ${label} at ₹${Number(payload.signed_value_total ?? 0).toLocaleString('en-IN')} (${String(payload.payment_terms)})`
           : `Update opportunity ${label}`;
@@ -1957,7 +1963,7 @@ async function fetchBeforeSnapshot(
         payload.linked_type === 'opportunity'
           ? String(payload.linked_id ?? '')
           : linkedOpportunityId,
-      defaultSummary: `Create ${String(payload.task_type)} task "${String(payload.title)}" for ${owner} due ${String(payload.due_at).slice(0, 10)}`,
+      defaultSummary: `Create ${humanizeEnum(payload.task_type).toLowerCase()} task "${String(payload.title)}" for ${owner}, due ${formatIstDisplay(String(payload.due_at))}`,
     };
   }
 

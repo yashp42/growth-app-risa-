@@ -12,14 +12,14 @@ export function formatInr(value: unknown): string {
   return `${n < 0 ? '−' : ''}₹${INR_GROUPING.format(Math.abs(n))}`;
 }
 
-/** ₹5.92L / ₹1.2Cr: compact form for headline figures (two decimals, truncated). */
+/** ₹5.92L / ₹1.20Cr: compact form for headline figures, same rounding as the dashboard (toFixed(2)). */
 export function formatInrLakh(value: unknown): string {
   const n = typeof value === 'number' ? value : Number(value);
   if (value === null || value === undefined || value === '' || !Number.isFinite(n)) return '—';
   const abs = Math.abs(n);
   const sign = n < 0 ? '−' : '';
-  if (abs >= 1e7) return `${sign}₹${(Math.trunc((abs / 1e7) * 100) / 100).toFixed(2)}Cr`;
-  if (abs >= 1e5) return `${sign}₹${(Math.trunc((abs / 1e5) * 100) / 100).toFixed(2)}L`;
+  if (abs >= 1e7) return `${sign}₹${(abs / 1e7).toFixed(2)}Cr`;
+  if (abs >= 1e5) return `${sign}₹${(abs / 1e5).toFixed(2)}L`;
   return formatInr(n);
 }
 
