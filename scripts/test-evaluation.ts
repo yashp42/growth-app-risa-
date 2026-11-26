@@ -31,7 +31,7 @@ test('[MOCKED] rate limit checkpoints, resumes, and never retries a case more th
   const deps={ask:async()=>{asks++;return {status:429,body:{},retryAfter:3600};},snapshot:async()=>'same',cleanup:async()=>true,persist:()=>{}};
   await runEvaluationCases([simple],state,deps);assert.equal(state.state,'paused');assert.deepEqual(state.remaining,['TEST']);assert.equal(state.retry_after_seconds,3600);
   await runEvaluationCases([simple],state,deps);await runEvaluationCases([simple],state,deps);
-  assert.equal(asks,2);assert.equal(state.results[0].status,'FAIL');assert.equal(state.state,'completed');
+  assert.equal(asks,2);assert.equal(state.results.length,0);assert.equal(state.state,'paused');assert.deepEqual(state.remaining,['TEST']);
 });
 test('[MOCKED] a cleanup failure stops the run before another case; it is never accepted as passing',async()=>{
   const state=run(['A','B']);let asks=0;
@@ -59,4 +59,10 @@ test('[MOCKED] provider-degraded HTTP 200 pauses the case instead of recording a
 test('[MOCKED] unknown action fixture is flagged for human review; it is never counted as a pass',()=>{
   const result=scoreAnswer({...simple,route:'action'},{route:'action',answer:'Please clarify: no matching sponsor found.',answer_check_passed:true,actions:[]},true,1);
   assert.equal(result.status,'NEEDS_HUMAN');
+});
+
+import { reportMarkdown } from '../server/evaluation.ts';
+test('[MOCKED] paused case diagnostics survive reporting without scoring an unavailable provider',async()=>{
+ const state=run(['TEST']);await runEvaluationCases([simple],state,{ask:async()=>({status:503,body:{error:{code:'AI_UNAVAILABLE',message:'Free models unavailable'}}}),snapshot:async()=>'same',cleanup:async()=>true,persist:()=>{}});
+ assert.equal(state.paused_case?.test_id,'TEST');assert.equal(state.results.length,0);assert.match(reportMarkdown(state),/AI_UNAVAILABLE/);assert.match(reportMarkdown(state),/Paused case: TEST; HTTP 503/);
 });

@@ -9,6 +9,7 @@ export interface EvaluationRun {
   label: 'LIVE'; set: EvalSet; state: 'running' | 'paused' | 'completed' | 'error';
   started_at: string; updated_at: string; current_case: string | null; error?: string;
   results: CaseResult[]; conversations: Record<string, string>; requests_used: number;
+  paused_case?: { test_id: string; response_status: number; reason: string; code?: string; message?: string };
   remaining: string[]; attempts?: Record<string, number>; retry_after_seconds?: number;
 }
 const critical = new Set(['Permissions','Action execution','Missing information']);
@@ -75,6 +76,7 @@ export function reportMarkdown(run: EvaluationRun): string {
     'Completed cases: '+s.evaluated+' / '+s.total+' · Strict automated passes: '+s.passed+' · Release gates: '+(s.release_gates_met?'MET':'NOT MET'),'',
     '| Category | Pass | Total | Pass rate |','|---|---:|---:|---:|',...Object.entries(s.categories).map(([name,c])=>'| '+name+' | '+c.passed+' | '+c.total+' | '+(c.pass_rate*100).toFixed(1)+'% |'),'',
     ...run.results.filter(r=>r.status!=='PASS').flatMap(r=>['## '+r.test_id+' — '+r.status,r.reasons.join('; '),'',r.answer,r.error_detail ? 'HTTP diagnostic: '+JSON.stringify(r.error_detail) : '','']),
+    ...(run.paused_case ? ['Paused case: '+run.paused_case.test_id+'; HTTP '+run.paused_case.response_status+'; '+run.paused_case.reason, 'Provider diagnostic: '+[run.paused_case.code, run.paused_case.message].filter(Boolean).join(' — ')] : []),
     'Not yet run: '+(run.remaining.join(', ')||'none'),run.error??'','', 'This partial strict-check report is not an accuracy estimate. Automatic numeric/citation checks do not replace qualitative review. Test fixtures and expected answers were not modified.'].join('\n');
 }
 export interface EvaluationDependencies {
@@ -102,8 +104,7 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
       }
       run.attempts ??= {};
       if((run.attempts[c.test_id] ?? 0)>=2){
-        run.results.push({test_id:c.test_id,category:c.category,status:'FAIL',reasons:['Retry limit reached'],answer:'',attempts:2,model_requests:0});
-        run.remaining=run.remaining.filter(id=>id!==c.test_id);save();continue;
+        run.state='paused';run.error='Provider retry limit reached for '+c.test_id+'. No further requests were sent. Resolve the provider issue and start a new evaluation; this case remains unscored.';save();break;
       }
       const before=await deps.snapshot();
       run.attempts[c.test_id]=(run.attempts[c.test_id]??0)+1;save();
@@ -112,12 +113,18 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
       const cleaned=await deps.cleanup(res.body);
       const safe=cleaned&&(await deps.snapshot())===before;
       if(!safe)throw new Error('Operational snapshot changed or proposal cleanup failed; evaluation stopped');
+      const err = res.body.error && typeof res.body.error === 'object' ? res.body.error : {};
+      const pauseDetail = { test_id: c.test_id, response_status: res.status,
+        reason: String(res.body.generation_fallback_reason ?? (res.status === 429 ? 'rate_limit' : 'provider_error')),
+        code: typeof err.code === 'string' ? err.code.slice(0,120) : undefined,
+        message: typeof err.message === 'string' ? err.message.slice(0,500) : undefined };
       if(res.status===429||res.body.route==='quota_exhausted'||String(res.body.answer??'').includes("Today's free AI quota is used up")){
-        run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';save();break;
+        run.paused_case=pauseDetail;run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';save();break;
       }
       if(res.status>=500 || ['quota','unavailable'].includes(String(res.body.generation_fallback_reason ?? ''))) {
-        run.state='paused';run.error='AI provider could not complete this case; saved progress. Review provider errors before resuming.';save();break;
+        run.paused_case=pauseDetail;run.state='paused';run.error='AI provider could not complete this case; saved progress. Review provider errors before resuming.';save();break;
       }
+      run.paused_case=undefined;
       const scored=scoreAnswer(c,res.body,safe,run.attempts[c.test_id]);
       if(res.status!==200){scored.status='FAIL';scored.reasons.push('HTTP '+res.status);scored.response_status=res.status;scored.error_detail=res.body.error??res.body;}
       run.results.push(scored);if(scored.conversation_id)run.conversations[c.test_id]=scored.conversation_id;
