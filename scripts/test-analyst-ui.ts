@@ -191,7 +191,8 @@ test('[MOCKED] 4D blocks render: sortable table, bar, line and KPI, each with it
   assert.match(html, /list_receivables · data v61/);
   assert.match(html, /aria-label="Cash collected by campaign bar chart"/);
   assert.match(html, /₹1,50,000/);
-  assert.match(html, /Total \[M-01\]: <span[^>]*>₹2,72,500/);
+  assert.match(html, /Total: <span[^>]*>₹2,72,500/);
+  assert.doesNotMatch(html, /Total \[M-01\]/, 'primary chart totals use business labels');
   assert.match(html, /<svg[^>]*aria-label="Cash collected by week line chart"/);
   assert.match(html, /<polyline/);
   assert.match(html, /₹5.92L/);
