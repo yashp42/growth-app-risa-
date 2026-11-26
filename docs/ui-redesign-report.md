@@ -4,7 +4,7 @@ Frontend-only implementation; backend contracts, schemas, metrics, approved stra
 
 ## Transformation
 
-Shared tokens, typography, table treatment, forms and overlay patterns now span the existing modules. The shell has fewer competing controls and a keyboard skip link. Overview brings pacing and exceptions together after the season measures. Campaigns has a functional core/all-metrics view. Sponsors have clearer identity. Pipeline stages use locally scrolling lanes with independently scrollable deal lists. Tasks retain their operations with the shared typography and forms. Collections emphasizes collected cash, preserves financial qualifications and explains the allocation empty state. Analytics puts calculation/source detail behind disclosure while keeping existing tabs and comparisons.
+Shared tokens, typography, table treatment, forms and overlay patterns now span the existing modules. The shell has fewer competing controls and a keyboard skip link. Quick Add routes into the existing create forms for campaigns, sponsors, opportunities, tasks and receipts, with historical read-only guards. Overview brings pacing and exceptions together after the season measures. Campaigns has a functional core/all-metrics view. Sponsors have clearer identity. Pipeline stages use locally scrolling lanes with independently scrollable deal lists. Tasks retain their operations with the shared typography and forms. Collections emphasizes collected cash, preserves financial qualifications and explains the allocation empty state. Analytics puts calculation/source detail behind disclosure while keeping existing tabs and comparisons.
 
 Growth Analyst is conversation-first: empty evidence/action workspaces are removed, evidence opens on demand, and actions remain with their proposing turn. The composer and starter prompts are quieter. Technical context, quotas and raw errors are secondary disclosures. Source figures, verification warnings and citations remain accessible.
 
@@ -12,7 +12,7 @@ The orb has one restrained material surface with transform/opacity motion and re
 
 ## Verification and limits
 
-See PR #7 for the latest TypeScript/build/regression results. New MOCKED tests exercise speech start/end/error/cancel/replacement behavior and the conversation-first empty layout. Existing source-block tests retain their original expected provenance strings behind the new disclosures.
+MOCKED / GitHub Linux CI on commit `3721ba4`: TypeScript (`tsc --noEmit`), production build, native regressions and all 161 full regression tests passed. New MOCKED tests exercise speech start/end/error/cancel/replacement behavior and the conversation-first empty layout. Existing source-block tests retain their original expected provenance strings behind the new disclosures.
 
 The existing deployed application was inspected, but this branch has not been deployed for visual acceptance. Physical microphone permission/recognition/playback, real-device responsive checks, route/navigation interaction and frame-rate measurements remain LIVE acceptance items. Static markup and CI are not a screenshot or browser-performance pass. No new business values or mocked product responses are shipped.
 
@@ -98,3 +98,10 @@ The existing deployed application was inspected, but this branch has not been de
 - Modified: `src/lib/speech.ts`
 
 No source files were removed. The prior design-guideline file was absent from the connected repository; it is created here to document the implemented system.
+
+- Modified: `src/App.tsx`
+- Modified: `src/components/campaigns/CampaignsWorkspace.tsx`
+- Modified: `src/components/sponsors/SponsorsWorkspace.tsx`
+- Modified: `src/components/pipeline/PipelineWorkspace.tsx`
+- Modified: `src/components/tasks/TasksWorkspace.tsx`
+- Modified: `src/components/collections/CollectionsWorkspace.tsx`
