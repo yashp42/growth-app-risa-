@@ -279,7 +279,7 @@ export function TasksDirectoryPage({
             <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Follow-ups, proposals, deadlines, and team assignments.
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
+            <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{filters.record_class==='historical_synthetic'?'Historical data':filters.record_class==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatRecordClassLabel(filters.record_class)}</span>
               <span aria-hidden="true">·</span>
               <span>{filters.edition_id}</span>
@@ -293,7 +293,7 @@ export function TasksDirectoryPage({
                   </span>
                 </>
               ) : null}
-            </div>
+            </div></details>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">

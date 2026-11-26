@@ -18,7 +18,7 @@ export function DataStateWrapper({
   children,
 }: DataStateWrapperProps) {
   if (status === 'loading') {
-    return <div aria-busy="true">{loadingSkeleton}</div>;
+    return <div aria-busy="true" role="status"><span className="sr-only">Loading workspace data…</span>{loadingSkeleton}</div>;
   }
 
   if (status === 'error') {
@@ -37,10 +37,10 @@ export function DataStateWrapper({
               <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                 Unable to load data
               </h3>
-              <p className="mt-0.5 text-[14px] text-[var(--color-ink-muted)]">
-                {error?.message ?? 'Please try refreshing this view.'}
-              </p>
-            </div>
+              <div className="mt-0.5 text-[14px] text-[var(--color-ink-muted)]">
+                Your records couldn’t be loaded. Refresh this view to try again.{error?.message?<details className="source-details"><summary>Details</summary><span className="break-words">{error.message}</span></details>:null}
+              </div>
+                </div>
           </div>
           {onRetry ? (
             <button
@@ -72,7 +72,7 @@ export function EmptyStateNotice({
   action,
 }: EmptyStateNoticeProps) {
   return (
-    <div className="flex flex-col justify-between gap-3 rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-5 py-5 sm:flex-row sm:items-center">
+    <div className="flex flex-col justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-white px-6 py-8 sm:flex-row sm:items-center">
       <div>
         <p className="text-[14px] font-medium text-[var(--color-ink)]">{title}</p>
         {description ? (
@@ -83,3 +83,4 @@ export function EmptyStateNotice({
     </div>
   );
 }
+

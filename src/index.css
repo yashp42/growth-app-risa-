@@ -86,3 +86,5 @@
 .campaign-portfolio-table[data-density=core] :is(th,td):is(:nth-child(2),:nth-child(3),:nth-child(6),:nth-child(7),:nth-child(11)) {display:none;}
 @media(min-width:1280px){.campaign-portfolio-table[data-density=core] th:first-child{width:28%;}}
 @media(max-width:639px){.module-toolbar .button-secondary{width:100%;}.campaign-portfolio-table{min-width:680px;}}
+@media(pointer:coarse){button,summary{min-height:44px;}button{min-width:44px;}input:not([type=checkbox]):not([type=radio]),select,textarea{min-height:44px;}}
+:focus-visible{outline:2px solid var(--color-accent)!important;outline-offset:3px;}

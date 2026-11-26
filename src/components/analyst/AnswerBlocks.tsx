@@ -42,7 +42,7 @@ function formatMetricValue(value: number | null, unit: string | null): string {
 }
 
 function SourceChip({ source, dataVersion }: { source: string; dataVersion: number | string | null }) {
- return <details className="relative text-xs text-[var(--color-ink-subtle)]"><summary className="inline-flex cursor-pointer items-center gap-1"><Database size={12} aria-hidden="true"/>Source</summary><div className="absolute right-0 z-20 mt-2 min-w-48 max-w-80 break-words rounded-lg border bg-white p-3 shadow-lg">{source}{dataVersion!==null&&dataVersion!==undefined?<div>Data version: {String(dataVersion)}</div>:null}</div></details>;
+ return <details className="relative text-xs text-[var(--color-ink-subtle)]"><summary className="inline-flex cursor-pointer items-center gap-1"><Database size={12} aria-hidden="true"/>Source</summary><div className="absolute right-0 z-20 mt-2 min-w-48 max-w-80 break-words rounded-lg border bg-white p-3 shadow-lg">{source}{dataVersion!==null&&dataVersion!==undefined?` · data v${String(dataVersion)}`:''}</div></details>;
 }
 
 function BlockFrame({

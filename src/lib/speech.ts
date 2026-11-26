@@ -54,15 +54,15 @@ export function speakAnswer(
   finishActive=finish;
   utterance.onstart=()=>{if(activeUtterance===utterance){reportSpeech(true);handlers.onStart?.();}};
   utterance.onend=finish;
-  utterance.onerror=finish;
-  window.speechSynthesis.speak(utterance);
-  return true;
+  utterance.onerror=()=>{if(activeUtterance===utterance && typeof window.dispatchEvent==='function')window.dispatchEvent(new CustomEvent('analyst:voice-error',{detail:'Speech playback is unavailable. You can continue in the conversation.'}));finish();};
+  try{window.speechSynthesis.speak(utterance);return true;}catch{utterance.onerror?.(new Event('error') as SpeechSynthesisErrorEvent);return false;}
 }
 
 export function stopSpeaking(): void {
-  if (isSpeechSynthesisSupported()) window.speechSynthesis.cancel();
-  finishActive?.();
-  activeUtterance=null;finishActive=null;reportSpeech(false);
+ const finish=finishActive;
+ activeUtterance=null;finishActive=null;
+ if(isSpeechSynthesisSupported())window.speechSynthesis.cancel();
+ finish?.();reportSpeech(false);
 }
 
 const AUTO_READ_STORAGE_KEY = 'growth_analyst_auto_read_v1';

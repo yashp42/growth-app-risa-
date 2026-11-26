@@ -203,9 +203,9 @@ export function GrowthAnalystChat({
                       ? 'Permission restricted'
                       : 'Growth Analyst service unavailable'}
                   </p>
-                  <p className="mt-0.5 text-[13px] text-[var(--color-ink-muted)]">
-                    {error.status===429?'The analyst has reached its temporary request limit. Your conversation is saved; try again after the limit resets.':'We couldn’t complete that request. Your conversation is saved.'}<details className="source-details"><summary>Diagnostic details</summary><p className="mt-2 break-words font-mono text-xs">{error.message}</p></details>
-                  </p>
+                  <div className="mt-0.5 text-[13px] text-[var(--color-ink-muted)]">
+                    {error.status===429?'The analyst has reached its temporary request limit. Try again after the limit resets; the rest of your workspace remains available.':'We could not complete that request. You can retry without leaving this conversation.'}<details className="source-details"><summary>Diagnostic details</summary><p className="mt-2 break-words font-mono text-xs">{error.message}</p></details>
+                  </div>
                 </div>
               </div>
               <button

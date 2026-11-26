@@ -1,3 +1,4 @@
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { AlertCircle, ArrowRight, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
@@ -65,6 +66,8 @@ export function GlobalSearchModal({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open,onClose,modalRef);
 
   useEffect(() => {
     if (!open) return;
@@ -368,3 +371,4 @@ export function GlobalSearchModal({
     </div>
   );
 }
+

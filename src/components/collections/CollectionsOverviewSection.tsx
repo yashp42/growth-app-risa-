@@ -211,6 +211,7 @@ export function CollectionsOverviewSection({
         </div>
       </div>
       </details>
+      <p className="text-[13px] text-[var(--color-ink-muted)]">{isHistorical?'Historical data has no receipt ledger; collected cash is unavailable.':'Collected cash includes only reconciled and allocated receipts. Signed value, invoices and in-kind support remain separate.'}</p>
     </section>
   );
 }

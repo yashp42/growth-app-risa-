@@ -275,7 +275,7 @@ export function CollectionsWorkspacePage({
             Signed cash obligations, payment schedules, issued invoices, and
             reconciled cash receipts.
           </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
+          <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{filters.record_class==='historical_synthetic'?'Historical data':filters.record_class==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
             <span>{formatRecordClassDisplay(filters.record_class)}</span>
             <span aria-hidden="true">·</span>
             <span>{filters.edition_id}</span>
@@ -289,7 +289,7 @@ export function CollectionsWorkspacePage({
                 </span>
               </>
             ) : null}
-          </div>
+          </div></details>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

@@ -1,5 +1,6 @@
 import { ShieldCheck, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect,useRef } from 'react';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import { formatFieldLabel } from '../../lib/displayFormat';
 import { confirmDialogTitle } from '../../services/analystApi';
 import { FieldValue } from './FieldValue';
@@ -18,6 +19,8 @@ export function ActionConfirmationDialog({
   onConfirm,
   onClose,
 }: ActionConfirmationDialogProps) {
+  const modalRef=useRef<HTMLDivElement>(null);
+  useDialogFocus(Boolean(action),()=>{if(!processing)onClose();},modalRef);
   useEffect(() => {
     if (!action) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -34,13 +37,13 @@ export function ActionConfirmationDialog({
   const entries = Object.entries(action.payload ?? {});
 
   return (
-    <div
+    <div ref={modalRef} tabIndex={-1}
       className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-ink)]/40 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-ai-action-title"
     >
-      <div className="w-full max-w-lg rounded-md border border-[var(--color-border)] bg-white shadow-xl">
+      <div className="w-full max-w-lg rounded-2xl border border-[var(--color-border)] bg-white shadow-xl">
         <div className="flex items-start justify-between gap-3 border-b border-[var(--color-border)] px-5 py-4">
           <div className="flex items-start gap-2.5">
             <ShieldCheck
@@ -48,7 +51,7 @@ export function ActionConfirmationDialog({
               aria-hidden="true"
             />
             <div>
-              <p className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
+              <p className="sr-only">
                 {action.ai_action_id} · {action.permission_level}
               </p>
               <h2
@@ -135,3 +138,4 @@ export function ActionConfirmationDialog({
     </div>
   );
 }
+

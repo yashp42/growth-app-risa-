@@ -415,7 +415,7 @@ export function AnalyticsWorkspace({
               Performance pacing, funnel diagnostics, channel attribution, and
               strategic bet scorecards.
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
+            <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{recordClass==='historical_synthetic'?'Historical data':recordClass==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{getRecordClassBannerLabel(recordClass)}</span>
               <span>·</span>
               <span>Edition: {editionId}</span>
@@ -427,7 +427,7 @@ export function AnalyticsWorkspace({
                   <span>Data v{String(dataVersion)}</span>
                 </>
               ) : null}
-            </div>
+            </div></details>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">

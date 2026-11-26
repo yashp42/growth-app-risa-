@@ -20,7 +20,7 @@ export function DataContextHeader(p:DataContextHeaderProps){
     <SelectControl id="analyst-record-class" label="Data source" value={p.filters.record_class} options={ANALYST_RECORD_CLASS_OPTIONS} onChange={v=>p.onChangeRecordClass(v as AiRecordClass)}/>
     <SelectControl id="analyst-edition" label="Edition" value={p.filters.edition_id} options={ANALYST_EDITION_BY_CLASS[p.filters.record_class]} onChange={p.onChangeEdition}/>
     <label className="flex flex-col gap-1.5 text-sm" htmlFor="analyst-as-of">As of date<input id="analyst-as-of" type="date" value={p.filters.as_of} onChange={e=>{if(e.target.value)p.onChangeAsOf(e.target.value);}} className="rounded-lg border px-3 py-2"/></label>
-    <details className="source-details"><summary>Technical details</summary><dl className="space-y-1 break-all"><div>Data version: {p.dataVersion??'Unknown'}</div><div>Conversation: {p.conversationId??'New conversation'}</div><div>AI requests remaining: {p.quota?.remaining??'Unknown'}</div></dl></details>
+    <details className="source-details"><summary>Technical details</summary><div className="space-y-1 break-all"><div>Data version: {p.dataVersion??'Unknown'}</div><div>Conversation: {p.conversationId??'New conversation'}</div><div>AI requests remaining: {p.quota?.remaining??'Unknown'}</div></div></details>
    </div></details>
    <button type="button" className="icon-button" aria-label="New conversation" title="New conversation" onClick={p.onResetConversation}><RotateCcw size={16}/></button>
   </div>

@@ -267,7 +267,7 @@ export function PipelineDirectoryPage({
             <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Commercial opportunities, stage progression, and deal outcomes.
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
+            <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{filters.record_class==='historical_synthetic'?'Historical data':filters.record_class==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatRecordClassLabel(filters.record_class)}</span>
               <span aria-hidden="true">·</span>
               <span>{filters.edition_id}</span>
@@ -288,7 +288,7 @@ export function PipelineDirectoryPage({
                   <span>v{summary.data_version}</span>
                 </>
               ) : null}
-            </div>
+            </div></details>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
@@ -604,13 +604,7 @@ export function PipelineDirectoryPage({
             </div>
           ) : displayMode === 'board' ? (
             <div
-              className={`grid grid-cols-1 gap-4 ${
-                boardStages.length === 1
-                  ? 'md:grid-cols-1'
-                  : boardStages.length === 3
-                    ? 'md:grid-cols-3'
-                    : 'md:grid-cols-2 xl:grid-cols-4'
-              }`}
+              role="region" aria-label="Opportunity stages" tabIndex={0} className="grid min-w-0 grid-flow-col auto-cols-[minmax(260px,1fr)] gap-4 overflow-x-auto pb-4"
             >
               {boardStages.map((stageKey) => {
                 const columnItems = scopedOpportunities.filter(
@@ -619,7 +613,7 @@ export function PipelineDirectoryPage({
                 return (
                   <div
                     key={stageKey}
-                    className="flex flex-col rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)]/70"
+                    className="flex min-w-0 flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)]/70"
                   >
                     <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-white px-3.5 py-2.5 rounded-t-md">
                       <span
@@ -638,7 +632,7 @@ export function PipelineDirectoryPage({
                       </span>
                     </div>
 
-                    <div className="space-y-2.5 p-2.5">
+                    <div className="max-h-[68vh] space-y-3 overflow-y-auto p-3">
                       {columnItems.length > 0 ? (
                         columnItems.map((opp) => {
                           const cur = opp.current_stage_version;

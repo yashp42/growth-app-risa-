@@ -177,7 +177,7 @@ export function SponsorDirectoryPage({
             <h1 className="page-heading text-[var(--color-ink)]">
               Sponsors
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
+            <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{filters.record_class==='historical_synthetic'?'Historical data':filters.record_class==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatSponsorRecordClass(filters.record_class)}</span>
               {filters.edition_id !== 'all' ? (
                 <>
@@ -195,7 +195,7 @@ export function SponsorDirectoryPage({
                   </span>
                 </>
               ) : null}
-            </div>
+            </div></details>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">

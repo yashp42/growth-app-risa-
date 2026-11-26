@@ -275,7 +275,7 @@ export function CampaignPortfolioPage({
             <h1 className="page-heading text-[var(--color-ink)]">
               Campaigns
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
+            <details className="mt-2 text-[13px] text-[var(--color-ink-muted)]"><summary className="w-fit">{filters.record_class==='historical_synthetic'?'Historical data':filters.record_class==='simulated'?'Demo data':'Live data'} · Context</summary><div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatRecordClassLabel(filters.record_class)}</span>
               <span aria-hidden="true">·</span>
               <span>{filters.edition_id}</span>
@@ -295,7 +295,7 @@ export function CampaignPortfolioPage({
                   </span>
                 </>
               ) : null}
-            </div>
+            </div></details>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
@@ -494,7 +494,7 @@ export function CampaignPortfolioPage({
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-21'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-21'].inclusion_exclusion}`}
                 />
               </span>
-              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">M-21</span>
+              <span className="sr-only">M-21</span>
             </div>
             <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
               {formatMetricValue(summary.open_pipeline_metric)}
@@ -510,7 +510,7 @@ export function CampaignPortfolioPage({
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-02'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-02'].inclusion_exclusion}`}
                 />
               </span>
-              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">M-02</span>
+              <span className="sr-only">M-02</span>
             </div>
             <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-accent)] tabular-nums">
               {formatMetricValue(summary.signed_value_metric)}
