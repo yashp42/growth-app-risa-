@@ -68,7 +68,7 @@ Demo records changed during earlier LIVE checks, so screenshots and old handoff 
 - **MOCKED:** 16 new regression checks passed using Node's test runner.
 - **MOCKED:** native syntax checks passed for 10 server/script files. This is not a TypeScript type check.
 - **MOCKED / GitHub CI:** clean dependency install, TypeScript type checking and Vite build passed on Linux. Local Windows installation remains blocked.
-- **MOCKED / GitHub CI:** the first full run passed 119 of 121 checks; the two failures concerned prompt size and safe-fallback wording and are addressed in the follow-up commit. Re-run results must be checked before merge.
+- **MOCKED / GitHub CI:** all 121 regression checks passed after keeping the system prompt within its existing budget and preserving safe verification wording.
 - **LIVE:** not run. No new database parity, retrieval comparison, release-gate score, browser performance result or production-deployment success is claimed.
 
 Remaining acceptance work includes the researched-prospects UI, allocation-drawer empty state, complete scenario-view review, orb/browser checks, and all LIVE evaluations. See `docs/handoff/` for their original requirements.
