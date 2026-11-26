@@ -18,9 +18,9 @@ const DIR=path.join(ROOT,'eval/results');
 const Body=z.object({set:z.enum(['gate','full','retrieval']),resume:z.boolean().optional().default(false)}).strict();
 
 export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePoolState,auth:AuthDependencies,evaluationToken?:string){
-  const router=Router(); let active:EvaluationRun|null=null;let retrievalReport:unknown=null; let checkpointActor:VerifiedActor|null=null;
+  const router=Router(); let active:EvaluationRun|null=null;let retrievalReport:unknown=null; const checkpointActors=new WeakMap<EvaluationRun,VerifiedActor>();
   const filename=(set:EvalSet)=>path.join(DIR,'latest-'+set+'.json');
-  async function persist(run:EvaluationRun){mkdirSync(DIR,{recursive:true});const file=filename(run.set);writeFileSync(file+'.tmp',JSON.stringify(run,null,2));renameSync(file+'.tmp',file);writeFileSync(file.replace(/\.json$/,'.md'),reportMarkdown(run));if(checkpointActor)await saveRuntimeCheckpoint(dbState,checkpointActor,'analyst-evaluation:'+run.set,{run,retrieval:run.set==='retrieval'?retrievalReport:null});}
+  async function persist(run:EvaluationRun){mkdirSync(DIR,{recursive:true});const file=filename(run.set);writeFileSync(file+'.tmp',JSON.stringify(run,null,2));renameSync(file+'.tmp',file);writeFileSync(file.replace(/\.json$/,'.md'),reportMarkdown(run));const checkpointActor=checkpointActors.get(run);if(checkpointActor)await saveRuntimeCheckpoint(dbState,checkpointActor,'analyst-evaluation:'+run.set,{run,retrieval:run.set==='retrieval'?retrievalReport:null});}
   function load(set:EvalSet):EvaluationRun|null{try{return JSON.parse(readFileSync(filename(set),'utf8'));}catch{return null;}}
   const pool=()=>{if(!dbState.pool)throw new AppApiError(503,'DATABASE_UNAVAILABLE','Evaluation needs the database');return dbState.pool;};
   router.use('/admin/eval',requireAuth(auth),requireResolvedRoles(auth),(req,_res,next)=>{
@@ -39,14 +39,16 @@ export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePo
       ...parseCsv(readFileSync(path.join(ROOT,'eval/chatbot_test_bank.csv'),'utf8')),
       ...parseCsv(readFileSync(path.join(ROOT,'eval/stage4_extra_cases.csv'),'utf8')),
     ],set);
-    checkpointActor=getVerifiedActor(req);
+    const checkpointActor=getVerifiedActor(req);
     const stored=resume?await loadRuntimeCheckpoint(dbState,checkpointActor,'analyst-evaluation:'+set) as {run?:EvaluationRun;retrieval?:unknown}|null:null;
     const previous=resume?(stored?.run??load(set)):null;
+    if(active?.state==='running')throw new AppApiError(409,'EVALUATION_RUNNING','An evaluation is already running');
     if(stored?.retrieval)retrievalReport=stored.retrieval;
     if(resume&&!previous)throw new AppApiError(404,'NO_CHECKPOINT','No checkpoint to resume for this set');
     if(previous?.state==='completed')throw new AppApiError(409,'EVALUATION_COMPLETE','This run is complete; start a new run');
     if(previous?.state==='running'||previous?.state==='error')throw new AppApiError(409,'REVIEW_INTERRUPTED_RUN','Review the interrupted or failed run before starting a new evaluation');
     const run:EvaluationRun=previous??{label:'LIVE',set,state:'running',started_at:new Date().toISOString(),updated_at:new Date().toISOString(),current_case:null,results:[],conversations:{},requests_used:0,remaining:cases.map(c=>c.test_id)};
+    checkpointActors.set(run,checkpointActor);
     run.state='running';active=run;
     try{await persist(run);}catch{active=null;throw new AppApiError(503,'CHECKPOINT_UNAVAILABLE','Could not save the evaluation checkpoint; no evaluation requests were sent.');}
     // Fixed loopback origin: never accept a URL, token or actor from the request body.
