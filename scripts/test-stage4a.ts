@@ -1140,11 +1140,29 @@ test('[MOCKED] prospect prioritisation, research status and verified-route answe
  const app=express();app.use(express.json());app.use('/api',createAiApiRouter(createBaseConfig(),dbState,createAuthDeps(store,dbState),{openrouter:client}).router);app.use(apiErrorHandler);
  const srv=await startServer(app);
  try{
-  for(const question of ['Which prospects should we pursue first?','Is Alpha in our pipeline, and what is it worth?','Which fintech prospects have a verified route to them?']){
+  for(const question of ['Which prospects should we pursue first?','Is there any high potential sponsor that we should focus on currently?','Which brands look promising for outreach?','Is Alpha in our pipeline, and what is it worth?','Which fintech prospects have a verified route to them?']){
    const response=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question,edition_id:'ED-2026-DEMO',as_of:'2026-11-26'})});
    const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.generation_status,'complete');assert.equal(body.token_usage.model_requests,0);assert.equal(body.answer_check_passed,true,JSON.stringify(body));assert.ok(body.tool_calls.some((t:any)=>t.tool_name==='get_register'&&t.status==='ok'));assert.ok(body.tool_calls.some((t:any)=>t.tool_name==='search_knowledge'&&t.status==='ok'));assert.match(body.answer,/Alpha/);assert.doesNotMatch(body.answer,/\| Beta \|/);
   }
   assert.equal(modelCalls,0);
+ }finally{client.stop();await srv.close();}
+});
+
+test('[MOCKED] cache hits persist conversation turns, isolate owners, and invalidate on changed data',async()=>{
+ const store=createMockStore();const dbState=createMockDbState(store);
+ const client=createOpenRouterClient(createBaseConfig(),{startBackgroundRefresh:false,fetchFn:async()=>new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,remaining:0,used:50}}}),{status:200})});
+ const app=express();app.use(express.json());app.use('/api',createAiApiRouter(createBaseConfig(),dbState,createAuthDeps(store,dbState),{openrouter:client}).router);app.use(apiErrorHandler);
+ const srv=await startServer(app);
+ const ask=async(conversation_id?:string)=>{const res=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question:'How much sponsorship value did we sign in 2025?',edition_id:'ED-2025',as_of:'2025-04-20',conversation_id})});assert.equal(res.status,200);return res.json();};
+ try {
+  const first=await ask();assert.equal(first.cached,false);
+  const second=await ask();assert.equal(second.cached,true);
+  assert.ok(store.messages.some(m=>m.conversation_id===second.conversation_id && m.role==='user'),'cached question is persisted for follow-ups');
+  const followup=await ask(second.conversation_id);assert.equal(followup.cached,false,'conversation-dependent answers bypass first-turn cache');
+  store.actorMemberId='OTHER-MEMBER';store.actorAuthUid='OTHER-AUTH';
+  const other=await ask();assert.equal(other.cached,false,'same roles are insufficient for owner cache sharing');
+  assert.equal((await ask()).cached,true);
+  store.dataVersion++;assert.equal((await ask()).cached,false);
  }finally{client.stop();await srv.close();}
 });
 
@@ -1187,6 +1205,21 @@ test('[MOCKED] provider schema rejection switches to another configured free ent
  try{const result=await client.createChatCompletion({messages:[{role:'user',content:'List open deals'}],tools:[{type:'function',function:{name:'list_records',description:'Read scoped records',parameters:{type:'object',properties:{limit:{type:'integer',maximum:25}}}}}]});assert.equal(chats,2);assert.equal(result.usedFallback,true);}
  finally{client.stop();}
 });
+
+test('[MOCKED] provider cooldown prevents repeated failed requests and reports attempted inference calls',async()=>{
+ const models:string[]=[];
+ const client=createOpenRouterClient(createBaseConfig(),{startBackgroundRefresh:false,fetchFn:async(input,init)=>{
+  if(String(input).endsWith('/key'))return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,remaining:50,used:0}}}),{status:200});
+  const req=JSON.parse(String(init?.body));models.push(req.model);
+  if(req.model===DEFAULT_OPENROUTER_MODEL_PRIMARY)return new Response('temporary capacity limit',{status:429,headers:{'retry-after':'600'}});
+  return new Response(JSON.stringify({model:req.model,choices:[{message:{role:'assistant',content:'OK'}}]}),{status:200});
+ }});
+ try {
+  assert.equal((await client.createChatCompletion({messages:[{role:'user',content:'Hello'}]})).requestAttempts,2);
+  assert.equal((await client.createChatCompletion({messages:[{role:'user',content:'Another question'}]})).requestAttempts,1);
+  assert.deepEqual(models,[DEFAULT_OPENROUTER_MODEL_PRIMARY,DEFAULT_OPENROUTER_MODEL_FALLBACK,DEFAULT_OPENROUTER_MODEL_FALLBACK]);
+ }finally{client.stop();}
+});
 test('[MOCKED] sponsor ranking HTTP path uses the source grain with zero model requests and renders a table',async()=>{
  const store=createMockStore(),dbState=createMockDbState(store),original=dbState.pool!.query.bind(dbState.pool);
  dbState.pool!.query=(async(sql:any,params?:any[])=>{
@@ -1198,3 +1231,4 @@ test('[MOCKED] sponsor ranking HTTP path uses the source grain with zero model r
  try{const response=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question:'What is the highest amount that we got from a sponsor?',edition_id:'ED-2026-DEMO',as_of:'2026-11-26'})});const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.answer_check_passed,true,JSON.stringify(body));assert.equal(body.token_usage.model_requests,0);assert.equal(calls,0);assert.match(body.answer,/Current Alpha/);assert.match(body.answer,/1,80,001/);assert.ok(body.blocks.some((b:any)=>b.type==='table'&&b.rows[0].sponsor_name==='Current Alpha'));}
  finally{client.stop();await srv.close();}
 });
+

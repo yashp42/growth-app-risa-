@@ -97,6 +97,7 @@ export interface OpenRouterHealthSnapshot {
 }
 
 export interface OpenRouterCompletionResult {
+  requestAttempts?: number;
   provider: 'groq' | 'openrouter';
   model: string;
   usedFallback: boolean;
@@ -117,6 +118,7 @@ export class OpenRouterError extends Error {
   readonly status: number;
   readonly code: string;
   readonly retryable: boolean;
+  requestAttempts = 0;
 
   constructor(
     message: string,
@@ -161,6 +163,7 @@ export interface OpenRouterClient {
     messages: OpenRouterChatMessage[];
     tools?: OpenRouterToolDefinition[];
     temperature?: number;
+    maxAttempts?: number;
   }): Promise<OpenRouterCompletionResult>;
   stop(): void;
 }
@@ -176,12 +179,12 @@ function parseRetryAfterMs(headerVal: string | null): number {
   const trimmed = headerVal.trim();
   const sec = Number(trimmed);
   if (Number.isFinite(sec) && sec > 0) {
-    return Math.min(Math.round(sec * 1000), 5000);
+    return Math.min(Math.round(sec * 1000), 86400000);
   }
   const dateMs = Date.parse(trimmed);
   if (Number.isFinite(dateMs)) {
     const delta = dateMs - Date.now();
-    return delta > 0 ? Math.min(delta, 5000) : 0;
+    return delta > 0 ? Math.min(delta, 86400000) : 0;
   }
   return 0;
 }
@@ -257,7 +260,6 @@ export function createOpenRouterClient(
   options: OpenRouterClientOptions = {}
 ): OpenRouterClient {
   const fetchFn = options.fetchFn ?? fetch;
-  const sleepFn = options.sleepFn ?? defaultSleep;
   const referer =
     options.referer ?? process.env.APP_URL?.trim() ?? 'http://localhost:3000';
   const title = options.title ?? 'Sponsorship Growth Platform';
@@ -311,6 +313,7 @@ export function createOpenRouterClient(
     validationError = err instanceof Error ? err.message : 'Invalid model config.';
   }
 
+  const cooldowns = new Map<string,number>();
   const buildChain = (): ChainEntry[] => {
     const entries: ChainEntry[]=[];
     if(groqKey)for(const model of new Set([groqPrimary,groqFallback].filter((model): model is string => Boolean(model))))entries.push({provider:'groq',model,baseUrl:GROQ_BASE_URL,apiKey:groqKey});
@@ -339,12 +342,12 @@ export function createOpenRouterClient(
   >();
   if (groqKey) {
     groqRateState.set(groqPrimary, {
-      remainingRequests: 1000,
+      remainingRequests: null,
       remainingTokens: null,
     });
     if (groqFallback && groqFallback !== groqPrimary) {
       groqRateState.set(groqFallback, {
-        remainingRequests: 1000,
+        remainingRequests: null,
         remainingTokens: null,
       });
     }
@@ -559,16 +562,14 @@ export function createOpenRouterClient(
     ) {
       totalRemaining += openrouterQuota.remaining;
     }
-    const groqModelCount =
-      groqFallback && groqFallback !== groqPrimary ? 2 : 1;
-    const totalLimit =
-      groqModelCount * 1000 + (openrouterQuota.limit ?? 0);
+    const unknownGroq=[...new Set([groqPrimary,groqFallback])].some(m=>groqRateState.get(m)?.remainingRequests==null);
     const unknownOpenRouter = Boolean(config.openrouterApiKey) && openrouterQuota.remaining === null;
     return {
-      limit: unknownOpenRouter ? null : totalLimit,
-      remaining: unknownOpenRouter ? null : totalRemaining,
-      used: unknownOpenRouter ? null : Math.max(0, totalLimit - totalRemaining),
-      exhausted: totalRemaining <= 0 && !unknownOpenRouter,
+      // Headers can describe different windows. Never invent or add daily allowances.
+      limit: null,
+      remaining: null,
+      used: null,
+      exhausted: totalRemaining <= 0 && !unknownOpenRouter && !unknownGroq,
       checked_at: new Date().toISOString(),
       reset_note: OPENROUTER_QUOTA_RESET_NOTE,
       source: 'provider_chain',
@@ -701,6 +702,7 @@ export function createOpenRouterClient(
       model: entry.model,
       messages: tools?.length ? messages : answerOnlyMessages(messages),
       temperature,
+      max_tokens: 1600,
     };
 
     if (tools && tools.length > 0) {
@@ -762,7 +764,7 @@ export function createOpenRouterClient(
         res.headers.get('x-ratelimit-remaining-tokens')
       );
       const prev = groqRateState.get(entry.model) ?? {
-        remainingRequests: 1000,
+        remainingRequests: null,
         remainingTokens: null,
       };
       groqRateState.set(entry.model, {
@@ -782,9 +784,8 @@ export function createOpenRouterClient(
       const retryAfterMs = retryable
         ? parseRetryAfterMs(res.headers.get('retry-after'))
         : 0;
-      if (retryAfterMs > 0) {
-        await sleepFn(retryAfterMs);
-      }
+      if(retryable)cooldowns.set(entry.provider+':'+entry.model,Date.now()+Math.max(retryAfterMs,res.status===429?60_000:toolArgumentFailure?60_000:10_000));
+      // Do not block the user's request or immediately retry a cooling provider.
       throw new OpenRouterError(
         `${entry.provider} returned HTTP ${res.status}${errText ? `: ${errText.slice(0, 220)}` : ''}`,
         res.status,
@@ -845,6 +846,7 @@ export function createOpenRouterClient(
     messages: OpenRouterChatMessage[];
     tools?: OpenRouterToolDefinition[];
     temperature?: number;
+    maxAttempts?: number;
   }): Promise<OpenRouterCompletionResult> {
     if (!configValid || !openrouterPrimaryModel || !openrouterFallbackModel) {
       throw new OpenRouterError(
@@ -873,8 +875,11 @@ export function createOpenRouterClient(
     const temperature = params.temperature ?? 0;
 
     let lastErr: unknown = null;
+    let attempts=0;
     for (let i = 0; i < chain.length; i += 1) {
       const entry = chain[i];
+      if((cooldowns.get(entry.provider+':'+entry.model)??0)>Date.now())continue;
+      if(attempts>=Math.min(3,Math.max(1,params.maxAttempts??3)))break;
       if(entry.provider==='openrouter' && openrouterQuota.exhausted)continue;
       const reasoningSupported =
         entry.provider === 'openrouter'
@@ -883,6 +888,7 @@ export function createOpenRouterClient(
             : (fallbackCheck?.reasoningSupported ?? true)
           : false;
       try {
+        attempts++;
         const result = await callSingleEntry(
           entry,
           params.messages,
@@ -892,9 +898,11 @@ export function createOpenRouterClient(
         );
         return {
           ...result,
+          requestAttempts: attempts,
           usedFallback: i > 0,
         };
       } catch (err) {
+        if(err instanceof OpenRouterError)err.requestAttempts=attempts;
         lastErr = err;
         const canContinue =
           err instanceof OpenRouterError &&
