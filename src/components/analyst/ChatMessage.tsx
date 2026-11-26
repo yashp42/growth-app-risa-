@@ -1,9 +1,6 @@
 import {
   AlertTriangle,
-  ChevronDown,
-  ChevronRight,
   LayoutGrid,
-  RefreshCw,
   ThumbsDown,
   ThumbsUp,
   Volume2,
@@ -19,7 +16,6 @@ import { MarkdownAnswer } from './MarkdownAnswer';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import {
-  formatAiRouteLabel,
   formatRecordClassLabel,
   verifyAnalystResponseIntegrity,
 } from '../../services/analystApi';
@@ -29,8 +25,6 @@ import type {
   AiPermissionProfile,
   AiViewSpec,
 } from '../../types/analyst';
-import { CitationList } from './CitationList';
-import { MetricEvidenceCard } from './MetricEvidenceCard';
 import { ProposedBatchCard } from './ProposedActionCard';
 
 interface ChatMessageProps {
@@ -76,9 +70,10 @@ export function ChatMessage({
   onSubmitFeedback,
   compact = false,
 }: ChatMessageProps) {
-  const [toolsExpanded, setToolsExpanded] = useState(false);
   const reduceMotion = useReducedMotion() ?? false;
   const [speaking, setSpeaking] = useState(false);
+
+  const answerContent = message.content.replace(/(?:^|\n)Source notes:\s*\n[\s\S]*$/i, '').trim();
 
   const ttsSupported = isSpeechSynthesisSupported();
 
@@ -91,7 +86,7 @@ export function ChatMessage({
       setSpeaking(false);
       return;
     }
-    if (speakAnswer(message.content, { onEnd: () => setSpeaking(false) })) {
+    if (speakAnswer(answerContent, { onEnd: () => setSpeaking(false) })) {
       setSpeaking(true);
     }
   };
@@ -117,7 +112,6 @@ export function ChatMessage({
   const integrity = structured
     ? verifyAnalystResponseIntegrity(structured)
     : null;
-  const routeLabel = formatAiRouteLabel(structured?.route);
   const resolvedActions = (structured?.action_ids ?? [])
     .map((id) => actionsById[id])
     .filter((a): a is AiActionRecord => Boolean(a));
@@ -146,7 +140,6 @@ export function ChatMessage({
     }
   }
 
-  const toolCalls = structured?.tool_calls ?? [];
 
   // A freshly arrived answer fades in from blur with a slight upward slide
   // (~450 ms); history and reduced-motion users get no animation.
@@ -164,58 +157,14 @@ export function ChatMessage({
         <span className="text-sm font-semibold text-[var(--color-accent)]">Growth Analyst</span>
         {ttsSupported && message.content.trim() ? <button type="button" className="icon-button" aria-label={speaking?'Stop reading aloud':'Read answer aloud'} aria-pressed={speaking} onClick={toggleSpeak}>{speaking?<VolumeX size={16}/>:<Volume2 size={16}/>}</button>:null}
       </div>
-      <details className="mb-2 text-xs text-[var(--color-ink-subtle)]"><summary className="w-fit">Answer context</summary><div className="mt-2 space-y-1">{structured?.data_labels?.join(' · ')}<div>{routeLabel} · Source version {String(structured?.data_version??'Unknown')}</div></div></details>
       {/* Main answer prose */}
       <div className="mt-3 text-[14px] leading-relaxed text-[var(--color-ink)]">
-        <MarkdownAnswer>{message.content}</MarkdownAnswer>
+        <MarkdownAnswer>{answerContent}</MarkdownAnswer>
       </div>
 
       {/* Server-built tables / charts / KPIs (numbers from tool results only) */}
       {structured?.blocks && structured.blocks.length > 0 ? (
         <AnswerBlocks blocks={structured.blocks} />
-      ) : null}
-
-      {/* Collapsed tool steps accordion */}
-      {toolCalls.length > 0 ? (
-        <div className="mt-3">
-          <button
-            type="button"
-            onClick={() => setToolsExpanded((prev) => !prev)}
-            aria-expanded={toolsExpanded}
-            className="inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)]"
-          >
-            {toolsExpanded ? (
-              <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-            )}
-            <span>How this answer was prepared</span>
-          </button>
-          {toolsExpanded ? (
-            <ul className="mt-1.5 space-y-1 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3 py-2 font-mono text-[12px] text-[var(--color-ink-muted)]">
-              {toolCalls.map((tc, idx) => (
-                <li
-                  key={`${tc.tool_call_id}-${idx}`}
-                  className="flex items-baseline justify-between gap-2"
-                >
-                  <span className="truncate">
-                    {tc.tool_name}
-                    {tc.summary ? ` — ${tc.summary}` : ''}
-                  </span>
-                  <span
-                    className={
-                      tc.status === 'error' || tc.status === 'denied'
-                        ? 'text-[#9B3B32]'
-                        : 'text-[var(--color-accent)]'
-                    }
-                  >
-                    {tc.status ?? 'ok'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
       ) : null}
 
       {/* Grounding / verification notice if flagged */}
@@ -229,32 +178,6 @@ export function ChatMessage({
             aria-hidden="true"
           />
           <span>{integrity.warnings.join(' ')}</span>
-        </div>
-      ) : null}
-
-      {/* Tool-backed metric cards */}
-      {structured?.metric_results && structured.metric_results.length > 0 ? (
-        <details className="source-details" open={integrity?.valid === false}><summary>Source metrics</summary><div
-          className={`mt-4 grid gap-3 ${
-            compact || structured.metric_results.length === 1
-              ? 'grid-cols-1'
-              : 'grid-cols-1 sm:grid-cols-2'
-          }`}
-        >
-          {structured.metric_results.map((m, idx) => (
-            <MetricEvidenceCard
-              key={`${m.metric_id}-${idx}`}
-              metric={m}
-              compact={compact}
-            />
-          ))}
-        </div></details>
-      ) : null}
-
-      {/* Interactive citation chips + drawer */}
-      {structured?.citations && structured.citations.length > 0 ? (
-        <div className="mt-4">
-          <CitationList citations={structured.citations} compact={compact} />
         </div>
       ) : null}
 
