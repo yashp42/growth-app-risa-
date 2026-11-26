@@ -1131,7 +1131,7 @@ test('[MOCKED] prospect prioritisation, research status and verified-route answe
   if(String(sql).includes('FROM ref.dataset WHERE'))return {rows:[{dataset_id:'market_research.prospect_register',title:'Prospect register',source_path:'research.csv',status:'research',record_class:'external_research',columns:Object.keys(prospectRows[0]),row_count:2}]};
   if(String(sql).includes('FROM ref.dataset_row r'))return {rows:prospectRows.map((data,i)=>({row_no:i+1,data}))};
   return original(sql,params);
- }) as typeof dbState.pool.query;
+ }) as typeof original;
  let modelCalls=0;
  const client=createOpenRouterClient(createBaseConfig(),{startBackgroundRefresh:false,fetchFn:async(input)=>{
   if(String(input).endsWith('/chat/completions')){modelCalls++;throw Error('Model unavailable');}
