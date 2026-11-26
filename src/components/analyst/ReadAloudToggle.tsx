@@ -22,13 +22,13 @@ export function ReadAloudToggle({ on, supported, onChange, compact = false }: Re
         compact
           ? `flex h-8 w-8 items-center justify-center rounded transition-colors duration-150 ${
               on
-                ? 'bg-[#EBF1EE] text-[#264B40]'
-                : 'text-[#525E58] hover:bg-[#FAF9F6] hover:text-[#202824]'
+                ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent-hover)]'
+                : 'text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-subtle)] hover:text-[var(--color-ink)]'
             }`
-          : `inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12px] font-medium transition-colors ${
+          : `inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
               on
-                ? 'border-[#315F52] bg-[#EBF1EE] text-[#264B40]'
-                : 'border-[#D9D7D0] bg-white text-[#525E58] hover:border-[#788C83] hover:text-[#202824]'
+                ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent-hover)]'
+                : 'border-[var(--color-border)] bg-white text-[var(--color-ink-muted)] hover:border-[var(--color-ink-subtle)] hover:text-[var(--color-ink)]'
             }`
       }
     >

@@ -5,13 +5,14 @@
  * start at a real event and simply end after their animation.
  */
 
-export type OrbState = 'idle' | 'listening' | 'thinking' | 'answering' | 'confirm' | 'error';
+export type OrbState = 'idle' | 'listening' | 'thinking' | 'answering' | 'confirm' | 'error' | 'speaking';
 
 export const ANSWERING_MS = 450;
 export const ERROR_FLASH_MS = 900;
 
 export interface OrbInputs {
   micOn: boolean;
+  speaking?: boolean;
   sending: boolean;
   pendingConfirm: boolean;
   /** Timestamp (ms) of the last error or quota-out, if any. */
@@ -25,12 +26,14 @@ export function deriveOrbState(i: OrbInputs): OrbState {
   if (i.lastErrorAt !== null && i.now - i.lastErrorAt < ERROR_FLASH_MS) return 'error';
   if (i.micOn) return 'listening';
   if (i.sending) return 'thinking';
+  if (i.speaking) return 'speaking';
   if (i.lastAnsweredAt !== null && i.now - i.lastAnsweredAt < ANSWERING_MS) return 'answering';
   if (i.pendingConfirm) return 'confirm';
   return 'idle';
 }
 
 export const ORB_STATE_LABEL: Record<OrbState, string> = {
+  speaking: 'Speaking. Stop playback at any time.',
   idle: 'Growth Analyst ready. Ask or speak.',
   listening: 'Listening…',
   thinking: 'Working on it…',
@@ -38,3 +41,4 @@ export const ORB_STATE_LABEL: Record<OrbState, string> = {
   confirm: 'A change is waiting for your Accept or Cancel.',
   error: 'Something went wrong.',
 };
+

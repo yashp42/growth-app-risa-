@@ -54,10 +54,10 @@ export function EvidencePanel({
   return (
     <aside
       aria-label="Evidence and context"
-      className="space-y-4 rounded-md border border-[#D9D7D0] bg-white p-4"
+      className="space-y-4 rounded-md border border-[var(--color-border)] bg-white p-4"
     >
-      <div className="flex items-center justify-between border-b border-[#E8E6E0] pb-3">
-        <h2 className="text-[14px] font-semibold text-[#202824]">
+      <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
+        <h2 className="text-[14px] font-semibold text-[var(--color-ink)]">
           Evidence &amp; context
         </h2>
         {onCollapse ? (
@@ -65,7 +65,7 @@ export function EvidencePanel({
             type="button"
             onClick={onCollapse}
             aria-label="Collapse evidence panel"
-            className="hidden h-7 w-7 items-center justify-center rounded text-[#525E58] hover:bg-[#FAF9F6] hover:text-[#202824] lg:inline-flex"
+            className="hidden h-7 w-7 items-center justify-center rounded text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-subtle)] hover:text-[var(--color-ink)] lg:inline-flex"
           >
             <PanelRightClose className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -73,32 +73,32 @@ export function EvidencePanel({
       </div>
 
       {/* Active Data Scope */}
-      <dl className="space-y-2 text-[12px]">
+      <dl className="space-y-2 text-[13px]">
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-[#788C83]">Data class</dt>
-          <dd className="text-right font-medium text-[#202824]">
+          <dt className="text-[var(--color-ink-subtle)]">Data class</dt>
+          <dd className="text-right font-medium text-[var(--color-ink)]">
             {formatRecordClassLabel(filters.record_class)}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-[#788C83]">Edition</dt>
-          <dd className="font-mono text-[#202824]">{filters.edition_id}</dd>
+          <dt className="text-[var(--color-ink-subtle)]">Edition</dt>
+          <dd className="font-mono text-[var(--color-ink)]">{filters.edition_id}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-[#788C83]">As of</dt>
-          <dd className="font-mono text-[#202824]">{filters.as_of}</dd>
+          <dt className="text-[var(--color-ink-subtle)]">As of</dt>
+          <dd className="font-mono text-[var(--color-ink)]">{filters.as_of}</dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-[#788C83]">Data version</dt>
-          <dd className="font-mono text-[#202824]">
+          <dt className="text-[var(--color-ink-subtle)]">Data version</dt>
+          <dd className="font-mono text-[var(--color-ink)]">
             {dataVersion !== null && dataVersion !== undefined
               ? `v${String(dataVersion)}`
               : 'Unavailable'}
           </dd>
         </div>
         <div className="flex items-baseline justify-between gap-2">
-          <dt className="text-[#788C83]">Workspace context</dt>
-          <dd className="font-mono text-[#525E58]">
+          <dt className="text-[var(--color-ink-subtle)]">Workspace context</dt>
+          <dd className="font-mono text-[var(--color-ink-muted)]">
             {activeRecordContext
               ? `${activeRecordContext.entityType} ${activeRecordContext.entityId}`
               : activeContextSection}
@@ -107,9 +107,9 @@ export function EvidencePanel({
       </dl>
 
       {activeFilterEntries.length > 0 ? (
-        <div className="border-t border-[#E8E6E0] pt-3">
-          <p className="text-[11px] font-medium text-[#788C83]">Active filters</p>
-          <p className="mt-1 font-mono text-[11px] text-[#202824]">
+        <div className="border-t border-[var(--color-border-subtle)] pt-3">
+          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Active filters</p>
+          <p className="mt-1 font-mono text-[12px] text-[var(--color-ink)]">
             {activeFilterEntries.join(' · ')}
           </p>
         </div>
@@ -119,11 +119,11 @@ export function EvidencePanel({
       {latestStructured ? (
         <>
           {latestStructured.data_labels.length > 0 ? (
-            <div className="border-t border-[#E8E6E0] pt-3">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="border-t border-[var(--color-border-subtle)] pt-3">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Source labels
               </p>
-              <p className="mt-1 text-[12px] text-[#202824]">
+              <p className="mt-1 text-[13px] text-[var(--color-ink)]">
                 {latestStructured.data_labels.join(' · ')}
               </p>
             </div>
@@ -131,8 +131,8 @@ export function EvidencePanel({
 
           {latestStructured.metric_results &&
           latestStructured.metric_results.length > 0 ? (
-            <div className="space-y-2.5 border-t border-[#E8E6E0] pt-3">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="space-y-2.5 border-t border-[var(--color-border-subtle)] pt-3">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Metrics queried ({latestStructured.metric_results.length})
               </p>
               {latestStructured.metric_results.map((m, idx) => (
@@ -146,7 +146,7 @@ export function EvidencePanel({
           ) : null}
 
           {latestStructured.citations.length > 0 ? (
-            <div className="border-t border-[#E8E6E0] pt-3">
+            <div className="border-t border-[var(--color-border-subtle)] pt-3">
               <CitationList citations={latestStructured.citations} compact />
             </div>
           ) : null}
@@ -154,21 +154,21 @@ export function EvidencePanel({
           {latestStructured.linked_records &&
           latestStructured.linked_records.length > 0 &&
           !permissionProfile.isViewerRestricted ? (
-            <div className="space-y-1.5 border-t border-[#E8E6E0] pt-3">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="space-y-1.5 border-t border-[var(--color-border-subtle)] pt-3">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Linked records
               </p>
-              <ul className="divide-y divide-[#E8E6E0] rounded border border-[#E8E6E0] bg-[#FAF9F6]">
+              <ul className="divide-y divide-[var(--color-border-subtle)] rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)]">
                 {latestStructured.linked_records.map((rec) => (
                   <li
                     key={`${rec.entity_type}:${rec.entity_id}`}
-                    className="flex items-center justify-between gap-2 px-3 py-2 text-[12px]"
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-[13px]"
                   >
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-[#202824]">
+                      <p className="truncate font-medium text-[var(--color-ink)]">
                         {rec.label}
                       </p>
-                      <p className="truncate font-mono text-[10px] text-[#788C83]">
+                      <p className="truncate font-mono text-[12px] text-[var(--color-ink-subtle)]">
                         {rec.entity_type} · {rec.entity_id}
                       </p>
                     </div>
@@ -179,7 +179,7 @@ export function EvidencePanel({
                           onOpenLinkedRecord(rec.entity_type, rec.entity_id)
                         }
                         aria-label={`Open ${rec.label}`}
-                        className="shrink-0 text-[#315F52] hover:text-[#264B40]"
+                        className="shrink-0 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
                       >
                         <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
@@ -192,11 +192,11 @@ export function EvidencePanel({
 
           {latestStructured.tool_calls &&
           latestStructured.tool_calls.length > 0 ? (
-            <div className="border-t border-[#E8E6E0] pt-3">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="border-t border-[var(--color-border-subtle)] pt-3">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Tools invoked ({latestStructured.tool_calls.length}/6)
               </p>
-              <ul className="mt-1.5 space-y-1 font-mono text-[11px] text-[#525E58]">
+              <ul className="mt-1.5 space-y-1 font-mono text-[12px] text-[var(--color-ink-muted)]">
                 {latestStructured.tool_calls.map((tc) => (
                   <li key={tc.tool_call_id} className="truncate">
                     {tc.tool_name}
@@ -208,7 +208,7 @@ export function EvidencePanel({
           ) : null}
         </>
       ) : (
-        <div className="border-t border-[#E8E6E0] pt-3 text-[12px] text-[#788C83]">
+        <div className="border-t border-[var(--color-border-subtle)] pt-3 text-[13px] text-[var(--color-ink-subtle)]">
           Metrics, citations, and linked records from your active investigation
           will appear here.
         </div>

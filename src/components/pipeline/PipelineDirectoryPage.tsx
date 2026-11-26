@@ -243,12 +243,12 @@ export function PipelineDirectoryPage({
       {[0, 1, 2, 3].map((col) => (
         <div
           key={col}
-          className="rounded-md border border-[#D9D7D0] bg-white p-4"
+          className="rounded-xl border border-[var(--color-border)] bg-white p-4"
         >
-          <div className="h-4 w-28 rounded bg-[#E8E6E0]" />
+          <div className="h-4 w-28 rounded bg-[var(--color-border-subtle)]" />
           <div className="mt-4 space-y-3">
-            <div className="h-24 rounded bg-[#FAF9F6]" />
-            <div className="h-24 rounded bg-[#FAF9F6]" />
+            <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
+            <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
           </div>
         </div>
       ))}
@@ -258,16 +258,16 @@ export function PipelineDirectoryPage({
   return (
     <div className="space-y-8 pb-8">
       {/* Header */}
-      <section className="border-b border-[#D9D7D0] pb-6">
+      <section className="border-b border-[var(--color-border)] pb-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-[#202824]">
+            <h1 className="page-heading text-[var(--color-ink)]">
               Pipeline
             </h1>
-            <p className="mt-1 text-[13px] text-[#525E58]">
+            <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Commercial opportunities, stage progression, and deal outcomes.
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[11px] text-[#788C83]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatRecordClassLabel(filters.record_class)}</span>
               <span aria-hidden="true">·</span>
               <span>{filters.edition_id}</span>
@@ -276,7 +276,7 @@ export function PipelineDirectoryPage({
               {isHistorical2025 ? (
                 <>
                   <span aria-hidden="true">·</span>
-                  <span className="font-medium text-[#525E58]">
+                  <span className="font-medium text-[var(--color-ink-muted)]">
                     {READ_ONLY_2025_MESSAGE}
                   </span>
                 </>
@@ -293,14 +293,14 @@ export function PipelineDirectoryPage({
 
           <div className="flex flex-wrap items-center gap-2.5">
             {showDevControls ? (
-              <div className="flex items-center gap-2 rounded-md border border-dashed border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1">
-                <span className="font-mono text-[11px] text-[#788C83]">
+              <div className="flex items-center gap-2 rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1">
+                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                   Dev state
                 </span>
                 <div
                   role="group"
                   aria-label="Developer preview pipeline data state"
-                  className="inline-flex rounded border border-[#D9D7D0] bg-white p-0.5"
+                  className="inline-flex rounded border border-[var(--color-border)] bg-white p-0.5"
                 >
                   {(
                     [
@@ -313,10 +313,10 @@ export function PipelineDirectoryPage({
                       key={mode.id}
                       type="button"
                       onClick={() => onChangePreviewMode(mode.id)}
-                      className={`rounded px-2 py-0.5 text-[12px] font-medium transition-colors duration-150 ${
+                      className={`rounded px-2 py-0.5 text-[13px] font-medium transition-colors duration-150 ${
                         previewMode === mode.id
-                          ? 'bg-[#315F52] text-white'
-                          : 'text-[#525E58] hover:text-[#202824]'
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                       }`}
                     >
                       {mode.label}
@@ -329,10 +329,10 @@ export function PipelineDirectoryPage({
             <button
               type="button"
               onClick={onRefresh}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] whitespace-nowrap"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] whitespace-nowrap"
             >
               <RefreshCw
-                className="h-3.5 w-3.5 text-[#525E58]"
+                className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                 aria-hidden="true"
               />
               Refresh
@@ -344,7 +344,7 @@ export function PipelineDirectoryPage({
                 onClick={onCreateOpportunity}
                 disabled={!canCreate}
                 title={isHistorical2025 ? READ_ONLY_2025_MESSAGE : undefined}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-3.5 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 New opportunity
@@ -366,10 +366,10 @@ export function PipelineDirectoryPage({
             return (
               <div
                 key={metricId}
-                className="rounded-md border border-[#D9D7D0] bg-white px-3.5 py-3"
+                className="rounded-xl border border-[var(--color-border)] bg-white px-3.5 py-3"
               >
                 <div className="flex items-center justify-between gap-1">
-                  <span className="truncate text-[11px] font-medium text-[#788C83]">
+                  <span className="truncate text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     {meta.name}
                   </span>
                   <InfoHint
@@ -380,8 +380,8 @@ export function PipelineDirectoryPage({
                 <p
                   className={`mt-1.5 font-mono text-[17px] font-semibold tabular-nums ${
                     metricId === 'M-02' || metricId === 'M-03'
-                      ? 'text-[#315F52]'
-                      : 'text-[#202824]'
+                      ? 'text-[var(--color-accent)]'
+                      : 'text-[var(--color-ink)]'
                   }`}
                 >
                   {formatted}
@@ -396,13 +396,13 @@ export function PipelineDirectoryPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="pipeline-search"
-              className="text-[11px] font-medium text-[#788C83]"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
             >
               Search
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[#788C83]"
+                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-ink-subtle)]"
                 aria-hidden="true"
               />
               <input
@@ -413,7 +413,7 @@ export function PipelineDirectoryPage({
                   onChangeFilters({ ...filters, search: e.target.value })
                 }
                 placeholder="Search opportunity or sponsor..."
-                className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white pr-3 pl-8 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none"
+                className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white pr-3 pl-8 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none"
               />
             </div>
           </div>
@@ -507,7 +507,7 @@ export function PipelineDirectoryPage({
           <div
             role="group"
             aria-label="Pipeline stage scope"
-            className="inline-flex rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-0.5"
+            className="inline-flex rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-0.5"
           >
             {(
               [
@@ -525,10 +525,10 @@ export function PipelineDirectoryPage({
                     onChangeFilters({ ...filters, stage: 'all' });
                   }
                 }}
-                className={`rounded px-3 py-1 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+                className={`rounded px-3 py-1 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                   scopeView === opt.id && filters.stage === 'all'
-                    ? 'bg-white text-[#202824] shadow-xs'
-                    : 'text-[#525E58] hover:text-[#202824]'
+                    ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                    : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                 }`}
               >
                 {opt.label}
@@ -539,15 +539,15 @@ export function PipelineDirectoryPage({
           <div
             role="group"
             aria-label="Pipeline display view"
-            className="inline-flex rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-0.5"
+            className="inline-flex rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-0.5"
           >
             <button
               type="button"
               onClick={() => setDisplayMode('board')}
-              className={`inline-flex items-center gap-1.5 rounded px-3 py-1 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 rounded px-3 py-1 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                 displayMode === 'board'
-                  ? 'bg-white text-[#202824] shadow-xs'
-                  : 'text-[#525E58] hover:text-[#202824]'
+                  ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                  : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
               }`}
             >
               <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
@@ -556,10 +556,10 @@ export function PipelineDirectoryPage({
             <button
               type="button"
               onClick={() => setDisplayMode('table')}
-              className={`inline-flex items-center gap-1.5 rounded px-3 py-1 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 rounded px-3 py-1 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                 displayMode === 'table'
-                  ? 'bg-white text-[#202824] shadow-xs'
-                  : 'text-[#525E58] hover:text-[#202824]'
+                  ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                  : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
               }`}
             >
               <Table2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -578,8 +578,8 @@ export function PipelineDirectoryPage({
           loadingSkeleton={skeleton}
         >
           {scopedOpportunities.length === 0 ? (
-            <div className="rounded-md border border-[#D9D7D0] bg-white px-6 py-12 text-center">
-              <p className="text-[13px] font-medium text-[#202824]">
+            <div className="rounded-xl border border-[var(--color-border)] bg-white px-6 py-12 text-center">
+              <p className="text-[14px] font-medium text-[var(--color-ink)]">
                 No opportunities yet
               </p>
               {roleAllowsWrite ? (
@@ -591,10 +591,10 @@ export function PipelineDirectoryPage({
                       isHistorical2025 ? READ_ONLY_2025_MESSAGE : undefined
                     }
                     onClick={onCreateOpportunity}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 py-1.5 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus
-                      className="h-3.5 w-3.5 text-[#315F52]"
+                      className="h-3.5 w-3.5 text-[var(--color-accent)]"
                       aria-hidden="true"
                     />
                     Create opportunity
@@ -619,21 +619,21 @@ export function PipelineDirectoryPage({
                 return (
                   <div
                     key={stageKey}
-                    className="flex flex-col rounded-md border border-[#D9D7D0] bg-[#FAF9F6]/70"
+                    className="flex flex-col rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)]/70"
                   >
-                    <div className="flex items-center justify-between border-b border-[#D9D7D0] bg-white px-3.5 py-2.5 rounded-t-md">
+                    <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-white px-3.5 py-2.5 rounded-t-md">
                       <span
-                        className={`text-[12px] font-semibold ${
+                        className={`text-[13px] font-semibold ${
                           stageKey === 'partner_confirmed'
-                            ? 'text-[#315F52]'
+                            ? 'text-[var(--color-accent)]'
                             : stageKey === 'lost' || stageKey === 'withdrawn'
                               ? 'text-[#9B3B32]'
-                              : 'text-[#202824]'
+                              : 'text-[var(--color-ink)]'
                         }`}
                       >
                         {formatOpportunityStage(stageKey)}
                       </span>
-                      <span className="font-mono text-[11px] tabular-nums text-[#788C83]">
+                      <span className="font-mono text-[12px] tabular-nums text-[var(--color-ink-subtle)]">
                         {columnItems.length}
                       </span>
                     </div>
@@ -655,13 +655,13 @@ export function PipelineDirectoryPage({
                           return (
                             <article
                               key={opp.opportunity_id}
-                              className="rounded-md border border-[#D9D7D0] bg-white p-3.5 transition-colors duration-150 hover:border-[#315F52]/50"
+                              className="rounded-xl border border-[var(--color-border)] bg-white p-3.5 transition-colors duration-150 hover:border-[var(--color-accent)]/50"
                             >
                               <div className="flex items-start justify-between gap-2">
-                                <p className="text-[11px] font-medium text-[#788C83] truncate">
+                                <p className="text-[12px] font-medium text-[var(--color-ink-subtle)] truncate">
                                   {opp.sponsor_name || opp.sponsor_id}
                                 </p>
-                                <span className="font-mono text-[11px] text-[#525E58] shrink-0">
+                                <span className="font-mono text-[12px] text-[var(--color-ink-muted)] shrink-0">
                                   {formatSupportType(opp.support_type)}
                                 </span>
                               </div>
@@ -669,14 +669,14 @@ export function PipelineDirectoryPage({
                               <button
                                 type="button"
                                 onClick={() => onOpenOpportunity(opp)}
-                                className="mt-1 block text-left text-[14px] font-semibold leading-snug text-[#202824] hover:text-[#315F52] hover:underline"
+                                className="mt-1 block text-left text-[14px] font-semibold leading-snug text-[var(--color-ink)] hover:text-[var(--color-accent)] hover:underline"
                               >
                                 {opp.name || opp.opportunity_id}
                               </button>
 
-                              <div className="mt-2.5 flex items-baseline justify-between gap-2 border-t border-[#E8E6E0] pt-2">
+                              <div className="mt-2.5 flex items-baseline justify-between gap-2 border-t border-[var(--color-border-subtle)] pt-2">
                                 <div>
-                                  <span className="block text-[10px] text-[#788C83]">
+                                  <span className="block text-[12px] text-[var(--color-ink-subtle)]">
                                     {cur?.stage === 'partner_confirmed'
                                       ? 'Signed value'
                                       : 'Proposed face value'}
@@ -684,8 +684,8 @@ export function PipelineDirectoryPage({
                                   <span
                                     className={`font-mono text-[14px] font-semibold tabular-nums ${
                                       cur?.stage === 'partner_confirmed'
-                                        ? 'text-[#315F52]'
-                                        : 'text-[#202824]'
+                                        ? 'text-[var(--color-accent)]'
+                                        : 'text-[var(--color-ink)]'
                                     }`}
                                   >
                                     {cur?.stage === 'partner_confirmed'
@@ -693,22 +693,22 @@ export function PipelineDirectoryPage({
                                       : formatCurrencyInr(cur?.proposed_value)}
                                   </span>
                                 </div>
-                                <span className="font-mono text-[11px] text-[#788C83] tabular-nums">
+                                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums">
                                   {formatDateShort(updatedAt)}
                                 </span>
                               </div>
 
-                              <dl className="mt-2.5 space-y-1 text-[11px] text-[#525E58]">
+                              <dl className="mt-2.5 space-y-1 text-[12px] text-[var(--color-ink-muted)]">
                                 <div className="flex items-center justify-between gap-2">
-                                  <dt className="text-[#788C83]">Owner</dt>
-                                  <dd className="truncate font-medium text-[#202824]">
+                                  <dt className="text-[var(--color-ink-subtle)]">Owner</dt>
+                                  <dd className="truncate font-medium text-[var(--color-ink)]">
                                     {cur?.owner_name ||
                                       cur?.owner_member_id ||
                                       '—'}
                                   </dd>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                  <dt className="text-[#788C83]">Contact</dt>
+                                  <dt className="text-[var(--color-ink-subtle)]">Contact</dt>
                                   <dd className="truncate">
                                     {opp.primary_contact_name ||
                                       opp.primary_contact_id ||
@@ -716,7 +716,7 @@ export function PipelineDirectoryPage({
                                   </dd>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                  <dt className="text-[#788C83]">Campaign</dt>
+                                  <dt className="text-[var(--color-ink-subtle)]">Campaign</dt>
                                   <dd className="truncate">
                                     {opp.originating_campaign_name ||
                                       opp.originating_campaign_id ||
@@ -724,7 +724,7 @@ export function PipelineDirectoryPage({
                                   </dd>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                  <dt className="text-[#788C83]">Bet</dt>
+                                  <dt className="text-[var(--color-ink-subtle)]">Bet</dt>
                                   <dd className="truncate font-mono">
                                     {opp.bet_id
                                       ? formatBetDisplay(
@@ -736,7 +736,7 @@ export function PipelineDirectoryPage({
                                 </div>
                               </dl>
 
-                              <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#E8E6E0] pt-2.5">
+                              <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-border-subtle)] pt-2.5">
                                 {editable || (isHistorical2025 && roleAllowsWrite) ? (
                                   <button
                                     type="button"
@@ -747,7 +747,7 @@ export function PipelineDirectoryPage({
                                         : undefined
                                     }
                                     onClick={() => onUpdateStage(opp)}
-                                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#525E58] hover:text-[#202824] disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     <GitCommitHorizontal
                                       className="h-3.5 w-3.5"
@@ -756,14 +756,14 @@ export function PipelineDirectoryPage({
                                     Update stage
                                   </button>
                                 ) : (
-                                  <span className="font-mono text-[11px] text-[#788C83]">
+                                  <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                     {readOnly ? 'Read-only' : ''}
                                   </span>
                                 )}
                                 <button
                                   type="button"
                                   onClick={() => onOpenOpportunity(opp)}
-                                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                  className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                                 >
                                   Open
                                   <ArrowUpRight
@@ -776,7 +776,7 @@ export function PipelineDirectoryPage({
                           );
                         })
                       ) : (
-                        <p className="py-6 text-center text-[12px] text-[#788C83]">
+                        <p className="py-6 text-center text-[13px] text-[var(--color-ink-subtle)]">
                           No opportunities
                         </p>
                       )}
@@ -786,11 +786,11 @@ export function PipelineDirectoryPage({
               })}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+            <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6]">
+                    <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
                       {TABLE_COLUMNS.map((col) => {
                         const isActive = sortKey === col.key;
                         const SortIcon = !isActive
@@ -809,21 +809,21 @@ export function PipelineDirectoryPage({
                                   : 'descending'
                                 : 'none'
                             }
-                            className={`px-4 py-3 text-[12px] font-medium text-[#525E58] whitespace-nowrap ${
+                            className={`px-4 py-3 text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap ${
                               col.align === 'right' ? 'text-right' : 'text-left'
                             }`}
                           >
                             <button
                               type="button"
                               onClick={() => handleSort(col.key)}
-                              className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[#202824] ${
-                                isActive ? 'font-semibold text-[#315F52]' : ''
+                              className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[var(--color-ink)] ${
+                                isActive ? 'font-semibold text-[var(--color-accent)]' : ''
                               }`}
                             >
                               <span>{col.label}</span>
                               <SortIcon
                                 className={`h-3 w-3 ${
-                                  isActive ? 'text-[#315F52]' : 'text-[#788C83]'
+                                  isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-ink-subtle)]'
                                 }`}
                                 aria-hidden="true"
                               />
@@ -833,14 +833,14 @@ export function PipelineDirectoryPage({
                       })}
                       <th
                         scope="col"
-                        className="px-4 py-3 text-right text-[12px] font-medium text-[#525E58] whitespace-nowrap"
+                        className="px-4 py-3 text-right text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap"
                       >
                         Actions
                       </th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                  <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                     {sortedTableRows.map((opp) => {
                       const cur = opp.current_stage_version;
                       const editable = canUserEditOpportunity(opp, permissions);
@@ -849,62 +849,62 @@ export function PipelineDirectoryPage({
                       return (
                         <tr
                           key={opp.opportunity_id}
-                          className="transition-colors duration-150 hover:bg-[#FAF9F6]"
+                          className="transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                         >
                           <td className="px-4 py-3">
                             <button
                               type="button"
                               onClick={() => onOpenOpportunity(opp)}
-                              className="text-left font-medium text-[#202824] hover:text-[#315F52] hover:underline"
+                              className="text-left font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)] hover:underline"
                             >
                               {opp.name || opp.opportunity_id}
                             </button>
                             {opp.primary_contact_name ? (
-                              <span className="mt-0.5 block text-[11px] text-[#788C83]">
+                              <span className="mt-0.5 block text-[12px] text-[var(--color-ink-subtle)]">
                                 {opp.primary_contact_name}
                               </span>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3 text-[#202824] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink)] whitespace-nowrap">
                             {opp.sponsor_name || opp.sponsor_id}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span
                               className={
                                 cur?.stage === 'partner_confirmed'
-                                  ? 'font-medium text-[#315F52]'
+                                  ? 'font-medium text-[var(--color-accent)]'
                                   : cur?.stage === 'lost' ||
                                       cur?.stage === 'withdrawn'
                                     ? 'font-medium text-[#9B3B32]'
-                                    : 'text-[#202824]'
+                                    : 'text-[var(--color-ink)]'
                               }
                             >
                               {formatOpportunityStage(cur?.stage)}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {formatSupportType(opp.support_type)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824] whitespace-nowrap">
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)] whitespace-nowrap">
                             {formatCurrencyInr(cur?.proposed_value)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[#315F52] whitespace-nowrap">
+                          <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[var(--color-accent)] whitespace-nowrap">
                             {cur?.stage === 'partner_confirmed'
                               ? formatCurrencyInr(cur?.confirmed_value)
                               : '—'}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {cur?.owner_name || cur?.owner_member_id || '—'}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {opp.originating_campaign_name ||
                               opp.originating_campaign_id ||
                               '—'}
                           </td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)] whitespace-nowrap">
                             {opp.bet_id || '—'}
                           </td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-[#788C83] tabular-nums whitespace-nowrap">
+                          <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-subtle)] tabular-nums whitespace-nowrap">
                             {formatDateShort(updatedAt)}
                           </td>
                           <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -919,7 +919,7 @@ export function PipelineDirectoryPage({
                                       : undefined
                                   }
                                   onClick={() => onUpdateStage(opp)}
-                                  className="text-[12px] font-medium text-[#525E58] hover:text-[#202824] disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="text-[13px] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Stage
                                 </button>
@@ -927,7 +927,7 @@ export function PipelineDirectoryPage({
                               <button
                                 type="button"
                                 onClick={() => onOpenOpportunity(opp)}
-                                className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                               >
                                 Open
                                 <ArrowUpRight
@@ -950,3 +950,4 @@ export function PipelineDirectoryPage({
     </div>
   );
 }
+

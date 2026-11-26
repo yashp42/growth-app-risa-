@@ -33,25 +33,36 @@ export function answerTextForSpeech(raw: string): string {
     .trim();
 }
 
+export const SPEECH_ACTIVITY_EVENT = 'analyst:speech-activity';
+let activeUtterance:SpeechSynthesisUtterance|null=null;
+let finishActive:(()=>void)|null=null;
+function reportSpeech(speaking:boolean){if(typeof window!=='undefined' && typeof window.dispatchEvent==='function')window.dispatchEvent(new CustomEvent(SPEECH_ACTIVITY_EVENT,{detail:{speaking}}));}
 /** Speak text in en-IN, replacing anything currently being read. */
 export function speakAnswer(
   raw: string,
-  handlers: { onEnd?: () => void } = {}
+  handlers: { onEnd?: () => void; onStart?: () => void } = {}
 ): boolean {
   if (!isSpeechSynthesisSupported()) return false;
   const text = answerTextForSpeech(raw);
   if (!text) return false;
-  window.speechSynthesis.cancel();
+  stopSpeaking();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-IN';
-  utterance.onend = () => handlers.onEnd?.();
-  utterance.onerror = () => handlers.onEnd?.();
+  activeUtterance=utterance;
+  let finished=false;
+  const finish=()=>{if(finished)return;finished=true;if(activeUtterance===utterance){activeUtterance=null;finishActive=null;reportSpeech(false);}handlers.onEnd?.();};
+  finishActive=finish;
+  utterance.onstart=()=>{if(activeUtterance===utterance){reportSpeech(true);handlers.onStart?.();}};
+  utterance.onend=finish;
+  utterance.onerror=finish;
   window.speechSynthesis.speak(utterance);
   return true;
 }
 
 export function stopSpeaking(): void {
   if (isSpeechSynthesisSupported()) window.speechSynthesis.cancel();
+  finishActive?.();
+  activeUtterance=null;finishActive=null;reportSpeech(false);
 }
 
 const AUTO_READ_STORAGE_KEY = 'growth_analyst_auto_read_v1';
@@ -71,3 +82,4 @@ export function saveAutoReadPreference(on: boolean): void {
     // Storage unavailable (private window): the toggle still works this session.
   }
 }
+

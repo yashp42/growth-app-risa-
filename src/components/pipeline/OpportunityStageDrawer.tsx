@@ -146,12 +146,12 @@ export function OpportunityStageDrawer({
       }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px]">
-          <div className="flex items-center justify-between gap-2 text-[#525E58]">
+        <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px]">
+          <div className="flex items-center justify-between gap-2 text-[var(--color-ink-muted)]">
             <span>{opportunity.sponsor_name || opportunity.sponsor_id}</span>
             <span>{formatSupportType(opportunity.support_type)}</span>
           </div>
-          <div className="mt-1 flex items-center justify-between gap-2 font-mono text-[11px] text-[#788C83]">
+          <div className="mt-1 flex items-center justify-between gap-2 font-mono text-[12px] text-[var(--color-ink-subtle)]">
             <span>
               Current: {formatOpportunityStage(current?.stage)}
             </span>
@@ -162,7 +162,7 @@ export function OpportunityStageDrawer({
         </div>
 
         {readOnly ? (
-          <div className="rounded border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Historical synthetic records are read-only and cannot be modified.
           </div>
         ) : null}
@@ -170,7 +170,7 @@ export function OpportunityStageDrawer({
         {formError ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{formError}</span>
@@ -181,7 +181,7 @@ export function OpportunityStageDrawer({
           <div>
             <label
               htmlFor="stage-transition-stage"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               New stage
             </label>
@@ -196,7 +196,7 @@ export function OpportunityStageDrawer({
                   setConfirmedValue('');
                 }
               }}
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {ALL_OPPORTUNITY_STAGES.filter(
                 (st) => st !== 'partner_confirmed'
@@ -206,7 +206,7 @@ export function OpportunityStageDrawer({
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-[11px] text-[#788C83]">
+            <p className="mt-1 text-[12px] text-[var(--color-ink-subtle)]">
               To mark a partnership confirmed, use Confirm deal so the signed contract is recorded atomically.
             </p>
           </div>
@@ -214,7 +214,7 @@ export function OpportunityStageDrawer({
           <div>
             <label
               htmlFor="stage-transition-owner"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Owner member ID
             </label>
@@ -226,7 +226,7 @@ export function OpportunityStageDrawer({
               value={ownerMemberId}
               onChange={(e) => setOwnerMemberId(e.target.value)}
               placeholder="Team member ID"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] placeholder:font-sans placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
             {ownerChoices.length > 0 ? (
               <datalist id={ownerListId}>
@@ -245,7 +245,7 @@ export function OpportunityStageDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="stage-transition-proposed"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Proposed face value (₹)
               </label>
@@ -263,7 +263,7 @@ export function OpportunityStageDrawer({
               value={proposedValue}
               onChange={(e) => setProposedValue(e.target.value)}
               placeholder="0"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] tabular-nums focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] tabular-nums focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
 
@@ -271,7 +271,7 @@ export function OpportunityStageDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="stage-transition-confirmed"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Confirmed signed value (₹)
               </label>
@@ -289,24 +289,24 @@ export function OpportunityStageDrawer({
               value={isConfirmedStage ? confirmedValue : '0'}
               onChange={(e) => setConfirmedValue(e.target.value)}
               placeholder="0"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] tabular-nums focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6] disabled:text-[#788C83]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] tabular-nums focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)] disabled:text-[var(--color-ink-subtle)]"
             />
           </div>
         </div>
 
         {isConfirmedStage && !opportunity.has_contract ? (
-          <div className="rounded border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Confirming a partnership with signed value requires an active signed
             contract on record in live operations.
           </div>
         ) : null}
 
         {isDropStage ? (
-          <div className="grid grid-cols-1 gap-4 border-t border-[#E8E6E0] pt-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 border-t border-[var(--color-border-subtle)] pt-4 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="stage-transition-drop-reason"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Drop reason (required)
               </label>
@@ -319,7 +319,7 @@ export function OpportunityStageDrawer({
                 value={dropReason}
                 onChange={(e) => setDropReason(e.target.value)}
                 placeholder="e.g. budget_frozen"
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               />
               <datalist id={dropListId}>
                 {DROP_REASON_SUGGESTIONS.map((item) => (
@@ -331,7 +331,7 @@ export function OpportunityStageDrawer({
             <div>
               <label
                 htmlFor="stage-transition-loss-reason"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Loss reason
               </label>
@@ -343,7 +343,7 @@ export function OpportunityStageDrawer({
                 value={lossReason}
                 onChange={(e) => setLossReason(e.target.value)}
                 placeholder="e.g. terms_dispute"
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               />
               <datalist id={lossListId}>
                 {LOSS_REASON_SUGGESTIONS.map((item) => (
@@ -354,11 +354,11 @@ export function OpportunityStageDrawer({
           </div>
         ) : null}
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
@@ -366,7 +366,7 @@ export function OpportunityStageDrawer({
             <button
               type="submit"
               disabled={submitting}
-              className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:opacity-60"
+              className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
               {submitting ? 'Saving...' : 'Save stage version'}
             </button>

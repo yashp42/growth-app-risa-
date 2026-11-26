@@ -136,7 +136,7 @@ export function InvoiceFormDrawer({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {!permissionProfile.verifiedByServer ? (
-          <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Unverified session preview: Finance &amp; Collections role is
             required on the server to issue invoices.
           </div>
@@ -145,7 +145,7 @@ export function InvoiceFormDrawer({
         {errorMsg ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
@@ -155,7 +155,7 @@ export function InvoiceFormDrawer({
         <div>
           <label
             htmlFor="invoice-contract"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Contract
           </label>
@@ -173,7 +173,7 @@ export function InvoiceFormDrawer({
                 setIssuedAt(nextContract.signed_at.slice(0, 10));
               }
             }}
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             required
           >
             {activeContracts.length === 0 ? (
@@ -192,7 +192,7 @@ export function InvoiceFormDrawer({
         <div>
           <label
             htmlFor="invoice-schedule-item"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Payment schedule item (optional)
           </label>
@@ -210,7 +210,7 @@ export function InvoiceFormDrawer({
                   setAmount(String(item.amount_due));
                 }
               }}
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             >
               <option value="">Unlinked / select schedule item</option>
               {contractSchedules.map((item) => (
@@ -231,7 +231,7 @@ export function InvoiceFormDrawer({
               value={scheduleItemId}
               onChange={(e) => setScheduleItemId(e.target.value)}
               placeholder="Optional schedule item ID"
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             />
           )}
         </div>
@@ -240,7 +240,7 @@ export function InvoiceFormDrawer({
           <div>
             <label
               htmlFor="invoice-no"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Invoice number
             </label>
@@ -250,7 +250,7 @@ export function InvoiceFormDrawer({
               value={invoiceNo}
               onChange={(e) => setInvoiceNo(e.target.value)}
               placeholder="e.g. INV-2026-001"
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           </div>
@@ -258,7 +258,7 @@ export function InvoiceFormDrawer({
           <div>
             <label
               htmlFor="invoice-issued-at"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Issued date
             </label>
@@ -267,7 +267,7 @@ export function InvoiceFormDrawer({
               type="date"
               value={issuedAt}
               onChange={(e) => setIssuedAt(e.target.value)}
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           </div>
@@ -277,7 +277,7 @@ export function InvoiceFormDrawer({
           <div>
             <label
               htmlFor="invoice-amount"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Invoice amount (INR)
             </label>
@@ -289,7 +289,7 @@ export function InvoiceFormDrawer({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="e.g. 125000"
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           </div>
@@ -297,7 +297,7 @@ export function InvoiceFormDrawer({
           <div>
             <label
               htmlFor="invoice-tax"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               GST / Tax amount (optional)
             </label>
@@ -309,7 +309,7 @@ export function InvoiceFormDrawer({
               value={taxAmount}
               onChange={(e) => setTaxAmount(e.target.value)}
               placeholder="e.g. 22500"
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             />
           </div>
         </div>
@@ -317,7 +317,7 @@ export function InvoiceFormDrawer({
         <div>
           <label
             htmlFor="invoice-doc-uri"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Document link (optional)
           </label>
@@ -327,27 +327,27 @@ export function InvoiceFormDrawer({
             value={documentUri}
             onChange={(e) => setDocumentUri(e.target.value)}
             placeholder="https://..."
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
           />
         </div>
 
-        <p className="rounded-md border border-[#E8E6E0] bg-[#FAF9F6] px-3 py-2 text-[12px] text-[#525E58]">
+        <p className="rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3 py-2 text-[13px] text-[var(--color-ink-muted)]">
           Once issued, invoices are locked and cannot be edited or cancelled in
           this workspace.
         </p>
 
-        <div className="flex items-center justify-end gap-2.5 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2.5 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-4 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting || activeContracts.length === 0}
-            className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Issuing...' : 'Issue invoice'}
           </button>

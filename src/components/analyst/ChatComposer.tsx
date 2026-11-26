@@ -1,3 +1,4 @@
+import { stopSpeaking } from '../../lib/speech';
 import { ArrowUp, Mic, MicOff } from 'lucide-react';
 import {
   useCallback,
@@ -255,7 +256,8 @@ export function ChatComposer({
     ) {
       lastAutoVoiceNonceRef.current = autoStartVoiceNonce;
       if (voiceAvailable && !listening && !disabled && !sending) {
-        startVoice();
+        stopSpeaking();
+    startVoice();
       }
     }
   }, [
@@ -284,8 +286,8 @@ export function ChatComposer({
     onListeningChangeRef.current?.(listening);
   }, [listening]);
   useEffect(() => {
-    onInterimRef.current?.(listening ? interimText : '');
-  }, [interimText, listening]);
+    onInterimRef.current?.(listening ? [draft,interimText].filter(Boolean).join(' ') : '');
+  }, [interimText, listening, draft]);
   useEffect(
     () => () => {
       onListeningChangeRef.current?.(false);
@@ -304,6 +306,7 @@ export function ChatComposer({
     }
   }, [toggleVoiceNonce, voiceAvailable, disabled, sending]);
 
+  useEffect(()=>{window.dispatchEvent(new CustomEvent('analyst:voice-error',{detail:voiceError}));},[voiceError]);
   const displayValue = interimText
     ? `${draft}${draft && !draft.endsWith(' ') ? ' ' : ''}${interimText}`
     : draft;
@@ -335,11 +338,11 @@ export function ChatComposer({
         e.preventDefault();
         void submit(false);
       }}
-      className="rounded-md border border-[#D9D7D0] bg-white p-2.5 focus-within:border-[#315F52]"
+      className="analyst-composer p-3 focus-within:border-[var(--color-accent)]"
     >
       <div className="flex items-end gap-2">
         <textarea
-          rows={compact ? 2 : 3}
+          rows={2}
           value={displayValue}
           disabled={disabled || sending}
           onChange={(e) => {
@@ -349,7 +352,7 @@ export function ChatComposer({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           aria-label="Growth Analyst question"
-          className="max-h-36 min-h-[44px] w-full resize-none bg-transparent px-1.5 py-1 text-[13px] leading-relaxed text-[#202824] placeholder:text-[#788C83] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+          className="max-h-36 min-h-[44px] w-full resize-none bg-transparent px-1.5 py-1 text-[14px] leading-relaxed text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-60"
         />
 
         {voiceAvailable ? (
@@ -369,7 +372,7 @@ export function ChatComposer({
             className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition-colors ${
               listening
                 ? 'border-[#9B3B32] bg-[#FDF5F4] text-[#9B3B32]'
-                : 'border-[#D9D7D0] bg-[#FAF9F6] text-[#525E58] hover:border-[#788C83] hover:text-[#202824]'
+                : 'border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[var(--color-ink-muted)] hover:border-[var(--color-ink-subtle)] hover:text-[var(--color-ink)]'
             } disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {listening ? (
@@ -384,35 +387,35 @@ export function ChatComposer({
           type="submit"
           disabled={!canSubmit}
           aria-label="Send message"
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#264B40] disabled:cursor-not-allowed disabled:bg-[#E8E6E0] disabled:text-[#788C83]"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white transition-colors hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--color-border-subtle)] disabled:text-[var(--color-ink-subtle)]"
         >
           <span>{sending ? 'Sending...' : 'Send'}</span>
           <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
 
-      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 px-1.5 text-[11px]">
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 px-1.5 text-[12px]">
         {!voiceAvailable ? (
-          <span className="text-[#788C83]">
+          <span className="text-[var(--color-ink-subtle)]">
             Voice needs Chrome or Edge and microphone permission
           </span>
         ) : (
-          <div className="flex flex-wrap items-center gap-3 text-[#788C83]">
+          <div className="flex flex-wrap items-center gap-3 text-[var(--color-ink-subtle)]">
             <span>
               {listening
                 ? 'Listening (en-IN)...'
                 : !compact
-                  ? 'Enter to send · Shift+Enter for a new line'
+                  ? 'Enter to send · Shift+Enter for new line'
                   : 'Browser voice (en-IN)'}
             </span>
-            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[#525E58]">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 text-[var(--color-ink-muted)]">
               <input
                 type="checkbox"
                 checked={autoSendSilence}
                 onChange={(e) => setAutoSendSilence(e.target.checked)}
-                className="h-3 w-3 accent-[#315F52]"
+                className="h-3 w-3 accent-[var(--color-accent)]"
               />
-              <span>Auto-send on pause (1.5s)</span>
+              <span>Send after a pause</span>
             </label>
           </div>
         )}
@@ -423,3 +426,4 @@ export function ChatComposer({
     </form>
   );
 }
+

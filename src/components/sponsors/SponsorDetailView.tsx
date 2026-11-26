@@ -554,7 +554,7 @@ export function SponsorDetailView({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#525E58] transition-colors duration-150 hover:text-[#202824]"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--color-ink-muted)] transition-colors duration-150 hover:text-[var(--color-ink)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back to Sponsors
@@ -567,17 +567,17 @@ export function SponsorDetailView({
         error={sponsorError}
         onRetry={triggerReload}
         loadingSkeleton={
-          <div className="border-b border-[#D9D7D0] pb-6">
-            <div className="h-7 w-64 rounded bg-[#E8E6E0]" />
-            <div className="mt-2 h-4 w-80 rounded bg-[#F3F1EB]" />
+          <div className="border-b border-[var(--color-border)] pb-6">
+            <div className="h-7 w-64 rounded bg-[var(--color-border-subtle)]" />
+            <div className="mt-2 h-4 w-80 rounded bg-[var(--color-canvas)]" />
           </div>
         }
       >
         {sponsor ? (
-          <div className="border-b border-[#D9D7D0] pb-5">
+          <div className="border-b border-[var(--color-border)] pb-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-[#788C83]">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[var(--color-ink-subtle)]">
                   <span>
                     {sponsor.category_name ||
                       sponsor.category_id ||
@@ -589,31 +589,31 @@ export function SponsorDetailView({
                       sponsor.lifecycle_status === 'do_not_contact'
                         ? 'font-medium text-[#9B3B32]'
                         : sponsor.lifecycle_status === 'active'
-                          ? 'font-medium text-[#315F52]'
-                          : 'text-[#525E58]'
+                          ? 'font-medium text-[var(--color-accent)]'
+                          : 'text-[var(--color-ink-muted)]'
                     }
                   >
                     {formatLifecycleStatus(sponsor.lifecycle_status)}
                   </span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono text-[11px]">
+                  <span className="font-mono text-[12px]">
                     {formatSponsorRecordClass(sponsor.record_class)}
                     {sponsor.edition_id ? ` · ${sponsor.edition_id}` : ''}
                   </span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono text-[11px]">
+                  <span className="font-mono text-[12px]">
                     As of {asOf}
                   </span>
                   {readOnly ? (
                     <>
                       <span aria-hidden="true">·</span>
-                      <span className="font-mono text-[11px] text-[#525E58]">
+                      <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                         {isHistorical2025 ? READ_ONLY_2025_MESSAGE : 'Read-only'}
                       </span>
                     </>
                   ) : null}
                 </div>
-                <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.025em] text-[#202824]">
+                <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.025em] text-[var(--color-ink)]">
                   {sponsor.display_name}
                 </h1>
               </div>
@@ -622,9 +622,9 @@ export function SponsorDetailView({
                 <button
                   type="button"
                   onClick={triggerReload}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                 >
-                  <RefreshCw className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
+                  <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
                   Refresh
                 </button>
                 {editableSponsor || (isHistorical2025 && roleAllowsWrite) ? (
@@ -639,9 +639,9 @@ export function SponsorDetailView({
                         hasPriorContract: priorContractPresent,
                       });
                     }}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Pencil className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
+                    <Pencil className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
                     Edit
                   </button>
                 ) : null}
@@ -652,7 +652,7 @@ export function SponsorDetailView({
             <div
               role="tablist"
               aria-label="Sponsor profile sections"
-              className="mt-6 flex flex-wrap gap-1 border-t border-[#E8E6E0] pt-4"
+              className="mt-6 flex flex-wrap gap-1 border-t border-[var(--color-border-subtle)] pt-4"
             >
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -663,17 +663,17 @@ export function SponsorDetailView({
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
+                    className={`rounded-md px-3 py-1.5 text-[14px] font-medium transition-colors duration-150 whitespace-nowrap ${
                       isActive
-                        ? 'bg-[#315F52] text-white'
-                        : 'text-[#525E58] hover:bg-white hover:text-[#202824]'
+                        ? 'bg-[var(--color-accent)] text-white'
+                        : 'text-[var(--color-ink-muted)] hover:bg-white hover:text-[var(--color-ink)]'
                     }`}
                   >
                     <span>{tab.label}</span>
                     {tab.count !== undefined ? (
                       <span
-                        className={`ml-1.5 font-mono text-[11px] tabular-nums ${
-                          isActive ? 'text-white/80' : 'text-[#788C83]'
+                        className={`ml-1.5 font-mono text-[12px] tabular-nums ${
+                          isActive ? 'text-white/80' : 'text-[var(--color-ink-subtle)]'
                         }`}
                       >
                         {tab.count}
@@ -693,29 +693,29 @@ export function SponsorDetailView({
           {/* 1. Overview */}
           {activeTab === 'overview' ? (
             <div className="space-y-6">
-              <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
+              <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Display name
                     </p>
-                    <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                       {sponsor.display_name}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Legal name
                     </p>
-                    <p className="mt-1 text-[14px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {sponsor.legal_name || '—'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Category
                     </p>
-                    <p className="mt-1 text-[14px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {sponsor.category_name
                         ? `${sponsor.category_name} (${sponsor.category_id})`
                         : sponsor.category_id || '—'}
@@ -723,7 +723,7 @@ export function SponsorDetailView({
                   </div>
                   <div>
                     <div className="flex items-center gap-1">
-                      <p className="text-[11px] font-medium text-[#788C83]">
+                      <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                         Lifecycle status
                       </p>
                       <InfoHint
@@ -731,38 +731,38 @@ export function SponsorDetailView({
                         content="Remains research target until an interaction exists with a named contact. Past sponsor requires a prior-edition contract."
                       />
                     </div>
-                    <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                       {formatLifecycleStatus(sponsor.lifecycle_status)}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       First source
                     </p>
-                    <p className="mt-1 text-[14px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {formatFirstSource(sponsor.first_source)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       City
                     </p>
-                    <p className="mt-1 text-[14px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {sponsor.city || '—'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Website
                     </p>
-                    <p className="mt-1 truncate text-[13px] text-[#202824]">
+                    <p className="mt-1 truncate text-[14px] text-[var(--color-ink)]">
                       {sponsor.website || '—'}
                     </p>
                   </div>
                   <div>
                     <div className="flex items-center gap-1">
-                      <p className="text-[11px] font-medium text-[#788C83]">
+                      <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                         GSTIN
                       </p>
                       <InfoHint
@@ -770,7 +770,7 @@ export function SponsorDetailView({
                         content="Hidden in the interface when unverified or restricted; server enforcement is required for actual protection."
                       />
                     </div>
-                    <p className="mt-1 font-mono text-[13px] text-[#202824]">
+                    <p className="mt-1 font-mono text-[14px] text-[var(--color-ink)]">
                       {sponsor.gstin_redacted
                         ? 'Redacted by server'
                         : !permissions.verified_by_server
@@ -782,19 +782,19 @@ export function SponsorDetailView({
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-1 gap-4 border-t border-[#E8E6E0] pt-4 sm:grid-cols-3">
+                <div className="mt-5 grid grid-cols-1 gap-4 border-t border-[var(--color-border-subtle)] pt-4 sm:grid-cols-3">
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Sponsor ID
                     </p>
-                    <p className="mt-1 font-mono text-[12px] text-[#525E58]">
+                    <p className="mt-1 font-mono text-[13px] text-[var(--color-ink-muted)]">
                       {sponsor.sponsor_id}
                     </p>
                   </div>
                   <div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1">
-                        <p className="text-[11px] font-medium text-[#788C83]">
+                        <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                           Relationship owner
                         </p>
                         <InfoHint
@@ -814,34 +814,34 @@ export function SponsorDetailView({
                             );
                             setShowOwnerForm((v) => !v);
                           }}
-                          className="text-[11px] font-medium text-[#315F52] hover:underline"
+                          className="text-[12px] font-medium text-[var(--color-accent)] hover:underline"
                         >
                           {showOwnerForm ? 'Cancel' : 'Change owner'}
                         </button>
                       ) : null}
                     </div>
-                    <p className="mt-1 text-[13px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {sponsor.current_ownership
                         ? sponsor.current_ownership.member_name ||
                           sponsor.current_ownership.member_id
                         : '—'}
                     </p>
                     {sponsor.current_ownership?.valid_from ? (
-                      <p className="mt-0.5 font-mono text-[11px] text-[#788C83]">
+                      <p className="mt-0.5 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                         Since {sponsor.current_ownership.valid_from.slice(0, 10)}
                       </p>
                     ) : null}
 
                     {showOwnerForm && !readOnly ? (
-                      <div className="mt-2 space-y-2 rounded border border-[#E8E6E0] bg-[#FAF9F6] p-2.5">
+                      <div className="mt-2 space-y-2 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-2.5">
                         {ownerError ? (
-                          <p className="text-[11px] text-[#9B3B32]">{ownerError}</p>
+                          <p className="text-[12px] text-[#9B3B32]">{ownerError}</p>
                         ) : null}
                         <select
                           aria-label="New owner member"
                           value={newOwnerId}
                           onChange={(e) => setNewOwnerId(e.target.value)}
-                          className="h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 text-[12px] text-[#202824]"
+                          className="h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 text-[13px] text-[var(--color-ink)]"
                         >
                           <option value="">Select owner...</option>
                           {teamRoster.map((tm) => (
@@ -855,7 +855,7 @@ export function SponsorDetailView({
                           value={ownerReason}
                           onChange={(e) => setOwnerReason(e.target.value)}
                           placeholder="Handoff reason"
-                          className="h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 text-[12px] text-[#202824]"
+                          className="h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 text-[13px] text-[var(--color-ink)]"
                         />
                         <button
                           type="button"
@@ -885,7 +885,7 @@ export function SponsorDetailView({
                               setOwnerSubmitting(false);
                             }
                           }}
-                          className="h-7 rounded bg-[#315F52] px-2.5 text-[11px] font-medium text-white hover:bg-[#264B40] disabled:opacity-50"
+                          className="h-7 rounded bg-[var(--color-accent)] px-2.5 text-[12px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                         >
                           {ownerSubmitting ? 'Saving...' : 'Assign owner'}
                         </button>
@@ -893,10 +893,10 @@ export function SponsorDetailView({
                     ) : null}
                   </div>
                   <div>
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Provenance
                     </p>
-                    <p className="mt-1 font-mono text-[12px] text-[#525E58]">
+                    <p className="mt-1 font-mono text-[13px] text-[var(--color-ink-muted)]">
                       {formatSponsorRecordClass(sponsor.record_class)}
                       {sponsor.source_ref ? ` · ${sponsor.source_ref}` : ''}
                       {sponsor.data_version !== null &&
@@ -909,30 +909,30 @@ export function SponsorDetailView({
 
                 {sponsor.ownership_history &&
                 sponsor.ownership_history.length > 0 ? (
-                  <div className="mt-5 border-t border-[#E8E6E0] pt-4">
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                  <div className="mt-5 border-t border-[var(--color-border-subtle)] pt-4">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Ownership history
                     </p>
                     <div className="mt-2 space-y-1.5">
                       {sponsor.ownership_history.map((assignment) => (
                         <div
                           key={assignment.assignment_id}
-                          className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#525E58]"
+                          className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-[var(--color-ink-muted)]"
                         >
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium text-[#202824]">
+                            <span className="font-medium text-[var(--color-ink)]">
                               {assignment.member_name || assignment.member_id}
                             </span>
-                            <span className="font-mono text-[11px] text-[#788C83]">
+                            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                               {assignment.role_in_relationship ?? 'owner'}
                             </span>
                             {assignment.reason ? (
-                              <span className="text-[#788C83]">
+                              <span className="text-[var(--color-ink-subtle)]">
                                 · {assignment.reason}
                               </span>
                             ) : null}
                           </div>
-                          <span className="font-mono text-[11px] text-[#788C83]">
+                          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                             {assignment.valid_from
                               ? assignment.valid_from.slice(0, 10)
                               : '—'}
@@ -949,9 +949,9 @@ export function SponsorDetailView({
                 ) : null}
 
                 {editableSponsor && !readOnly ? (
-                  <div className="mt-5 border-t border-[#E8E6E0] pt-4">
+                  <div className="mt-5 border-t border-[var(--color-border-subtle)] pt-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[11px] font-medium text-[#788C83]">
+                      <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                         Qualification status
                       </p>
                       <button
@@ -960,20 +960,20 @@ export function SponsorDetailView({
                           setQualFeedback(null);
                           setShowQualifyForm((v) => !v);
                         }}
-                        className="text-[12px] font-medium text-[#315F52] hover:underline"
+                        className="text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                       >
                         {showQualifyForm ? 'Cancel' : 'Record qualification'}
                       </button>
                     </div>
                     {qualFeedback ? (
-                      <p className="mt-1.5 text-[12px] text-[#315F52]">
+                      <p className="mt-1.5 text-[13px] text-[var(--color-accent)]">
                         {qualFeedback}
                       </p>
                     ) : null}
                     {showQualifyForm ? (
-                      <div className="mt-2 grid grid-cols-1 gap-2 rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3 sm:grid-cols-4 sm:items-end">
+                      <div className="mt-2 grid grid-cols-1 gap-2 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3 sm:grid-cols-4 sm:items-end">
                         <div>
-                          <label className="block text-[11px] font-medium text-[#525E58]">
+                          <label className="block text-[12px] font-medium text-[var(--color-ink-muted)]">
                             Status
                           </label>
                           <select
@@ -988,7 +988,7 @@ export function SponsorDetailView({
                                   | 'dormant'
                               )
                             }
-                            className="mt-1 h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 text-[12px]"
+                            className="mt-1 h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 text-[13px]"
                           >
                             <option value="unreviewed">Unreviewed</option>
                             <option value="engaged">Engaged</option>
@@ -998,13 +998,13 @@ export function SponsorDetailView({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[11px] font-medium text-[#525E58]">
+                          <label className="block text-[12px] font-medium text-[var(--color-ink-muted)]">
                             Source campaign
                           </label>
                           <select
                             value={qualCampaignId}
                             onChange={(e) => setQualCampaignId(e.target.value)}
-                            className="mt-1 h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 text-[12px]"
+                            className="mt-1 h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 text-[13px]"
                           >
                             <option value="">None / optional</option>
                             {campaignsCatalog.map((cam) => (
@@ -1015,7 +1015,7 @@ export function SponsorDetailView({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[11px] font-medium text-[#525E58]">
+                          <label className="block text-[12px] font-medium text-[var(--color-ink-muted)]">
                             Reason
                           </label>
                           <input
@@ -1023,7 +1023,7 @@ export function SponsorDetailView({
                             value={qualReason}
                             onChange={(e) => setQualReason(e.target.value)}
                             placeholder="Assessment reason"
-                            className="mt-1 h-8 w-full rounded border border-[#D9D7D0] bg-white px-2 text-[12px]"
+                            className="mt-1 h-8 w-full rounded border border-[var(--color-border)] bg-white px-2 text-[13px]"
                           />
                         </div>
                         <div>
@@ -1059,7 +1059,7 @@ export function SponsorDetailView({
                                 setQualSubmitting(false);
                               }
                             }}
-                            className="h-8 w-full rounded bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#264B40] disabled:opacity-50"
+                            className="h-8 w-full rounded bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                           >
                             {qualSubmitting ? 'Saving...' : 'Save qualification'}
                           </button>
@@ -1076,7 +1076,7 @@ export function SponsorDetailView({
           {activeTab === 'contacts' ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 text-[12px] text-[#788C83]">
+                <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-subtle)]">
                   <span>Organisation contacts</span>
                   <InfoHint
                     label="Contact governance"
@@ -1093,7 +1093,7 @@ export function SponsorDetailView({
                       setEditingContact(null);
                       setContactDrawerOpen(true);
                     }}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                     Add contact
@@ -1106,17 +1106,17 @@ export function SponsorDetailView({
                 error={contactsError}
                 onRetry={triggerReload}
                 loadingSkeleton={
-                  <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                    <div className="h-24 rounded bg-[#FAF9F6]" />
+                  <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                    <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                   </div>
                 }
               >
-                <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+                <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                   {contacts.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-left">
                         <thead>
-                          <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                          <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                             <th className="px-4 py-3">Name</th>
                             <th className="px-4 py-3">Job title</th>
                             <th className="px-4 py-3">Decision role</th>
@@ -1126,7 +1126,7 @@ export function SponsorDetailView({
                             <th className="px-4 py-3 text-right">Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                        <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                           {contacts.map((contact) => {
                             const optedOut = isContactOptedOut(contact);
                             const contactReadOnly = isContactReadOnly(
@@ -1145,29 +1145,29 @@ export function SponsorDetailView({
                             return (
                               <tr
                                 key={contact.contact_id}
-                                className="hover:bg-[#FAF9F6]"
+                                className="hover:bg-[var(--color-surface-subtle)]"
                               >
-                                <td className="px-4 py-3 font-medium text-[#202824]">
+                                <td className="px-4 py-3 font-medium text-[var(--color-ink)]">
                                   {contact.full_name}
                                 </td>
-                                <td className="px-4 py-3 text-[#525E58]">
+                                <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                                   {contact.job_title || '—'}
                                 </td>
-                                <td className="px-4 py-3 text-[#202824] whitespace-nowrap">
+                                <td className="px-4 py-3 text-[var(--color-ink)] whitespace-nowrap">
                                   {formatDecisionRole(contact.decision_role)}
                                 </td>
-                                <td className="px-4 py-3 text-[#525E58]">
+                                <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                                   {piiBlocked ? (
-                                    <span className="text-[12px] text-[#788C83]">
+                                    <span className="text-[13px] text-[var(--color-ink-subtle)]">
                                       {piiBlockedLabel}
                                     </span>
                                   ) : contact.email || contact.phone ? (
-                                    <div className="space-y-0.5 text-[12px]">
+                                    <div className="space-y-0.5 text-[13px]">
                                       {contact.email ? (
                                         <div>{contact.email}</div>
                                       ) : null}
                                       {contact.phone ? (
-                                        <div className="font-mono text-[#788C83]">
+                                        <div className="font-mono text-[var(--color-ink-subtle)]">
                                           {contact.phone}
                                         </div>
                                       ) : null}
@@ -1176,21 +1176,21 @@ export function SponsorDetailView({
                                     '—'
                                   )}
                                 </td>
-                                <td className="px-4 py-3 text-[12px] text-[#525E58]">
+                                <td className="px-4 py-3 text-[13px] text-[var(--color-ink-muted)]">
                                   <div>
                                     {contact.consent_basis
                                       ? contact.consent_basis.replace(/_/g, ' ')
                                       : '—'}
                                   </div>
                                   {contact.source_ref ? (
-                                    <div className="font-mono text-[11px] text-[#788C83]">
+                                    <div className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                       {contact.source_ref}
                                     </div>
                                   ) : null}
                                 </td>
                                 <td className="px-4 py-3 whitespace-nowrap">
                                   {optedOut ? (
-                                    <div className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#9B3B32]">
+                                    <div className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#9B3B32]">
                                       <Ban
                                         className="h-3.5 w-3.5 shrink-0"
                                         aria-hidden="true"
@@ -1198,7 +1198,7 @@ export function SponsorDetailView({
                                       <span>Blocked (opted out)</span>
                                     </div>
                                   ) : (
-                                    <span className="text-[12px] text-[#315F52]">
+                                    <span className="text-[13px] text-[var(--color-accent)]">
                                       Permitted
                                     </span>
                                   )}
@@ -1221,7 +1221,7 @@ export function SponsorDetailView({
                                               : undefined
                                           }
                                           onClick={() => handleOptOut(contact)}
-                                          className="text-[12px] font-medium text-[#9B3B32] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                          className="text-[13px] font-medium text-[#9B3B32] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                           Opt out
                                         </button>
@@ -1249,13 +1249,13 @@ export function SponsorDetailView({
                                           setEditingContact(contact);
                                           setContactDrawerOpen(true);
                                         }}
-                                        className="text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                       >
                                         Edit
                                       </button>
                                     </div>
                                   ) : (
-                                    <span className="font-mono text-[11px] text-[#788C83]">
+                                    <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                       Read-only
                                     </span>
                                   )}
@@ -1268,7 +1268,7 @@ export function SponsorDetailView({
                     </div>
                   ) : (
                     <div className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No contacts recorded yet
                       </p>
                       {canManageContacts ||
@@ -1287,10 +1287,10 @@ export function SponsorDetailView({
                               setEditingContact(null);
                               setContactDrawerOpen(true);
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 py-1.5 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <Plus
-                              className="h-3.5 w-3.5 text-[#315F52]"
+                              className="h-3.5 w-3.5 text-[var(--color-accent)]"
                               aria-hidden="true"
                             />
                             Add contact
@@ -1319,7 +1319,7 @@ export function SponsorDetailView({
                       }
                       setShowOutreachForm((v) => !v);
                     }}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#264B40]"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[var(--color-accent-hover)]"
                   >
                     <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                     Log outreach
@@ -1335,9 +1335,9 @@ export function SponsorDetailView({
                         }
                         setShowInteractionForm((v) => !v);
                       }}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                     >
-                      <Plus className="h-3.5 w-3.5 text-[#315F52]" aria-hidden="true" />
+                      <Plus className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
                       Log interaction
                     </button>
                   ) : null}
@@ -1345,14 +1345,14 @@ export function SponsorDetailView({
               ) : null}
 
               {activityFormError ? (
-                <div className="rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2 text-[12px] text-[#9B3B32]">
+                <div className="rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2 text-[13px] text-[#9B3B32]">
                   {activityFormError}
                 </div>
               ) : null}
 
               {showOutreachForm && editableSponsor && !readOnly ? (
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-4 space-y-3">
-                  <p className="text-[13px] font-semibold text-[#202824]">
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-4 space-y-3">
+                  <p className="text-[14px] font-semibold text-[var(--color-ink)]">
                     Start outreach attempt
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -1360,7 +1360,7 @@ export function SponsorDetailView({
                       aria-label="Campaign"
                       value={outreachCampaignId}
                       onChange={(e) => setOutreachCampaignId(e.target.value)}
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                     >
                       <option value="">Select campaign...</option>
                       {campaignsCatalog.map((c) => (
@@ -1373,7 +1373,7 @@ export function SponsorDetailView({
                       aria-label="Contact"
                       value={outreachContactId}
                       onChange={(e) => setOutreachContactId(e.target.value)}
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                     >
                       <option value="">Any / no contact</option>
                       {contacts.map((c) => (
@@ -1394,7 +1394,7 @@ export function SponsorDetailView({
                             | 'web_inbound'
                         )
                       }
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                     >
                       <option value="outreach_sent">Outreach sent</option>
                       <option value="introduction_received">
@@ -1408,13 +1408,13 @@ export function SponsorDetailView({
                     value={outreachSummary}
                     onChange={(e) => setOutreachSummary(e.target.value)}
                     placeholder="Summary note (optional)"
-                    className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                    className="h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                   />
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setShowOutreachForm(false)}
-                      className="h-8 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium"
+                      className="h-8 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium"
                     >
                       Cancel
                     </button>
@@ -1447,7 +1447,7 @@ export function SponsorDetailView({
                           setActivityFormSubmitting(false);
                         }
                       }}
-                      className="h-8 rounded-md bg-[#315F52] px-3.5 text-[12px] font-medium text-white disabled:opacity-50"
+                      className="h-8 rounded-md bg-[var(--color-accent)] px-3.5 text-[13px] font-medium text-white disabled:opacity-50"
                     >
                       {activityFormSubmitting ? 'Saving...' : 'Save outreach'}
                     </button>
@@ -1456,8 +1456,8 @@ export function SponsorDetailView({
               ) : null}
 
               {showInteractionForm && editableSponsor && !readOnly ? (
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-4 space-y-3">
-                  <p className="text-[13px] font-semibold text-[#202824]">
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-4 space-y-3">
+                  <p className="text-[14px] font-semibold text-[var(--color-ink)]">
                     Append interaction to attempt
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -1465,7 +1465,7 @@ export function SponsorDetailView({
                       aria-label="Attempt"
                       value={interactionAttemptId}
                       onChange={(e) => setInteractionAttemptId(e.target.value)}
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                     >
                       {outreach.map((att) => (
                         <option key={att.attempt_id} value={att.attempt_id}>
@@ -1487,7 +1487,7 @@ export function SponsorDetailView({
                             | 'opt_out'
                         )
                       }
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                     >
                       <option value="replied">Replied</option>
                       <option value="follow_up_sent">Follow-up sent</option>
@@ -1500,7 +1500,7 @@ export function SponsorDetailView({
                       aria-label="Outcome"
                       value={interactionOutcome}
                       onChange={(e) => setInteractionOutcome(e.target.value)}
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                     >
                       <option value="positive">Positive</option>
                       <option value="neutral">Neutral</option>
@@ -1516,13 +1516,13 @@ export function SponsorDetailView({
                     value={interactionSummary}
                     onChange={(e) => setInteractionSummary(e.target.value)}
                     placeholder="Interaction summary"
-                    className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px]"
+                    className="h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px]"
                   />
                   <div className="flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setShowInteractionForm(false)}
-                      className="h-8 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium"
+                      className="h-8 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium"
                     >
                       Cancel
                     </button>
@@ -1556,7 +1556,7 @@ export function SponsorDetailView({
                           setActivityFormSubmitting(false);
                         }
                       }}
-                      className="h-8 rounded-md bg-[#315F52] px-3.5 text-[12px] font-medium text-white disabled:opacity-50"
+                      className="h-8 rounded-md bg-[var(--color-accent)] px-3.5 text-[13px] font-medium text-white disabled:opacity-50"
                     >
                       {activityFormSubmitting ? 'Saving...' : 'Save interaction'}
                     </button>
@@ -1569,27 +1569,27 @@ export function SponsorDetailView({
                 error={activityError}
                 onRetry={triggerReload}
                 loadingSkeleton={
-                  <div className="space-y-3 rounded-md border border-[#D9D7D0] bg-white p-5">
+                  <div className="space-y-3 rounded-md border border-[var(--color-border)] bg-white p-5">
                     {[0, 1, 2].map((i) => (
-                      <div key={i} className="h-10 rounded bg-[#FAF9F6]" />
+                      <div key={i} className="h-10 rounded bg-[var(--color-surface-subtle)]" />
                     ))}
                   </div>
                 }
               >
-                <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+                <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                   {timelineItems.length > 0 ? (
-                    <ul className="divide-y divide-[#E8E6E0]">
+                    <ul className="divide-y divide-[var(--color-border-subtle)]">
                       {timelineItems.map((item) => (
                         <li key={item.key} className="px-5 py-4">
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#788C83]">
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-[var(--color-ink-subtle)]">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-medium capitalize text-[#315F52]">
+                              <span className="font-medium capitalize text-[var(--color-accent)]">
                                 {item.event_type}
                               </span>
                               {item.contact_label ? (
                                 <>
                                   <span aria-hidden="true">·</span>
-                                  <span className="font-medium text-[#202824]">
+                                  <span className="font-medium text-[var(--color-ink)]">
                                     {item.contact_label}
                                   </span>
                                 </>
@@ -1603,23 +1603,23 @@ export function SponsorDetailView({
                               {item.outcome ? (
                                 <>
                                   <span aria-hidden="true">·</span>
-                                  <span className="font-mono text-[11px] text-[#525E58]">
+                                  <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                                     {item.outcome.replace(/_/g, ' ')}
                                   </span>
                                 </>
                               ) : null}
                             </div>
-                            <span className="font-mono text-[11px] tabular-nums">
+                            <span className="font-mono text-[12px] tabular-nums">
                               {item.occurred_at}
                             </span>
                           </div>
                           {item.summary ? (
-                            <p className="mt-1.5 text-[13px] text-[#202824]">
+                            <p className="mt-1.5 text-[14px] text-[var(--color-ink)]">
                               {item.summary}
                             </p>
                           ) : null}
                           {item.actor_label ? (
-                            <p className="mt-1 text-[12px] text-[#788C83]">
+                            <p className="mt-1 text-[13px] text-[var(--color-ink-subtle)]">
                               {item.actor_label}
                             </p>
                           ) : null}
@@ -1628,7 +1628,7 @@ export function SponsorDetailView({
                     </ul>
                   ) : (
                     <div className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No interactions recorded yet
                       </p>
                     </div>
@@ -1641,7 +1641,7 @@ export function SponsorDetailView({
           {/* 4. Research */}
           {activeTab === 'research' ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-1.5 text-[12px] text-[#788C83]">
+              <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-subtle)]">
                 <span>External prospect research</span>
                 <InfoHint
                   label="Research isolation rule"
@@ -1654,46 +1654,46 @@ export function SponsorDetailView({
                   {researchRecords.map((pr) => (
                     <div
                       key={pr.research_id}
-                      className="rounded-md border border-[#D9D7D0] bg-white p-5"
+                      className="rounded-md border border-[var(--color-border)] bg-white p-5"
                     >
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8E6E0] pb-3">
-                        <div className="flex flex-wrap items-center gap-2 text-[12px]">
-                          <span className="font-semibold text-[#202824]">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-3">
+                        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                          <span className="font-semibold text-[var(--color-ink)]">
                             {pr.action || 'Assessed'}
                           </span>
                           {pr.route_class ? (
                             <>
-                              <span className="text-[#788C83]" aria-hidden="true">
+                              <span className="text-[var(--color-ink-subtle)]" aria-hidden="true">
                                 ·
                               </span>
-                              <span className="font-mono text-[#315F52]">
+                              <span className="font-mono text-[var(--color-accent)]">
                                 Route {pr.route_class}
                               </span>
                             </>
                           ) : null}
                           {pr.value_track ? (
                             <>
-                              <span className="text-[#788C83]" aria-hidden="true">
+                              <span className="text-[var(--color-ink-subtle)]" aria-hidden="true">
                                 ·
                               </span>
-                              <span className="text-[#525E58]">
+                              <span className="text-[var(--color-ink-muted)]">
                                 {pr.value_track === 'in_kind' ? 'In-kind' : 'Cash'}{' '}
                                 track
                               </span>
                             </>
                           ) : null}
                         </div>
-                        <span className="font-mono text-[11px] text-[#788C83]">
+                        <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                           Assessed {pr.assessed_at} · External research
                         </span>
                       </div>
 
                       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Attractiveness
                           </p>
-                          <p className="mt-1 font-mono text-[14px] font-medium text-[#202824] tabular-nums">
+                          <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink)] tabular-nums">
                             {pr.attractiveness !== null &&
                             pr.attractiveness !== undefined
                               ? `${pr.attractiveness}/100`
@@ -1701,10 +1701,10 @@ export function SponsorDetailView({
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Accessibility
                           </p>
-                          <p className="mt-1 font-mono text-[14px] font-medium text-[#202824] tabular-nums">
+                          <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink)] tabular-nums">
                             {pr.accessibility !== null &&
                             pr.accessibility !== undefined
                               ? `${pr.accessibility}/100`
@@ -1712,20 +1712,20 @@ export function SponsorDetailView({
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Research estimate (not pipeline)
                           </p>
-                          <p className="mt-1 font-mono text-[14px] text-[#525E58] tabular-nums">
+                          <p className="mt-1 font-mono text-[14px] text-[var(--color-ink-muted)] tabular-nums">
                             {pr.face_value_low != null || pr.face_value_high != null
                               ? `${formatCurrencyInr(pr.face_value_low)} – ${formatCurrencyInr(pr.face_value_high)}`
                               : '—'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Evidence sources
                           </p>
-                          <p className="mt-1 font-mono text-[12px] text-[#525E58]">
+                          <p className="mt-1 font-mono text-[13px] text-[var(--color-ink-muted)]">
                             {pr.evidence_source_ids || '—'}
                           </p>
                         </div>
@@ -1734,8 +1734,8 @@ export function SponsorDetailView({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-md border border-[#D9D7D0] bg-white px-6 py-10 text-center">
-                  <p className="text-[13px] font-medium text-[#202824]">
+                <div className="rounded-md border border-[var(--color-border)] bg-white px-6 py-10 text-center">
+                  <p className="text-[14px] font-medium text-[var(--color-ink)]">
                     No prospect research assessment recorded
                   </p>
                 </div>
@@ -1757,17 +1757,17 @@ export function SponsorDetailView({
               error={activityError ?? opportunitiesError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <div className="h-24 rounded bg-[#FAF9F6]" />
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                 </div>
               }
             >
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                 {campaignAssociations.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left">
                       <thead>
-                        <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                        <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                           <th className="px-4 py-3">Campaign</th>
                           <th className="px-4 py-3">Channel</th>
                           <th className="px-4 py-3">Attribution</th>
@@ -1780,13 +1780,13 @@ export function SponsorDetailView({
                           ) : null}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                      <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                         {campaignAssociations.map((ca) => (
-                          <tr key={ca.campaign_id} className="hover:bg-[#FAF9F6]">
-                            <td className="px-4 py-3 font-medium text-[#202824]">
+                          <tr key={ca.campaign_id} className="hover:bg-[var(--color-surface-subtle)]">
+                            <td className="px-4 py-3 font-medium text-[var(--color-ink)]">
                               {ca.campaign_name}
                             </td>
-                            <td className="px-4 py-3 text-[#525E58]">
+                            <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                               {ca.channel_id
                                 ? formatChannelDisplay(
                                     ca.channel_id,
@@ -1794,17 +1794,17 @@ export function SponsorDetailView({
                                   )
                                 : '—'}
                             </td>
-                            <td className="px-4 py-3 text-[#525E58]">
+                            <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                               {ca.attribution_source === 'both'
                                 ? 'Outreach & originating deal'
                                 : ca.attribution_source === 'outreach_attempt'
                                   ? 'Outreach attempt'
                                   : 'Originating deal'}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                               {ca.attempt_count}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                               {ca.opportunity_count}
                             </td>
                             {onOpenCampaign ? (
@@ -1812,7 +1812,7 @@ export function SponsorDetailView({
                                 <button
                                   type="button"
                                   onClick={() => onOpenCampaign(ca.campaign_id)}
-                                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                  className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                                 >
                                   Open
                                   <ArrowUpRight
@@ -1829,7 +1829,7 @@ export function SponsorDetailView({
                   </div>
                 ) : (
                   <div className="px-6 py-10 text-center">
-                    <p className="text-[13px] font-medium text-[#202824]">
+                    <p className="text-[14px] font-medium text-[var(--color-ink)]">
                       No campaign associations yet
                     </p>
                   </div>
@@ -1845,13 +1845,13 @@ export function SponsorDetailView({
               error={opportunitiesError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <div className="h-24 rounded bg-[#FAF9F6]" />
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                 </div>
               }
             >
               <div className="space-y-3">
-                <div className="flex items-center gap-1.5 text-[12px] text-[#788C83]">
+                <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-subtle)]">
                   <span>Commercial opportunities</span>
                   <InfoHint
                     label="Opportunity value rules"
@@ -1859,12 +1859,12 @@ export function SponsorDetailView({
                   />
                 </div>
 
-                <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+                <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                   {opportunities.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse text-left">
                         <thead>
-                          <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                          <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                             <th className="px-4 py-3">Opportunity</th>
                             <th className="px-4 py-3">Edition</th>
                             <th className="px-4 py-3">Support type</th>
@@ -1877,28 +1877,28 @@ export function SponsorDetailView({
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                        <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                           {opportunities.map((opp) => (
                             <tr
                               key={opp.opportunity_id}
-                              className="hover:bg-[#FAF9F6]"
+                              className="hover:bg-[var(--color-surface-subtle)]"
                             >
-                              <td className="px-4 py-3 font-medium text-[#202824]">
+                              <td className="px-4 py-3 font-medium text-[var(--color-ink)]">
                                 {opp.name || opp.opportunity_id}
                               </td>
-                              <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                              <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                                 {opp.edition_id}
                               </td>
-                              <td className="px-4 py-3 text-[#525E58]">
+                              <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                                 {formatSupportType(opp.support_type)}
                               </td>
-                              <td className="px-4 py-3 text-[#202824]">
+                              <td className="px-4 py-3 text-[var(--color-ink)]">
                                 {formatOpportunityStage(opp.stage)}
                               </td>
-                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                              <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                                 {formatCurrencyInr(opp.proposed_value)}
                               </td>
-                              <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[#315F52]">
+                              <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[var(--color-accent)]">
                                 {formatCurrencyInr(opp.confirmed_value)}
                               </td>
                             </tr>
@@ -1908,7 +1908,7 @@ export function SponsorDetailView({
                     </div>
                   ) : (
                     <div className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No opportunities yet
                       </p>
                     </div>
@@ -1925,17 +1925,17 @@ export function SponsorDetailView({
               error={contractsError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <div className="h-24 rounded bg-[#FAF9F6]" />
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                 </div>
               }
             >
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                 {contracts.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left">
                       <thead>
-                        <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                        <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                           <th className="px-4 py-3">Contract ID</th>
                           <th className="px-4 py-3">Opportunity</th>
                           <th className="px-4 py-3">Signed at</th>
@@ -1946,34 +1946,34 @@ export function SponsorDetailView({
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                      <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                         {contracts.map((contract) => (
                           <tr
                             key={contract.contract_id}
-                            className="hover:bg-[#FAF9F6]"
+                            className="hover:bg-[var(--color-surface-subtle)]"
                           >
-                            <td className="px-4 py-3 font-mono font-medium text-[#202824]">
+                            <td className="px-4 py-3 font-mono font-medium text-[var(--color-ink)]">
                               {contract.contract_id}
                             </td>
-                            <td className="px-4 py-3 text-[#525E58]">
+                            <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                               {contract.opportunity_name ||
                                 contract.opportunity_id}
                             </td>
-                            <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                            <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                               {contract.signed_at
                                 ? contract.signed_at.slice(0, 10)
                                 : '—'}
                             </td>
-                            <td className="px-4 py-3 text-[#525E58]">
+                            <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                               {contract.payment_terms || '—'}
                             </td>
-                            <td className="px-4 py-3 capitalize text-[#202824]">
+                            <td className="px-4 py-3 capitalize text-[var(--color-ink)]">
                               {contract.status}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono font-medium tabular-nums text-[#315F52]">
+                            <td className="px-4 py-3 text-right font-mono font-medium tabular-nums text-[var(--color-accent)]">
                               {formatCurrencyInr(contract.signed_value_total)}
                               {contract.lines && contract.lines.length > 0 ? (
-                                <span className="mt-0.5 block text-[11px] font-normal text-[#788C83]">
+                                <span className="mt-0.5 block text-[12px] font-normal text-[var(--color-ink-subtle)]">
                                   {contract.lines
                                     .map(
                                       (l) =>
@@ -1990,7 +1990,7 @@ export function SponsorDetailView({
                   </div>
                 ) : (
                   <div className="px-6 py-10 text-center">
-                    <p className="text-[13px] font-medium text-[#202824]">
+                    <p className="text-[14px] font-medium text-[var(--color-ink)]">
                       No contracts recorded yet
                     </p>
                   </div>

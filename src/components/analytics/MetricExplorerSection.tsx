@@ -145,11 +145,11 @@ export function MetricExplorerSection({
       <div>
         <h2
           id="metric-explorer-heading"
-          className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+          className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
         >
           Metric explorer and definitions
         </h2>
-        <p className="text-[12px] text-[#525E58]">
+        <p className="text-[13px] text-[var(--color-ink-muted)]">
           Read-only catalog sourced from the reference metric and KPI
           definitions, paired with live results for the active filters.
         </p>
@@ -163,11 +163,11 @@ export function MetricExplorerSection({
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           {/* Left: Searchable Metric List */}
-          <div className="rounded-md border border-[#D9D7D0] bg-white lg:col-span-5">
-            <div className="border-b border-[#D9D7D0] p-3">
+          <div className="rounded-md border border-[var(--color-border)] bg-white lg:col-span-5">
+            <div className="border-b border-[var(--color-border)] p-3">
               <div className="relative">
                 <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#788C83]"
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]"
                   aria-hidden="true"
                 />
                 <input
@@ -176,14 +176,14 @@ export function MetricExplorerSection({
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Filter by metric ID, name, or KPI..."
                   aria-label="Search metric definitions"
-                  className="h-9 w-full rounded-md border border-[#D9D7D0] bg-[#FAF9F6] pl-9 pr-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:bg-white focus:outline-none"
+                  className="h-9 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] pl-9 pr-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:bg-white focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="max-h-[540px] divide-y divide-[#E8E6E0] overflow-y-auto">
+            <div className="max-h-[540px] divide-y divide-[var(--color-border-subtle)] overflow-y-auto">
               {filteredMetrics.length === 0 ? (
-                <p className="p-4 text-[13px] text-[#525E58]">
+                <p className="p-4 text-[14px] text-[var(--color-ink-muted)]">
                   No metric definitions match your search.
                 </p>
               ) : (
@@ -197,21 +197,21 @@ export function MetricExplorerSection({
                       onClick={() => setSelectedMetricId(m.metric_id)}
                       className={`flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors ${
                         isSelected
-                          ? 'bg-[#EBF1EE]/60'
-                          : 'hover:bg-[#FAF9F6]'
+                          ? 'bg-[var(--color-accent-soft)]/60'
+                          : 'hover:bg-[var(--color-surface-subtle)]'
                       }`}
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-medium text-[#202824]">
+                        <p className="truncate text-[14px] font-medium text-[var(--color-ink)]">
                           {m.name}
                         </p>
-                        <p className="mt-0.5 truncate text-[11px] text-[#788C83]">
+                        <p className="mt-0.5 truncate text-[12px] text-[var(--color-ink-subtle)]">
                           {[m.kpi_id, m.unit, m.value_nature]
                             .filter(Boolean)
                             .join(' · ')}
                         </p>
                       </div>
-                      <span className="shrink-0 font-mono text-[11px] font-medium text-[#315F52]">
+                      <span className="shrink-0 font-mono text-[12px] font-medium text-[var(--color-accent)]">
                         {m.metric_id}
                       </span>
                     </button>
@@ -226,43 +226,43 @@ export function MetricExplorerSection({
             {selectedMetric ? (
               <>
                 {/* Live Computed Result Box */}
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#E8E6E0] pb-3">
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-border-subtle)] pb-3">
                     <div>
-                      <span className="font-mono text-[11px] text-[#788C83]">
+                      <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                         {selectedMetric.metric_id}
                         {ANALYTICS_METRIC_UI_HINTS[selectedMetric.metric_id]
                           ?.grain
                           ? ` · ${ANALYTICS_METRIC_UI_HINTS[selectedMetric.metric_id].grain}`
                           : ''}
                       </span>
-                      <h3 className="mt-0.5 text-[16px] font-semibold text-[#202824]">
+                      <h3 className="mt-0.5 text-[16px] font-semibold text-[var(--color-ink)]">
                         {selectedMetric.name}
                       </h3>
                     </div>
                     {liveResult?.definition_version ? (
-                      <span className="font-mono text-[11px] text-[#788C83]">
+                      <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                         Def v{String(liveResult.definition_version)}
                       </span>
                     ) : null}
                   </div>
 
                   {queryLoading ? (
-                    <div className="mt-4 h-10 w-36 animate-pulse rounded bg-[#FAF9F6]" />
+                    <div className="mt-4 h-10 w-36 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
                   ) : queryError ? (
-                    <p className="mt-4 text-[13px] text-[#525E58]">
+                    <p className="mt-4 text-[14px] text-[var(--color-ink-muted)]">
                       {queryError}
                     </p>
                   ) : !liveResult ? (
-                    <p className="mt-4 text-[13px] text-[#525E58]">
+                    <p className="mt-4 text-[14px] text-[var(--color-ink-muted)]">
                       Metric output is unavailable for the active context.
                     </p>
                   ) : !liveResult.computable ? (
                     <div className="mt-4 space-y-1">
-                      <p className="font-mono text-[16px] font-medium text-[#525E58]">
+                      <p className="font-mono text-[16px] font-medium text-[var(--color-ink-muted)]">
                         Not computable
                       </p>
-                      <p className="text-[12px] text-[#788C83]">
+                      <p className="text-[13px] text-[var(--color-ink-subtle)]">
                         {liveResult.reason ||
                           'Required inputs are absent in this dataset.'}
                       </p>
@@ -270,19 +270,19 @@ export function MetricExplorerSection({
                   ) : (
                     <div className="mt-4 flex flex-wrap items-baseline justify-between gap-4">
                       <div>
-                        <p className="font-mono text-[24px] font-semibold tabular-nums text-[#315F52]">
+                        <p className="font-mono text-[24px] font-semibold tabular-nums text-[var(--color-accent)]">
                           {formatAnalyticsMetricValue(
                             liveResult,
                             selectedMetric.unit
                           )}
                         </p>
                         {formatNumeratorDenominator(liveResult) ? (
-                          <p className="mt-0.5 font-mono text-[12px] text-[#525E58]">
+                          <p className="mt-0.5 font-mono text-[13px] text-[var(--color-ink-muted)]">
                             {formatNumeratorDenominator(liveResult)}
                           </p>
                         ) : null}
                       </div>
-                      <div className="text-right font-mono text-[11px] text-[#788C83]">
+                      <div className="text-right font-mono text-[12px] text-[var(--color-ink-subtle)]">
                         <div>
                           {liveResult.record_class}
                           {liveResult.as_of ? ` · as of ${liveResult.as_of}` : ''}
@@ -303,66 +303,66 @@ export function MetricExplorerSection({
                 </div>
 
                 {/* Read-Only Reference Definition */}
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <h4 className="border-b border-[#E8E6E0] pb-2.5 text-[13px] font-semibold text-[#202824]">
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <h4 className="border-b border-[var(--color-border-subtle)] pb-2.5 text-[14px] font-semibold text-[var(--color-ink)]">
                     Reference definition
                   </h4>
 
-                  <dl className="mt-3 divide-y divide-[#E8E6E0] text-[12px]">
+                  <dl className="mt-3 divide-y divide-[var(--color-border-subtle)] text-[13px]">
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">
                         Business meaning
                       </dt>
-                      <dd className="text-[#202824] sm:col-span-2">
+                      <dd className="text-[var(--color-ink)] sm:col-span-2">
                         {selectedMetric.business_meaning || '—'}
                       </dd>
                     </div>
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">Formula</dt>
-                      <dd className="font-mono text-[#202824] sm:col-span-2">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">Formula</dt>
+                      <dd className="font-mono text-[var(--color-ink)] sm:col-span-2">
                         {selectedMetric.formula}
                       </dd>
                     </div>
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">
                         Numerator / Denominator
                       </dt>
-                      <dd className="text-[#202824] sm:col-span-2">
+                      <dd className="text-[var(--color-ink)] sm:col-span-2">
                         {selectedMetric.numerator || '—'} ÷{' '}
                         {selectedMetric.denominator || '—'}
                       </dd>
                     </div>
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">
                         Aggregation &amp; Unit
                       </dt>
-                      <dd className="text-[#202824] sm:col-span-2">
+                      <dd className="text-[var(--color-ink)] sm:col-span-2">
                         {[selectedMetric.aggregation, selectedMetric.unit]
                           .filter(Boolean)
                           .join(' · ') || '—'}
                       </dd>
                     </div>
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">
                         Time period
                       </dt>
-                      <dd className="text-[#202824] sm:col-span-2">
+                      <dd className="text-[var(--color-ink)] sm:col-span-2">
                         {selectedMetric.time_period || '—'}
                       </dd>
                     </div>
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">
                         Inclusion / Exclusion
                       </dt>
-                      <dd className="text-[#202824] sm:col-span-2">
+                      <dd className="text-[var(--color-ink)] sm:col-span-2">
                         {selectedMetric.inclusion_exclusion || '—'}
                       </dd>
                     </div>
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">
                         Value nature &amp; 2025 availability
                       </dt>
-                      <dd className="text-[#202824] sm:col-span-2">
+                      <dd className="text-[var(--color-ink)] sm:col-span-2">
                         {selectedMetric.value_nature || '—'} · 2025 computable:{' '}
                         {selectedMetric.computable_2025 === true ||
                         selectedMetric.computable_2025 === 'yes'
@@ -374,10 +374,10 @@ export function MetricExplorerSection({
                       </dd>
                     </div>
                     <div className="grid grid-cols-1 gap-1 py-2 sm:grid-cols-3">
-                      <dt className="font-medium text-[#525E58]">
+                      <dt className="font-medium text-[var(--color-ink-muted)]">
                         Related KPI
                       </dt>
-                      <dd className="text-[#202824] sm:col-span-2">
+                      <dd className="text-[var(--color-ink)] sm:col-span-2">
                         {selectedKpi ? (
                           <div>
                             <span className="font-mono font-medium">
@@ -385,7 +385,7 @@ export function MetricExplorerSection({
                             </span>{' '}
                             · {selectedKpi.name}
                             {selectedKpi.definition ? (
-                              <span className="mt-0.5 block text-[#525E58]">
+                              <span className="mt-0.5 block text-[var(--color-ink-muted)]">
                                 {selectedKpi.definition}
                               </span>
                             ) : null}

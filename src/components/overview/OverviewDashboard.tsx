@@ -279,6 +279,27 @@ export function OverviewDashboard({
         recordClass={recordClass}
         asOfDate={asOf}
       />
+      <div className="grid min-w-0 grid-cols-1 items-start gap-7 xl:grid-cols-[1.4fr_1fr]">
+      {/* D. Target pacing */}
+      <TargetPacingSection
+        pacing={payload.targetPacing}
+        selectedScenario={scenario}
+        onSelectScenario={setScenario}
+        status={status}
+        error={error}
+        onRetry={handleRetry}
+        recordClass={recordClass}
+        asOfDate={asOf}
+      />
+      {/* F. Adaptive needs-attention queue */}
+      <NeedsAttentionQueueSection
+        items={payload.attentionItems}
+        status={status}
+        error={error}
+        onRetry={handleRetry}
+        onInspectItem={handleInspectAttentionItem}
+      />
+      </div>
 
       {/* C. Sponsorship growth funnel */}
       <SponsorshipFunnelSection
@@ -292,17 +313,7 @@ export function OverviewDashboard({
         onInspectCashOutcome={() => setCashOutcomeDrawerOpen(true)}
       />
 
-      {/* D. Target pacing */}
-      <TargetPacingSection
-        pacing={payload.targetPacing}
-        selectedScenario={scenario}
-        onSelectScenario={setScenario}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-        recordClass={recordClass}
-        asOfDate={asOf}
-      />
+
 
       {/* E. Campaign performance */}
       <CampaignPerformanceSection
@@ -323,14 +334,7 @@ export function OverviewDashboard({
         onRetry={handleRetry}
       />
 
-      {/* F. Adaptive needs-attention queue */}
-      <NeedsAttentionQueueSection
-        items={payload.attentionItems}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-        onInspectItem={handleInspectAttentionItem}
-      />
+
 
       {/* G. Strategic bets */}
       <StrategicBetsSection
@@ -362,35 +366,35 @@ export function OverviewDashboard({
         {inspectedStage ? (
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-                <p className="text-[11px] font-medium text-[#788C83]">
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+                <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                   Count
                 </p>
-                <p className="mt-1 text-[20px] font-semibold text-[#202824] tabular-nums">
+                <p className="mt-1 text-[20px] font-semibold text-[var(--color-ink)] tabular-nums">
                   {inspectedStage.count ?? '—'}
                 </p>
               </div>
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-                <p className="text-[11px] font-medium text-[#788C83]">
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+                <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                   Server rate
                 </p>
-                <p className="mt-1 text-[20px] font-semibold text-[#202824] tabular-nums">
+                <p className="mt-1 text-[20px] font-semibold text-[var(--color-ink)] tabular-nums">
                   {inspectedStage.rateFormatted ?? inspectedStage.reason ?? '—'}
                 </p>
               </div>
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-                <p className="text-[11px] font-medium text-[#788C83]">
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+                <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                   Cash value (separate)
                 </p>
-                <p className="mt-1 font-mono text-[14px] font-medium text-[#202824] tabular-nums">
+                <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink)] tabular-nums">
                   {inspectedStage.cashValueFormatted ?? '—'}
                 </p>
               </div>
-              <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-                <p className="text-[11px] font-medium text-[#788C83]">
+              <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+                <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                   In-kind / note
                 </p>
-                <p className="mt-1 font-mono text-[14px] font-medium text-[#202824] tabular-nums">
+                <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink)] tabular-nums">
                   {inspectedStage.inKindValueFormatted ?? '—'}
                 </p>
               </div>
@@ -403,7 +407,7 @@ export function OverviewDashboard({
                   setInspectedStage(null);
                   onNavigateSection('pipeline');
                 }}
-                className="text-[12px] font-medium text-[#315F52] hover:underline"
+                className="text-[13px] font-medium text-[var(--color-accent)] hover:underline"
               >
                 Open Pipeline
               </button>
@@ -422,39 +426,39 @@ export function OverviewDashboard({
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Cleared cash collected (M-01)
               </p>
-              <p className="mt-1 text-[20px] font-semibold text-[#202824] tabular-nums">
+              <p className="mt-1 text-[20px] font-semibold text-[var(--color-ink)] tabular-nums">
                 {payload.cashOutcome.collectedCashFormatted ??
                   payload.cashOutcome.collectedReason ??
                   'Not computable'}
               </p>
             </div>
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Collection rate (M-06)
               </p>
-              <p className="mt-1 text-[20px] font-semibold text-[#315F52] tabular-nums">
+              <p className="mt-1 text-[20px] font-semibold text-[var(--color-accent)] tabular-nums">
                 {payload.cashOutcome.collectionRateFormatted ??
                   payload.cashOutcome.collectionRateReason ??
                   'Not computable'}
               </p>
             </div>
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Signed cash basis (M-03)
               </p>
-              <p className="mt-1 font-mono text-[14px] font-medium text-[#202824] tabular-nums">
+              <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink)] tabular-nums">
                 {payload.cashOutcome.confirmedCashBasisFormatted ?? '—'}
               </p>
             </div>
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 In-kind value (M-04, separate)
               </p>
-              <p className="mt-1 font-mono text-[14px] font-medium text-[#525E58] tabular-nums">
+              <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink-muted)] tabular-nums">
                 {payload.cashOutcome.inKindValueSeparateFormatted ?? '—'}
               </p>
             </div>
@@ -467,7 +471,7 @@ export function OverviewDashboard({
                 setCashOutcomeDrawerOpen(false);
                 onNavigateSection('collections');
               }}
-              className="text-[12px] font-medium text-[#315F52] hover:underline"
+              className="text-[13px] font-medium text-[var(--color-accent)] hover:underline"
             >
               Open Collections
             </button>
@@ -484,17 +488,17 @@ export function OverviewDashboard({
         subtitle={inspectedMetric?.supportingLabel}
       >
         {inspectedMetric ? (
-          <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-4">
-            <p className="text-[11px] font-medium text-[#788C83]">
+          <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-4">
+            <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
               Current value ({recordClass} · as of {asOf})
             </p>
-            <p className="mt-1 text-[22px] font-semibold text-[#202824] tabular-nums">
+            <p className="mt-1 text-[22px] font-semibold text-[var(--color-ink)] tabular-nums">
               {inspectedMetric.computable && inspectedMetric.formattedValue
                 ? inspectedMetric.formattedValue
                 : inspectedMetric.reason || 'Not computable'}
             </p>
             {inspectedMetric.secondaryBreakdownLabel ? (
-              <p className="mt-2 text-[12px] text-[#525E58]">
+              <p className="mt-2 text-[13px] text-[var(--color-ink-muted)]">
                 {inspectedMetric.secondaryBreakdownLabel}
               </p>
             ) : null}
@@ -517,47 +521,48 @@ export function OverviewDashboard({
       >
         {inspectedCampaign ? (
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">Pipeline (M-21)</p>
-              <p className="mt-1 font-mono text-[15px] font-medium text-[#202824] tabular-nums">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Pipeline (M-21)</p>
+              <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.pipelineFormatted ?? '—'}
               </p>
             </div>
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">Proposals (M-13)</p>
-              <p className="mt-1 font-mono text-[15px] font-medium text-[#202824] tabular-nums">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Proposals (M-13)</p>
+              <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.proposalCount ?? '—'}
               </p>
             </div>
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Signed value (M-02)
               </p>
-              <p className="mt-1 font-mono text-[15px] font-medium text-[#202824] tabular-nums">
+              <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.signedFormatted ?? '—'}
               </p>
             </div>
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Signed cash (M-03)
               </p>
-              <p className="mt-1 font-mono text-[15px] font-medium text-[#202824] tabular-nums">
+              <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-ink)] tabular-nums">
                 {inspectedCampaign.signedCashFormatted ?? '—'}
               </p>
             </div>
-            <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] p-3.5">
-              <p className="text-[11px] font-medium text-[#788C83]">
+            <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] p-3.5">
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                 Collected (M-01)
               </p>
-              <p className="mt-1 font-mono text-[15px] font-medium text-[#315F52] tabular-nums">
+              <p className="mt-1 font-mono text-[15px] font-medium text-[var(--color-accent)] tabular-nums">
                 {inspectedCampaign.collectedCashFormatted ?? '—'}
               </p>
             </div>
           </div>
         ) : (
-          <p className="text-[13px] text-[#525E58]">No campaign selected.</p>
+          <p className="text-[14px] text-[var(--color-ink-muted)]">No campaign selected.</p>
         )}
       </SlideOverDrawer>
     </div>
   );
 }
+

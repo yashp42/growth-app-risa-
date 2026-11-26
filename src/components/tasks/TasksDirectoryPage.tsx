@@ -253,10 +253,10 @@ export function TasksDirectoryPage({
   };
 
   const skeleton = (
-    <div className="rounded-md border border-[#D9D7D0] bg-white p-4">
+    <div className="rounded-xl border border-[var(--color-border)] bg-white p-4">
       <div className="space-y-3">
         {[0, 1, 2, 3, 4].map((row) => (
-          <div key={row} className="h-10 rounded bg-[#FAF9F6]" />
+          <div key={row} className="h-10 rounded bg-[var(--color-surface-subtle)]" />
         ))}
       </div>
     </div>
@@ -270,16 +270,16 @@ export function TasksDirectoryPage({
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <section className="border-b border-[#D9D7D0] pb-6">
+      <section className="border-b border-[var(--color-border)] pb-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-[#202824]">
+            <h1 className="page-heading text-[var(--color-ink)]">
               Tasks
             </h1>
-            <p className="mt-1 text-[13px] text-[#525E58]">
+            <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
               Follow-ups, proposals, deadlines, and team assignments.
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[11px] text-[#788C83]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatRecordClassLabel(filters.record_class)}</span>
               <span aria-hidden="true">·</span>
               <span>{filters.edition_id}</span>
@@ -288,7 +288,7 @@ export function TasksDirectoryPage({
               {isHistorical2025 ? (
                 <>
                   <span aria-hidden="true">·</span>
-                  <span className="font-medium text-[#525E58]">
+                  <span className="font-medium text-[var(--color-ink-muted)]">
                     {READ_ONLY_2025_MESSAGE}
                   </span>
                 </>
@@ -298,14 +298,14 @@ export function TasksDirectoryPage({
 
           <div className="flex flex-wrap items-center gap-2.5">
             {showDevControls ? (
-              <div className="flex items-center gap-2 rounded-md border border-dashed border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1">
-                <span className="font-mono text-[11px] text-[#788C83]">
+              <div className="flex items-center gap-2 rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1">
+                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                   Dev state
                 </span>
                 <div
                   role="group"
                   aria-label="Developer preview task data state"
-                  className="inline-flex rounded border border-[#D9D7D0] bg-white p-0.5"
+                  className="inline-flex rounded border border-[var(--color-border)] bg-white p-0.5"
                 >
                   {(
                     [
@@ -318,10 +318,10 @@ export function TasksDirectoryPage({
                       key={mode.id}
                       type="button"
                       onClick={() => onChangePreviewMode(mode.id)}
-                      className={`rounded px-2 py-0.5 text-[12px] font-medium transition-colors duration-150 ${
+                      className={`rounded px-2 py-0.5 text-[13px] font-medium transition-colors duration-150 ${
                         previewMode === mode.id
-                          ? 'bg-[#315F52] text-white'
-                          : 'text-[#525E58] hover:text-[#202824]'
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                       }`}
                     >
                       {mode.label}
@@ -334,10 +334,10 @@ export function TasksDirectoryPage({
             <button
               type="button"
               onClick={onRefresh}
-              className="inline-flex h-10 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] whitespace-nowrap"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] whitespace-nowrap"
             >
               <RefreshCw
-                className="h-3.5 w-3.5 text-[#525E58]"
+                className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                 aria-hidden="true"
               />
               Refresh
@@ -349,7 +349,7 @@ export function TasksDirectoryPage({
                 disabled={isHistorical2025}
                 title={isHistorical2025 ? READ_ONLY_2025_MESSAGE : undefined}
                 onClick={onCreateTask}
-                className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+                className="inline-flex h-10 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 New task
@@ -363,7 +363,7 @@ export function TasksDirectoryPage({
           <div
             role="tablist"
             aria-label="Task scope views"
-            className="inline-flex flex-wrap rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-0.5"
+            className="inline-flex flex-wrap rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-0.5"
           >
             {SCOPE_TABS.map((tab) => {
               const active = scopeView === tab.id;
@@ -374,10 +374,10 @@ export function TasksDirectoryPage({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setScopeView(tab.id)}
-                  className={`rounded px-3 py-1.5 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+                  className={`rounded px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                     active
-                      ? 'bg-white text-[#202824] shadow-xs'
-                      : 'text-[#525E58] hover:text-[#202824]'
+                      ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                      : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                   }`}
                 >
                   {tab.label}
@@ -389,15 +389,15 @@ export function TasksDirectoryPage({
           <div
             role="group"
             aria-label="Task display mode"
-            className="inline-flex rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-0.5"
+            className="inline-flex rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-0.5"
           >
             <button
               type="button"
               onClick={() => setDisplayMode('table')}
-              className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                 displayMode === 'table'
-                  ? 'bg-white text-[#202824] shadow-xs'
-                  : 'text-[#525E58] hover:text-[#202824]'
+                  ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                  : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
               }`}
             >
               <Table2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -406,10 +406,10 @@ export function TasksDirectoryPage({
             <button
               type="button"
               onClick={() => setDisplayMode('board')}
-              className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                 displayMode === 'board'
-                  ? 'bg-white text-[#202824] shadow-xs'
-                  : 'text-[#525E58] hover:text-[#202824]'
+                  ? 'bg-white text-[var(--color-ink)] shadow-xs'
+                  : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
               }`}
             >
               <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
@@ -423,13 +423,13 @@ export function TasksDirectoryPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="tasks-search"
-              className="text-[11px] font-medium text-[#788C83]"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
             >
               Search
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[#788C83]"
+                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-ink-subtle)]"
                 aria-hidden="true"
               />
               <input
@@ -440,7 +440,7 @@ export function TasksDirectoryPage({
                   onChangeFilters({ ...filters, search: e.target.value })
                 }
                 placeholder="Search title, ID, or linked..."
-                className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white pr-3 pl-8 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none"
+                className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white pr-3 pl-8 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none"
               />
             </div>
           </div>
@@ -493,7 +493,7 @@ export function TasksDirectoryPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="tasks-filter-due-from"
-              className="text-[11px] font-medium text-[#788C83]"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
             >
               Due from
             </label>
@@ -504,14 +504,14 @@ export function TasksDirectoryPage({
               onChange={(e) =>
                 onChangeFilters({ ...filters, due_from: e.target.value })
               }
-              className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[12px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 font-mono text-[13px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1">
             <label
               htmlFor="tasks-filter-due-to"
-              className="text-[11px] font-medium text-[#788C83]"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
             >
               Due to
             </label>
@@ -522,7 +522,7 @@ export function TasksDirectoryPage({
               onChange={(e) =>
                 onChangeFilters({ ...filters, due_to: e.target.value })
               }
-              className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[12px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 font-mono text-[13px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             />
           </div>
 
@@ -557,7 +557,7 @@ export function TasksDirectoryPage({
       {quickError ? (
         <div
           role="alert"
-          className="flex items-start justify-between gap-3 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-4 py-3 text-[12px] text-[#9B3B32]"
+          className="flex items-start justify-between gap-3 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-4 py-3 text-[13px] text-[#9B3B32]"
         >
           <div className="flex items-start gap-2">
             <AlertCircle
@@ -569,7 +569,7 @@ export function TasksDirectoryPage({
           <button
             type="button"
             onClick={() => setQuickError(null)}
-            className="text-[11px] font-medium underline shrink-0"
+            className="text-[12px] font-medium underline shrink-0"
           >
             Dismiss
           </button>
@@ -585,29 +585,29 @@ export function TasksDirectoryPage({
           loadingSkeleton={skeleton}
         >
           {!permissionProfile.canRead ? (
-            <div className="rounded-md border border-[#D9D7D0] bg-white px-6 py-10 text-center">
-              <p className="text-[13px] font-medium text-[#202824]">
+            <div className="rounded-xl border border-[var(--color-border)] bg-white px-6 py-10 text-center">
+              <p className="text-[14px] font-medium text-[var(--color-ink)]">
                 Your current role does not have task-workspace access.
               </p>
             </div>
           ) : myTasksIdentityMissing ? (
-            <div className="rounded-md border border-[#D9D7D0] bg-white px-6 py-10 text-center">
-              <p className="text-[13px] font-medium text-[#202824]">
+            <div className="rounded-xl border border-[var(--color-border)] bg-white px-6 py-10 text-center">
+              <p className="text-[14px] font-medium text-[var(--color-ink)]">
                 Current team-member identity is unavailable for My Tasks.
               </p>
               <div className="mt-3">
                 <button
                   type="button"
                   onClick={() => setScopeView('all')}
-                  className="inline-flex h-9 items-center rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                  className="inline-flex h-9 items-center rounded-xl border border-[var(--color-border)] bg-white px-3.5 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                 >
                   View All Tasks
                 </button>
               </div>
             </div>
           ) : sortedTasks.length === 0 ? (
-            <div className="rounded-md border border-[#D9D7D0] bg-white px-6 py-12 text-center">
-              <p className="text-[13px] font-medium text-[#202824]">
+            <div className="rounded-xl border border-[var(--color-border)] bg-white px-6 py-12 text-center">
+              <p className="text-[14px] font-medium text-[var(--color-ink)]">
                 {scopeView === 'my'
                   ? 'No tasks assigned to you match these filters'
                   : 'No tasks match these filters'}
@@ -617,7 +617,7 @@ export function TasksDirectoryPage({
                   <button
                     type="button"
                     onClick={() => setScopeView('all')}
-                    className="inline-flex h-9 items-center rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                    className="inline-flex h-9 items-center rounded-xl border border-[var(--color-border)] bg-white px-3.5 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                   >
                     Switch to All Tasks
                   </button>
@@ -630,10 +630,10 @@ export function TasksDirectoryPage({
                       isHistorical2025 ? READ_ONLY_2025_MESSAGE : undefined
                     }
                     onClick={onCreateTask}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3.5 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus
-                      className="h-3.5 w-3.5 text-[#315F52]"
+                      className="h-3.5 w-3.5 text-[var(--color-accent)]"
                       aria-hidden="true"
                     />
                     Create task
@@ -642,11 +642,11 @@ export function TasksDirectoryPage({
               </div>
             </div>
           ) : displayMode === 'table' ? (
-            <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+            <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6]">
+                    <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
                       {TABLE_COLUMNS.map((col) => {
                         const isActive = sortKey === col.key;
                         const SortIcon = !isActive
@@ -665,19 +665,19 @@ export function TasksDirectoryPage({
                                   : 'descending'
                                 : 'none'
                             }
-                            className="px-4 py-3 text-[12px] font-medium text-[#525E58] whitespace-nowrap"
+                            className="px-4 py-3 text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap"
                           >
                             <button
                               type="button"
                               onClick={() => handleSort(col.key)}
-                              className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[#202824] ${
-                                isActive ? 'font-semibold text-[#315F52]' : ''
+                              className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[var(--color-ink)] ${
+                                isActive ? 'font-semibold text-[var(--color-accent)]' : ''
                               }`}
                             >
                               <span>{col.label}</span>
                               <SortIcon
                                 className={`h-3 w-3 ${
-                                  isActive ? 'text-[#315F52]' : 'text-[#788C83]'
+                                  isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-ink-subtle)]'
                                 }`}
                                 aria-hidden="true"
                               />
@@ -687,14 +687,14 @@ export function TasksDirectoryPage({
                       })}
                       <th
                         scope="col"
-                        className="px-4 py-3 text-right text-[12px] font-medium text-[#525E58] whitespace-nowrap"
+                        className="px-4 py-3 text-right text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap"
                       >
                         Actions
                       </th>
                     </tr>
                   </thead>
 
-                  <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                  <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                     {sortedTasks.map((task) => {
                       const editable = canUserEditTask(task, permissionProfile);
                       const overdue = evaluateTaskOverdue(task, nowMs);
@@ -703,17 +703,17 @@ export function TasksDirectoryPage({
                       return (
                         <tr
                           key={task.task_id}
-                          className="transition-colors duration-150 hover:bg-[#FAF9F6]"
+                          className="transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                         >
                           <td className="px-4 py-3">
                             <button
                               type="button"
                               onClick={() => onOpenTask(task)}
-                              className="text-left font-medium text-[#202824] hover:text-[#315F52] hover:underline"
+                              className="text-left font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)] hover:underline"
                             >
                               {task.title}
                             </button>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[#788C83]">
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-[var(--color-ink-subtle)]">
                               <span className="font-mono">{task.task_id}</span>
                               {task.bet_id ? (
                                 <>
@@ -728,16 +728,16 @@ export function TasksDirectoryPage({
 
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span
-                              className={`font-mono text-[12px] tabular-nums ${
+                              className={`font-mono text-[13px] tabular-nums ${
                                 overdue.isOverdue
                                   ? 'font-medium text-[#9B3B32]'
-                                  : 'text-[#525E58]'
+                                  : 'text-[var(--color-ink-muted)]'
                               }`}
                             >
                               {formatTaskDueDisplay(task.due_at)}
                             </span>
                             {overdue.isOverdue ? (
-                              <span className="mt-0.5 block text-[11px] font-medium text-[#9B3B32]">
+                              <span className="mt-0.5 block text-[12px] font-medium text-[#9B3B32]">
                                 {overdue.isCancelledAnomaly
                                   ? 'Overdue (cancelled)'
                                   : 'Overdue'}
@@ -745,7 +745,7 @@ export function TasksDirectoryPage({
                             ) : null}
                           </td>
 
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {task.owner_name || task.owner_member_id}
                           </td>
 
@@ -753,19 +753,19 @@ export function TasksDirectoryPage({
                             <span
                               className={
                                 task.status === 'done'
-                                  ? 'font-medium text-[#315F52]'
+                                  ? 'font-medium text-[var(--color-accent)]'
                                   : task.status === 'blocked'
                                     ? 'font-medium text-[#9B3B32]'
                                     : task.status === 'cancelled'
-                                      ? 'text-[#788C83]'
-                                      : 'text-[#202824]'
+                                      ? 'text-[var(--color-ink-subtle)]'
+                                      : 'text-[var(--color-ink)]'
                               }
                             >
                               {formatTaskStatus(task.status)}
                             </span>
                           </td>
 
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {formatTaskType(task.task_type)}
                           </td>
 
@@ -775,7 +775,7 @@ export function TasksDirectoryPage({
                                 <button
                                   type="button"
                                   onClick={() => handleDrillLinked(task)}
-                                  className="inline-flex items-center gap-1 text-left text-[12px] font-medium text-[#315F52] hover:underline"
+                                  className="inline-flex items-center gap-1 text-left text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                                 >
                                   <span>
                                     {formatTaskLinkedType(task.linked_type)} ·{' '}
@@ -787,7 +787,7 @@ export function TasksDirectoryPage({
                                   />
                                 </button>
                               ) : (
-                                <span className="text-[12px] text-[#525E58]">
+                                <span className="text-[13px] text-[var(--color-ink-muted)]">
                                   {formatTaskLinkedType(task.linked_type)} ·{' '}
                                   <span className="font-mono">
                                     {task.linked_label || task.linked_id}
@@ -795,7 +795,7 @@ export function TasksDirectoryPage({
                                 </span>
                               )
                             ) : (
-                              <span className="text-[#788C83]">—</span>
+                              <span className="text-[var(--color-ink-subtle)]">—</span>
                             )}
                           </td>
 
@@ -815,7 +815,7 @@ export function TasksDirectoryPage({
                                       : undefined
                                   }
                                   onClick={() => handleQuickDone(task)}
-                                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <Check className="h-3.5 w-3.5" aria-hidden="true" />
                                   {markingTaskId === task.task_id
@@ -834,7 +834,7 @@ export function TasksDirectoryPage({
                                       : undefined
                                   }
                                   onClick={() => onEditTask(task)}
-                                  className="text-[12px] font-medium text-[#525E58] hover:text-[#202824] disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="text-[13px] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Edit
                                 </button>
@@ -842,7 +842,7 @@ export function TasksDirectoryPage({
                               <button
                                 type="button"
                                 onClick={() => onOpenTask(task)}
-                                className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                               >
                                 Open
                                 <ArrowUpRight
@@ -868,21 +868,21 @@ export function TasksDirectoryPage({
                 return (
                   <div
                     key={statusKey}
-                    className="flex flex-col rounded-md border border-[#D9D7D0] bg-[#FAF9F6]/70"
+                    className="flex flex-col rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)]/70"
                   >
-                    <div className="flex items-center justify-between rounded-t-md border-b border-[#D9D7D0] bg-white px-3.5 py-2.5">
+                    <div className="flex items-center justify-between rounded-t-md border-b border-[var(--color-border)] bg-white px-3.5 py-2.5">
                       <span
-                        className={`text-[12px] font-semibold ${
+                        className={`text-[13px] font-semibold ${
                           statusKey === 'done'
-                            ? 'text-[#315F52]'
+                            ? 'text-[var(--color-accent)]'
                             : statusKey === 'blocked'
                               ? 'text-[#9B3B32]'
-                              : 'text-[#202824]'
+                              : 'text-[var(--color-ink)]'
                         }`}
                       >
                         {formatTaskStatus(statusKey)}
                       </span>
-                      <span className="font-mono text-[11px] tabular-nums text-[#788C83]">
+                      <span className="font-mono text-[12px] tabular-nums text-[var(--color-ink-subtle)]">
                         {colTasks.length}
                       </span>
                     </div>
@@ -898,9 +898,9 @@ export function TasksDirectoryPage({
                           return (
                             <article
                               key={task.task_id}
-                              className="rounded-md border border-[#D9D7D0] bg-white p-3.5 transition-colors duration-150 hover:border-[#315F52]/50"
+                              className="rounded-xl border border-[var(--color-border)] bg-white p-3.5 transition-colors duration-150 hover:border-[var(--color-accent)]/50"
                             >
-                              <div className="flex items-center justify-between gap-2 text-[11px] text-[#788C83]">
+                              <div className="flex items-center justify-between gap-2 text-[12px] text-[var(--color-ink-subtle)]">
                                 <span>{formatTaskType(task.task_type)}</span>
                                 <span className="font-mono">{task.task_id}</span>
                               </div>
@@ -908,19 +908,19 @@ export function TasksDirectoryPage({
                               <button
                                 type="button"
                                 onClick={() => onOpenTask(task)}
-                                className="mt-1 block text-left text-[13px] font-semibold leading-snug text-[#202824] hover:text-[#315F52] hover:underline"
+                                className="mt-1 block text-left text-[14px] font-semibold leading-snug text-[var(--color-ink)] hover:text-[var(--color-accent)] hover:underline"
                               >
                                 {task.title}
                               </button>
 
-                              <dl className="mt-2.5 space-y-1 border-t border-[#E8E6E0] pt-2 text-[11px] text-[#525E58]">
+                              <dl className="mt-2.5 space-y-1 border-t border-[var(--color-border-subtle)] pt-2 text-[12px] text-[var(--color-ink-muted)]">
                                 <div className="flex items-center justify-between gap-2">
-                                  <dt className="text-[#788C83]">Due</dt>
+                                  <dt className="text-[var(--color-ink-subtle)]">Due</dt>
                                   <dd
                                     className={`font-mono tabular-nums ${
                                       overdue.isOverdue
                                         ? 'font-medium text-[#9B3B32]'
-                                        : 'text-[#202824]'
+                                        : 'text-[var(--color-ink)]'
                                     }`}
                                   >
                                     {formatTaskDueDisplay(task.due_at)}
@@ -932,13 +932,13 @@ export function TasksDirectoryPage({
                                   </dd>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                  <dt className="text-[#788C83]">Owner</dt>
-                                  <dd className="truncate font-medium text-[#202824]">
+                                  <dt className="text-[var(--color-ink-subtle)]">Owner</dt>
+                                  <dd className="truncate font-medium text-[var(--color-ink)]">
                                     {task.owner_name || task.owner_member_id}
                                   </dd>
                                 </div>
                                 <div className="flex items-center justify-between gap-2">
-                                  <dt className="text-[#788C83]">Linked</dt>
+                                  <dt className="text-[var(--color-ink-subtle)]">Linked</dt>
                                   <dd className="truncate">
                                     {task.linked_type && task.linked_id
                                       ? `${formatTaskLinkedType(task.linked_type)} · ${task.linked_label || task.linked_id}`
@@ -947,7 +947,7 @@ export function TasksDirectoryPage({
                                 </div>
                               </dl>
 
-                              <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#E8E6E0] pt-2">
+                              <div className="mt-3 flex items-center justify-between gap-2 border-t border-[var(--color-border-subtle)] pt-2">
                                 {(editable || (isHistorical2025 && permissionProfile.canCreate)) &&
                                 task.status !== 'done' ? (
                                   <button
@@ -962,7 +962,7 @@ export function TasksDirectoryPage({
                                         : undefined
                                     }
                                     onClick={() => handleQuickDone(task)}
-                                    className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     <Check
                                       className="h-3.5 w-3.5"
@@ -973,14 +973,14 @@ export function TasksDirectoryPage({
                                       : 'Mark done'}
                                   </button>
                                 ) : (
-                                  <span className="text-[11px] text-[#788C83]">
+                                  <span className="text-[12px] text-[var(--color-ink-subtle)]">
                                     {formatTaskOrigin(task.origin)}
                                   </span>
                                 )}
                                 <button
                                   type="button"
                                   onClick={() => onOpenTask(task)}
-                                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                  className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                                 >
                                   Open
                                   <ArrowUpRight
@@ -993,7 +993,7 @@ export function TasksDirectoryPage({
                           );
                         })
                       ) : (
-                        <p className="py-6 text-center text-[12px] text-[#788C83]">
+                        <p className="py-6 text-center text-[13px] text-[var(--color-ink-subtle)]">
                           No tasks
                         </p>
                       )}
@@ -1008,3 +1008,4 @@ export function TasksDirectoryPage({
     </div>
   );
 }
+

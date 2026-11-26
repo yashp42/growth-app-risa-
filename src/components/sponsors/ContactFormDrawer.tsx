@@ -161,15 +161,15 @@ export function ContactFormDrawer({
       title={isEditing ? editingContact?.full_name ?? 'Edit contact' : 'Add contact'}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded border border-[#E8E6E0] bg-[#FAF9F6] px-3.5 py-2.5">
-          <p className="text-[11px] font-medium text-[#788C83]">Sponsor</p>
-          <p className="mt-0.5 text-[13px] font-medium text-[#202824]">
+        <div className="rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5">
+          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Sponsor</p>
+          <p className="mt-0.5 text-[14px] font-medium text-[var(--color-ink)]">
             {sponsor.display_name}
           </p>
         </div>
 
         {readOnly ? (
-          <div className="rounded border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             This contact belongs to a read-only record and cannot be modified.
           </div>
         ) : null}
@@ -177,7 +177,7 @@ export function ContactFormDrawer({
         {formError ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{formError}</span>
@@ -187,7 +187,7 @@ export function ContactFormDrawer({
         <div>
           <label
             htmlFor="contact-full-name"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Full name
           </label>
@@ -199,7 +199,7 @@ export function ContactFormDrawer({
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="e.g. Ananya Sharma"
-            className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           />
         </div>
 
@@ -207,7 +207,7 @@ export function ContactFormDrawer({
           <div>
             <label
               htmlFor="contact-job-title"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Job title
             </label>
@@ -218,7 +218,7 @@ export function ContactFormDrawer({
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
               placeholder="e.g. Head of Brand Marketing"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
 
@@ -226,7 +226,7 @@ export function ContactFormDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="contact-decision-role"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Decision role
               </label>
@@ -242,7 +242,7 @@ export function ContactFormDrawer({
               onChange={(e) =>
                 setDecisionRole(e.target.value as ContactDecisionRole)
               }
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {CONTACT_DECISION_ROLE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -258,7 +258,7 @@ export function ContactFormDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="contact-email"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Email
               </label>
@@ -275,10 +275,10 @@ export function ContactFormDrawer({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@company.com"
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               />
             ) : (
-              <div className="mt-1 flex h-9 items-center rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 text-[12px] text-[#788C83]">
+              <div className="mt-1 flex h-9 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 text-[13px] text-[var(--color-ink-subtle)]">
                 {piiRestrictionLabel}
               </div>
             )}
@@ -287,7 +287,7 @@ export function ContactFormDrawer({
           <div>
             <label
               htmlFor="contact-phone"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Phone
             </label>
@@ -299,10 +299,10 @@ export function ContactFormDrawer({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 ..."
-                className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] placeholder:font-sans placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               />
             ) : (
-              <div className="mt-1 flex h-9 items-center rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 text-[12px] text-[#788C83]">
+              <div className="mt-1 flex h-9 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 text-[13px] text-[var(--color-ink-subtle)]">
                 {piiRestrictionLabel}
               </div>
             )}
@@ -313,7 +313,7 @@ export function ContactFormDrawer({
           <div>
             <label
               htmlFor="contact-consent-basis"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Consent basis
             </label>
@@ -325,7 +325,7 @@ export function ContactFormDrawer({
               value={consentBasis}
               onChange={(e) => setConsentBasis(e.target.value)}
               placeholder="e.g. warm_introduction"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
             <datalist id={consentListId}>
               {CONTACT_CONSENT_BASIS_SUGGESTIONS.map((item) => (
@@ -337,7 +337,7 @@ export function ContactFormDrawer({
           <div>
             <label
               htmlFor="contact-source-ref"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Source reference (provenance)
             </label>
@@ -349,28 +349,28 @@ export function ContactFormDrawer({
               value={sourceRef}
               onChange={(e) => setSourceRef(e.target.value)}
               placeholder="e.g. Referral RF-003 or Inbound form"
-              className="mt-1 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
         </div>
 
-        <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-3">
-          <label className="flex items-start gap-2.5 text-[13px] text-[#202824]">
+        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-3">
+          <label className="flex items-start gap-2.5 text-[14px] text-[var(--color-ink)]">
             <input
               type="checkbox"
               disabled={readOnly || submitting}
               checked={optedOut}
               onChange={(e) => setOptedOut(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[#D9D7D0] text-[#315F52] focus:ring-[#315F52]"
+              className="mt-0.5 h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
             />
             <span>
               <span className="font-medium">Opted out of outreach</span>
               {editingContact?.opted_out_at ? (
-                <span className="mt-0.5 block font-mono text-[11px] text-[#9B3B32]">
+                <span className="mt-0.5 block font-mono text-[12px] text-[#9B3B32]">
                   Opted out at {editingContact.opted_out_at}
                 </span>
               ) : (
-                <span className="mt-0.5 block text-[12px] text-[#788C83]">
+                <span className="mt-0.5 block text-[13px] text-[var(--color-ink-subtle)]">
                   Blocks all outreach attempts for this contact.
                 </span>
               )}
@@ -378,11 +378,11 @@ export function ContactFormDrawer({
           </label>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
@@ -390,7 +390,7 @@ export function ContactFormDrawer({
             <button
               type="submit"
               disabled={submitting}
-              className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:opacity-60"
+              className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
               {submitting
                 ? 'Saving...'

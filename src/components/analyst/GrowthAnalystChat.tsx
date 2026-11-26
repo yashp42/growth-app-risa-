@@ -15,7 +15,7 @@ const INVESTIGATION_STARTERS: ReadonlyArray<string> = [
   'Which campaign is leaking the most qualified leads?',
   'How much cash did we collect in 2025?',
   'Which signed partnerships still have outstanding cash?',
-  'What is our T-55 base target in D-009?',
+  'Which prospects should we pursue first?',
   'How much cash have we collected before fest?',
 ];
 
@@ -98,17 +98,17 @@ export function GrowthAnalystChat({
   );
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    bottomRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block: 'end' });
   }, [messages.length, sending, error]);
 
   return (
     <div className="flex min-h-[460px] flex-col justify-between gap-4">
       <div className="space-y-4">
         {dataVersionChanged ? (
-          <div className="flex items-center justify-between gap-3 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#202824]">
+          <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink)]">
             <div className="flex items-center gap-2">
               <RefreshCw
-                className="h-3.5 w-3.5 shrink-0 text-[#315F52]"
+                className="h-3.5 w-3.5 shrink-0 text-[var(--color-accent)]"
                 aria-hidden="true"
               />
               <span>
@@ -119,7 +119,7 @@ export function GrowthAnalystChat({
             <button
               type="button"
               onClick={onClearDataVersionChanged}
-              className="shrink-0 text-[11px] font-medium text-[#525E58] hover:text-[#202824]"
+              className="shrink-0 text-[12px] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
             >
               Dismiss
             </button>
@@ -128,22 +128,22 @@ export function GrowthAnalystChat({
 
         {loadingConversation ? (
           <div className="space-y-3" aria-busy="true">
-            <div className="h-16 animate-pulse rounded-md border border-[#D9D7D0] bg-white" />
-            <div className="h-28 animate-pulse rounded-md border border-[#D9D7D0] bg-white" />
+            <div className="h-16 animate-pulse rounded-md border border-[var(--color-border)] bg-white" />
+            <div className="h-28 animate-pulse rounded-md border border-[var(--color-border)] bg-white" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-            <h2 className="text-[15px] font-semibold text-[#202824]">
-              Ask a grounded sponsorship question
+          <div className="py-6 sm:py-10">
+            <h2 className="text-[24px] font-semibold text-[var(--color-ink)]">
+              What would you like to explore?
             </h2>
-            <div className="mt-3 divide-y divide-[#E8E6E0] rounded border border-[#E8E6E0]">
+            <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {INVESTIGATION_STARTERS.map((prompt) => (
                 <button
                   key={prompt}
                   type="button"
                   disabled={sending}
                   onClick={() => void onSend(prompt)}
-                  className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left text-[13px] text-[#202824] transition-colors hover:bg-[#FAF9F6] disabled:opacity-50"
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--color-border)] bg-white px-4 py-3 text-left text-[14px] text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-subtle)] disabled:opacity-50"
                 >
                   <span>{prompt}</span>
                 </button>
@@ -180,7 +180,7 @@ export function GrowthAnalystChat({
         {sending ? (
           <div
             aria-live="polite"
-            className="rounded-md border border-[#D9D7D0] bg-white px-4 py-3 text-[13px] text-[#525E58]"
+            className="rounded-md border border-[var(--color-border)] bg-white px-4 py-3 text-[14px] text-[var(--color-ink-muted)]"
           >
             Retrieving current metrics and source evidence...
           </div>
@@ -189,7 +189,7 @@ export function GrowthAnalystChat({
         {error ? (
           <div
             role="alert"
-            className="rounded-md border border-[#D9D7D0] bg-white p-4"
+            className="rounded-md border border-[var(--color-border)] bg-white p-4"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-2.5">
@@ -198,20 +198,20 @@ export function GrowthAnalystChat({
                   aria-hidden="true"
                 />
                 <div>
-                  <p className="text-[13px] font-semibold text-[#202824]">
+                  <p className="text-[14px] font-semibold text-[var(--color-ink)]">
                     {error.status === 403
                       ? 'Permission restricted'
                       : 'Growth Analyst service unavailable'}
                   </p>
-                  <p className="mt-0.5 text-[12px] text-[#525E58]">
-                    {error.message}
+                  <p className="mt-0.5 text-[13px] text-[var(--color-ink-muted)]">
+                    {error.status===429?'The analyst has reached its temporary request limit. Your conversation is saved; try again after the limit resets.':'We couldn’t complete that request. Your conversation is saved.'}<details className="source-details"><summary>Diagnostic details</summary><p className="mt-2 break-words font-mono text-xs">{error.message}</p></details>
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={onDismissError}
-                className="shrink-0 text-[12px] font-medium text-[#525E58] hover:text-[#202824]"
+                className="shrink-0 text-[13px] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
               >
                 Dismiss
               </button>
@@ -222,7 +222,7 @@ export function GrowthAnalystChat({
         <div ref={bottomRef} />
       </div>
 
-      <div className="sticky bottom-2 z-10 bg-[#F3F1EB] pt-2">
+      <div className="sticky bottom-0 z-10 bg-[var(--color-canvas)]/95 pb-3 pt-4">
         <ChatComposer
           onSend={onSend}
           sending={sending}
@@ -240,3 +240,4 @@ export function GrowthAnalystChat({
     </div>
   );
 }
+

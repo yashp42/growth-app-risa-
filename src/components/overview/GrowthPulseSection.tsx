@@ -31,11 +31,11 @@ export function GrowthPulseSection({
       {[0, 1, 2, 3].map((idx) => (
         <div
           key={idx}
-          className="rounded-md border border-[#D9D7D0] bg-white p-5"
+          className="rounded-md border border-[var(--color-border)] bg-white p-5"
         >
-          <div className="h-3.5 w-28 rounded bg-[#E8E6E0]" />
-          <div className="mt-4 h-8 w-24 rounded bg-[#E8E6E0]" />
-          <div className="mt-3 h-3 w-20 rounded bg-[#F3F1EB]" />
+          <div className="h-3.5 w-28 rounded bg-[var(--color-border-subtle)]" />
+          <div className="mt-4 h-8 w-24 rounded bg-[var(--color-border-subtle)]" />
+          <div className="mt-3 h-3 w-20 rounded bg-[var(--color-canvas)]" />
         </div>
       ))}
     </div>
@@ -44,7 +44,7 @@ export function GrowthPulseSection({
   return (
     <section id="section-pulse" aria-label="Growth pulse" className="space-y-4">
       <SectionHeader
-        title="Growth pulse"
+        title="Season performance"
         meta={
           recordClass && asOfDate ? `${recordClass} · as of ${asOfDate}` : undefined
         }
@@ -73,37 +73,37 @@ export function GrowthPulseSection({
                 }}
                 role="button"
                 tabIndex={0}
-                className={`flex cursor-pointer flex-col justify-between rounded-md border p-5 text-left transition-colors duration-150 ${
+                className={`flex cursor-pointer flex-col justify-between rounded-xl border p-6 text-left transition-colors duration-150 ${
                   isNorthStar
-                    ? 'border-[#315F52] bg-white hover:bg-[#FAF9F6]'
-                    : 'border-[#D9D7D0] bg-white hover:border-[#788C83] hover:bg-[#FAF9F6]'
+                    ? 'metric-hero border-[var(--color-accent)] hover:bg-[var(--color-accent-soft)]'
+                    : 'border-[var(--color-border)] bg-white hover:border-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-subtle)]'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[#525E58]">
+                  <span className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-ink-muted)]">
                     <span>{metric.label}</span>
                     <InfoHint
                       label={`Definition for ${metric.label}`}
                       content={metric.supportingLabel}
                     />
                   </span>
-                  <span className="font-mono text-[11px] font-medium text-[#788C83] whitespace-nowrap">
-                    {isNorthStar ? `North Star · ${metric.metricId}` : metric.metricId}
+                  <span className="font-mono text-[12px] font-medium text-[var(--color-ink-subtle)] whitespace-nowrap">
+                    {isNorthStar ? 'Primary measure' : ''}
                   </span>
                 </div>
 
                 <div className="mt-3 flex items-baseline justify-between gap-2">
                   {hasValue ? (
-                    <span className="text-[28px] font-semibold tracking-[-0.02em] text-[#202824] tabular-nums">
+                    <span className="metric-value text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
                       {metric.formattedValue}
                     </span>
                   ) : (
-                    <span className="text-[13px] font-medium text-[#788C83]">
+                    <span className="text-[14px] font-medium text-[var(--color-ink-subtle)]">
                       {metric.reason || 'Not computable'}
                     </span>
                   )}
                   {metric.comparisonText && hasValue ? (
-                    <span className="font-mono text-[12px] text-[#525E58] tabular-nums">
+                    <span className="font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums">
                       {metric.comparisonText}
                     </span>
                   ) : null}
@@ -111,14 +111,12 @@ export function GrowthPulseSection({
 
                 <div className="mt-2.5 flex flex-col gap-0.5">
                   {metric.secondaryBreakdownLabel ? (
-                    <p className="text-[11px] text-[#788C83]">
+                    <p className="text-[12px] text-[var(--color-ink-subtle)]">
                       {metric.secondaryBreakdownLabel}
                     </p>
                   ) : null}
                   {metric.recordClassLabel && metric.asOfDate ? (
-                    <p className="font-mono text-[10px] text-[#788C83]">
-                      {metric.recordClassLabel} · as of {metric.asOfDate}
-                    </p>
+                    <span className="sr-only">{metric.recordClassLabel} · as of {metric.asOfDate}</span>
                   ) : null}
                 </div>
               </div>
@@ -129,3 +127,4 @@ export function GrowthPulseSection({
     </section>
   );
 }
+

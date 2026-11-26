@@ -266,16 +266,16 @@ export function CollectionsWorkspacePage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 border-b border-[#D9D7D0] pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[#202824]">
+          <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--color-ink)]">
             Collections
           </h1>
-          <p className="mt-1 text-[13px] text-[#525E58]">
+          <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
             Signed cash obligations, payment schedules, issued invoices, and
             reconciled cash receipts.
           </p>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[11px] text-[#788C83]">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
             <span>{formatRecordClassDisplay(filters.record_class)}</span>
             <span aria-hidden="true">·</span>
             <span>{filters.edition_id}</span>
@@ -284,7 +284,7 @@ export function CollectionsWorkspacePage({
             {isHistorical ? (
               <>
                 <span aria-hidden="true">·</span>
-                <span className="font-medium text-[#525E58]">
+                <span className="font-medium text-[var(--color-ink-muted)]">
                   {READ_ONLY_2025_MESSAGE}
                 </span>
               </>
@@ -294,7 +294,7 @@ export function CollectionsWorkspacePage({
 
         <div className="flex flex-wrap items-center gap-2">
           {showDevControls ? (
-            <div className="mr-2 flex items-center gap-1 rounded-md border border-[#D9D7D0] bg-white p-0.5 text-[11px]">
+            <div className="mr-2 flex items-center gap-1 rounded-xl border border-[var(--color-border)] bg-white p-0.5 text-[12px]">
               {(['default', 'loading', 'error'] as const).map((mode) => (
                 <button
                   key={mode}
@@ -302,8 +302,8 @@ export function CollectionsWorkspacePage({
                   onClick={() => onChangePreviewMode(mode)}
                   className={`rounded px-2 py-1 capitalize transition-colors ${
                     previewMode === mode
-                      ? 'bg-[#315F52] text-white'
-                      : 'text-[#525E58] hover:text-[#202824]'
+                      ? 'bg-[var(--color-accent)] text-white'
+                      : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                   }`}
                 >
                   {mode}
@@ -315,9 +315,9 @@ export function CollectionsWorkspacePage({
           <button
             type="button"
             onClick={onRefresh}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors hover:bg-[#FAF9F6]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-subtle)]"
           >
-            <RefreshCw className="h-3.5 w-3.5 text-[#525E58]" />
+            <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" />
             Refresh
           </button>
 
@@ -327,9 +327,9 @@ export function CollectionsWorkspacePage({
               disabled={isHistorical}
               title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
               onClick={() => onOpenScheduleDrawer(null)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Plus className="h-3.5 w-3.5 text-[#315F52]" />
+              <Plus className="h-3.5 w-3.5 text-[var(--color-accent)]" />
               Add schedule item
             </button>
           ) : null}
@@ -340,9 +340,9 @@ export function CollectionsWorkspacePage({
               disabled={isHistorical}
               title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
               onClick={() => onOpenInvoiceDrawer(null)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[14px] font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Plus className="h-3.5 w-3.5 text-[#315F52]" />
+              <Plus className="h-3.5 w-3.5 text-[var(--color-accent)]" />
               Record invoice
             </button>
           ) : null}
@@ -353,7 +353,7 @@ export function CollectionsWorkspacePage({
               disabled={isHistorical}
               title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
               onClick={() => onOpenReceiptDrawer(null)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-3.5 text-[13px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 text-[14px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus className="h-3.5 w-3.5" />
               Record receipt
@@ -366,7 +366,7 @@ export function CollectionsWorkspacePage({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="relative flex-1 sm:max-w-sm">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#788C83]"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-ink-subtle)]"
             aria-hidden="true"
           />
           <input
@@ -377,7 +377,7 @@ export function CollectionsWorkspacePage({
             }
             placeholder="Search sponsor, contract, or invoice..."
             aria-label="Search collections"
-            className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white pl-9 pr-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none"
+            className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white pl-9 pr-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none"
           />
         </div>
 
@@ -417,7 +417,7 @@ export function CollectionsWorkspacePage({
       />
 
       {/* Section Tabs */}
-      <div className="border-b border-[#D9D7D0]">
+      <div className="border-b border-[var(--color-border)]">
         <nav
           aria-label="Collections sections"
           className="-mb-px flex flex-wrap gap-6"
@@ -441,15 +441,15 @@ export function CollectionsWorkspacePage({
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`inline-flex items-center gap-2 border-b-2 pb-3 text-[13px] font-medium transition-colors ${
+                className={`inline-flex items-center gap-2 border-b-2 pb-3 text-[14px] font-medium transition-colors ${
                   isActive
-                    ? 'border-[#315F52] text-[#202824]'
-                    : 'border-transparent text-[#525E58] hover:text-[#202824]'
+                    ? 'border-[var(--color-accent)] text-[var(--color-ink)]'
+                    : 'border-transparent text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                 }`}
               >
                 <span>{tab.label}</span>
                 {count !== undefined ? (
-                  <span className="font-mono text-[11px] text-[#788C83]">
+                  <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                     {count}
                   </span>
                 ) : null}
@@ -462,7 +462,7 @@ export function CollectionsWorkspacePage({
       {actionError ? (
         <div
           role="alert"
-          className="flex items-start justify-between gap-3 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-4 py-3 text-[13px] text-[#9B3B32]"
+          className="flex items-start justify-between gap-3 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-4 py-3 text-[14px] text-[#9B3B32]"
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -471,7 +471,7 @@ export function CollectionsWorkspacePage({
           <button
             type="button"
             onClick={onDismissActionError}
-            className="text-[12px] font-medium underline"
+            className="text-[13px] font-medium underline"
           >
             Dismiss
           </button>
@@ -484,10 +484,10 @@ export function CollectionsWorkspacePage({
         error={error}
         onRetry={onRetry}
         loadingSkeleton={
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-6">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white p-6">
             <div className="space-y-3">
-              <div className="h-5 w-48 animate-pulse rounded bg-[#F3F1EB]" />
-              <div className="h-28 animate-pulse rounded bg-[#FAF9F6]" />
+              <div className="h-5 w-48 animate-pulse rounded bg-[var(--color-canvas)]" />
+              <div className="h-28 animate-pulse rounded bg-[var(--color-surface-subtle)]" />
             </div>
           </div>
         }
@@ -519,8 +519,8 @@ export function CollectionsWorkspacePage({
           ) : (
             <div className="space-y-3">
               {!joinedSupport.hasBalanceView ? (
-                <div className="flex items-start gap-2 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-4 py-3 text-[12px] text-[#525E58]">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#788C83]" />
+                <div className="flex items-start gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-[13px] text-[var(--color-ink-muted)]">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-ink-subtle)]" />
                   <span>
                     Per-contract cash balance figures (signed cash, cash
                     received, outstanding, and overdue) are not yet available
@@ -529,11 +529,11 @@ export function CollectionsWorkspacePage({
                 </div>
               ) : null}
 
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
                     <thead>
-                      <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                      <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                         <th className="px-4 py-3">Sponsor &amp; Contract</th>
                         <th className="px-4 py-3">Payment terms</th>
                         <th className="px-4 py-3">Status</th>
@@ -544,13 +544,13 @@ export function CollectionsWorkspacePage({
                         <th className="px-4 py-3 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                    <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                       {filteredContracts.map((contract) => {
                         const bal = contract.balance_view;
                         return (
                           <tr
                             key={contract.contract_id}
-                            className="hover:bg-[#FAF9F6]"
+                            className="hover:bg-[var(--color-surface-subtle)]"
                           >
                             <td className="px-4 py-3">
                               <div className="flex flex-col gap-0.5">
@@ -560,23 +560,23 @@ export function CollectionsWorkspacePage({
                                     onClick={() =>
                                       onOpenSponsor(contract.sponsor_id!)
                                     }
-                                    className="inline-flex w-fit items-center gap-1 text-left font-medium text-[#202824] hover:text-[#315F52]"
+                                    className="inline-flex w-fit items-center gap-1 text-left font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)]"
                                   >
                                     <span>
                                       {contract.sponsor_name ||
                                         contract.sponsor_id}
                                     </span>
-                                    <ArrowUpRight className="h-3.5 w-3.5 text-[#788C83]" />
+                                    <ArrowUpRight className="h-3.5 w-3.5 text-[var(--color-ink-subtle)]" />
                                   </button>
                                 ) : (
-                                  <span className="font-medium text-[#202824]">
+                                  <span className="font-medium text-[var(--color-ink)]">
                                     {contract.sponsor_name ||
                                       contract.opportunity_name ||
                                       contract.contract_id}
                                   </span>
                                 )}
 
-                                <div className="flex flex-wrap items-center gap-2 text-[12px] text-[#788C83]">
+                                <div className="flex flex-wrap items-center gap-2 text-[13px] text-[var(--color-ink-subtle)]">
                                   <span className="font-mono">
                                     {contract.contract_id}
                                   </span>
@@ -590,7 +590,7 @@ export function CollectionsWorkspacePage({
                                           contract.opportunity_id
                                         )
                                       }
-                                      className="inline-flex items-center gap-0.5 text-[#525E58] hover:text-[#315F52]"
+                                      className="inline-flex items-center gap-0.5 text-[var(--color-ink-muted)] hover:text-[var(--color-accent)]"
                                     >
                                       <span>
                                         {contract.opportunity_name ||
@@ -607,7 +607,7 @@ export function CollectionsWorkspacePage({
                                 </div>
 
                                 {contract.lines && contract.lines.length > 0 ? (
-                                  <span className="mt-0.5 text-[11px] text-[#788C83]">
+                                  <span className="mt-0.5 text-[12px] text-[var(--color-ink-subtle)]">
                                     Lines:{' '}
                                     {contract.lines
                                       .map(
@@ -620,7 +620,7 @@ export function CollectionsWorkspacePage({
                               </div>
                             </td>
 
-                            <td className="px-4 py-3 text-[#525E58]">
+                            <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                               <div className="flex items-center gap-2">
                                 <span>
                                   {formatPaymentTermsLabel(contract.payment_terms)}
@@ -638,7 +638,7 @@ export function CollectionsWorkspacePage({
                                     onClick={() =>
                                       onOpenPaymentTermsDrawer(contract)
                                     }
-                                    className="text-[11px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="text-[12px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     Edit
                                   </button>
@@ -646,21 +646,21 @@ export function CollectionsWorkspacePage({
                               </div>
                             </td>
 
-                            <td className="px-4 py-3 capitalize text-[#202824]">
+                            <td className="px-4 py-3 capitalize text-[var(--color-ink)]">
                               {contract.status}
                             </td>
 
-                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                               {bal
                                 ? formatCollectionsCurrency(bal.cash_signed)
                                 : 'Unavailable'}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[#315F52]">
+                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-accent)]">
                               {bal
                                 ? formatCollectionsCurrency(bal.cash_received)
                                 : 'Unavailable'}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                               {bal
                                 ? formatCollectionsCurrency(bal.outstanding)
                                 : 'Unavailable'}
@@ -669,7 +669,7 @@ export function CollectionsWorkspacePage({
                               className={`px-4 py-3 text-right font-mono tabular-nums ${
                                 bal && bal.overdue_amount > 0
                                   ? 'font-medium text-[#9B3B32]'
-                                  : 'text-[#525E58]'
+                                  : 'text-[var(--color-ink-muted)]'
                               }`}
                             >
                               {bal
@@ -692,7 +692,7 @@ export function CollectionsWorkspacePage({
                                     onClick={() =>
                                       onOpenScheduleDrawer(contract.contract_id)
                                     }
-                                    className="text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     Schedule
                                   </button>
@@ -710,7 +710,7 @@ export function CollectionsWorkspacePage({
                                     onClick={() =>
                                       onOpenInvoiceDrawer(contract.contract_id)
                                     }
-                                    className="text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     Invoice
                                   </button>
@@ -747,7 +747,7 @@ export function CollectionsWorkspacePage({
                     disabled={isHistorical}
                     title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
                     onClick={() => onOpenScheduleDrawer(null)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add schedule item
@@ -765,7 +765,7 @@ export function CollectionsWorkspacePage({
                     disabled={isHistorical}
                     title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
                     onClick={() => onOpenScheduleDrawer(null)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Add schedule item
@@ -774,11 +774,11 @@ export function CollectionsWorkspacePage({
               }
             />
           ) : (
-            <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+            <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                    <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                       <th className="px-4 py-3">Schedule ID</th>
                       <th className="px-4 py-3">Sponsor / Contract</th>
                       <th className="px-4 py-3">Kind</th>
@@ -790,42 +790,42 @@ export function CollectionsWorkspacePage({
                       ) : null}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                  <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                     {filteredSchedules.map((item) => (
                       <tr
                         key={item.schedule_item_id}
-                        className="hover:bg-[#FAF9F6]"
+                        className="hover:bg-[var(--color-surface-subtle)]"
                       >
-                        <td className="px-4 py-3 font-mono text-[12px] font-medium text-[#202824]">
+                        <td className="px-4 py-3 font-mono text-[13px] font-medium text-[var(--color-ink)]">
                           {item.schedule_item_id}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col">
-                            <span className="font-medium text-[#202824]">
+                            <span className="font-medium text-[var(--color-ink)]">
                               {item.sponsor_name || item.contract_id}
                             </span>
-                            <span className="font-mono text-[11px] text-[#788C83]">
+                            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                               {item.contract_id}
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[#202824]">
+                        <td className="px-4 py-3 text-[var(--color-ink)]">
                           {formatScheduleKind(item.kind)}
                         </td>
-                        <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                        <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                           {item.due_date ? item.due_date.slice(0, 10) : '—'}
                         </td>
-                        <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                        <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                           {formatCollectionsCurrency(item.amount_due)}
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`text-[12px] font-medium ${
+                            className={`text-[13px] font-medium ${
                               item.status === 'overdue'
                                 ? 'text-[#9B3B32]'
                                 : item.status === 'paid'
-                                  ? 'text-[#315F52]'
-                                  : 'text-[#525E58]'
+                                  ? 'text-[var(--color-accent)]'
+                                  : 'text-[var(--color-ink-muted)]'
                             }`}
                           >
                             {formatScheduleStatus(item.status)}
@@ -844,7 +844,7 @@ export function CollectionsWorkspacePage({
                               onClick={() =>
                                 onOpenInvoiceDrawer(item.contract_id)
                               }
-                              className="text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                              className="text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               Issue invoice
                             </button>
@@ -878,7 +878,7 @@ export function CollectionsWorkspacePage({
                     disabled={isHistorical}
                     title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
                     onClick={() => onOpenInvoiceDrawer(null)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Record invoice
@@ -896,7 +896,7 @@ export function CollectionsWorkspacePage({
                     disabled={isHistorical}
                     title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
                     onClick={() => onOpenInvoiceDrawer(null)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Record invoice
@@ -906,24 +906,24 @@ export function CollectionsWorkspacePage({
             />
           ) : (
             <div className="space-y-3">
-              <p className="text-[12px] text-[#525E58]">
+              <p className="text-[13px] text-[var(--color-ink-muted)]">
                 Invoices are immutable once issued and do not represent cash
                 collected until matched to reconciled receipts. Issued invoices
                 with no allocated receipts may be cancelled by Finance.
               </p>
 
               {cancellingInvoiceId ? (
-                <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-4">
-                  <div className="text-[13px] font-medium text-[#202824]">
+                <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4">
+                  <div className="text-[14px] font-medium text-[var(--color-ink)]">
                     Cancel invoice {cancellingInvoiceId}
                   </div>
-                  <p className="mt-1 text-[12px] text-[#525E58]">
+                  <p className="mt-1 text-[13px] text-[var(--color-ink-muted)]">
                     Invoices with allocated receipts cannot be cancelled.
                   </p>
                   {cancelError ? (
                     <div
                       role="alert"
-                      className="mt-2 flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3 py-2 text-[12px] text-[#9B3B32]"
+                      className="mt-2 flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3 py-2 text-[13px] text-[#9B3B32]"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>{cancelError}</span>
@@ -935,7 +935,7 @@ export function CollectionsWorkspacePage({
                       value={cancelReason}
                       onChange={(e) => setCancelReason(e.target.value)}
                       placeholder="Reason for cancellation (required)"
-                      className="h-9 flex-1 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                      className="h-9 flex-1 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                     />
                     <div className="flex items-center gap-2">
                       <button
@@ -945,7 +945,7 @@ export function CollectionsWorkspacePage({
                           setCancelReason('');
                           setCancelError(null);
                         }}
-                        className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                        className="h-9 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                       >
                         Close
                       </button>
@@ -973,7 +973,7 @@ export function CollectionsWorkspacePage({
                             setCancelSubmitting(false);
                           }
                         }}
-                        className="h-9 rounded-md bg-[#9B3B32] px-3 text-[12px] font-medium text-white hover:bg-[#822F27] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-9 rounded-md bg-[#9B3B32] px-3 text-[13px] font-medium text-white hover:bg-[#822F27] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {cancelSubmitting ? 'Cancelling...' : 'Confirm cancel'}
                       </button>
@@ -982,11 +982,11 @@ export function CollectionsWorkspacePage({
                 </div>
               ) : null}
 
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
                     <thead>
-                      <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                      <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                         <th className="px-4 py-3">Invoice no.</th>
                         <th className="px-4 py-3">Sponsor / Contract</th>
                         <th className="px-4 py-3">Schedule item</th>
@@ -997,35 +997,35 @@ export function CollectionsWorkspacePage({
                         <th className="px-4 py-3 text-right">Document &amp; Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                    <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                       {filteredInvoices.map((inv) => (
                         <tr
                           key={inv.invoice_id}
-                          className="hover:bg-[#FAF9F6]"
+                          className="hover:bg-[var(--color-surface-subtle)]"
                         >
-                          <td className="px-4 py-3 font-mono font-medium text-[#202824]">
+                          <td className="px-4 py-3 font-mono font-medium text-[var(--color-ink)]">
                             {inv.invoice_no}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-col">
-                              <span className="font-medium text-[#202824]">
+                              <span className="font-medium text-[var(--color-ink)]">
                                 {inv.sponsor_name || inv.contract_id}
                               </span>
-                              <span className="font-mono text-[11px] text-[#788C83]">
+                              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                 {inv.contract_id}
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                          <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                             {inv.schedule_item_id || '—'}
                           </td>
-                          <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                          <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                             {inv.issued_at ? inv.issued_at.slice(0, 10) : '—'}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                             {formatCollectionsCurrency(inv.amount)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[#525E58]">
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink-muted)]">
                             {inv.tax_amount !== null &&
                             inv.tax_amount !== undefined
                               ? formatCollectionsCurrency(inv.tax_amount)
@@ -1033,12 +1033,12 @@ export function CollectionsWorkspacePage({
                           </td>
                           <td className="px-4 py-3">
                             <span
-                              className={`text-[12px] font-medium ${
+                              className={`text-[13px] font-medium ${
                                 inv.status === 'settled'
-                                  ? 'text-[#315F52]'
+                                  ? 'text-[var(--color-accent)]'
                                   : inv.status === 'cancelled'
                                     ? 'text-[#9B3B32]'
-                                    : 'text-[#202824]'
+                                    : 'text-[var(--color-ink)]'
                               }`}
                             >
                               {formatInvoiceStatus(inv.status)}
@@ -1051,13 +1051,13 @@ export function CollectionsWorkspacePage({
                                   href={inv.document_uri}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                  className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                                 >
                                   <span>View</span>
                                   <ExternalLink className="h-3 w-3" />
                                 </a>
                               ) : (
-                                <span className="text-[12px] text-[#788C83]">
+                                <span className="text-[13px] text-[var(--color-ink-subtle)]">
                                   —
                                 </span>
                               )}
@@ -1076,7 +1076,7 @@ export function CollectionsWorkspacePage({
                                     setCancelReason('');
                                     setCancelError(null);
                                   }}
-                                  className="text-[12px] font-medium text-[#9B3B32] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="text-[13px] font-medium text-[#9B3B32] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Cancel
                                 </button>
@@ -1112,7 +1112,7 @@ export function CollectionsWorkspacePage({
                     disabled={isHistorical}
                     title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
                     onClick={() => onOpenReceiptDrawer(null)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Record receipt
@@ -1130,7 +1130,7 @@ export function CollectionsWorkspacePage({
                     disabled={isHistorical}
                     title={isHistorical ? READ_ONLY_2025_MESSAGE : undefined}
                     onClick={() => onOpenReceiptDrawer(null)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Record receipt
@@ -1140,14 +1140,14 @@ export function CollectionsWorkspacePage({
             />
           ) : (
             <div className="space-y-3">
-              <div className="flex flex-col gap-1 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-4 py-3 text-[12px] text-[#525E58]">
+              <div className="flex flex-col gap-1 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-[13px] text-[var(--color-ink-muted)]">
                 <span>
                   Receipts are immutable once saved. Only receipts that are both{' '}
-                  <strong className="font-medium text-[#202824]">
+                  <strong className="font-medium text-[var(--color-ink)]">
                     reconciled
                   </strong>{' '}
                   and{' '}
-                  <strong className="font-medium text-[#202824]">
+                  <strong className="font-medium text-[var(--color-ink)]">
                     allocated
                   </strong>{' '}
                   to an invoice or schedule item count as collected cash.
@@ -1160,11 +1160,11 @@ export function CollectionsWorkspacePage({
                 ) : null}
               </div>
 
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
                     <thead>
-                      <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                      <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                         <th className="px-4 py-3">Receipt</th>
                         <th className="px-4 py-3">Sponsor</th>
                         <th className="px-4 py-3">Received at</th>
@@ -1180,7 +1180,7 @@ export function CollectionsWorkspacePage({
                         ) : null}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                    <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                       {visibleReceipts.map((rec) => {
                         const recAllocs =
                           rec.allocations ??
@@ -1204,9 +1204,9 @@ export function CollectionsWorkspacePage({
                         return (
                           <tr
                             key={rec.receipt_id}
-                            className="align-top hover:bg-[#FAF9F6]"
+                            className="align-top hover:bg-[var(--color-surface-subtle)]"
                           >
-                            <td className="px-4 py-3 font-mono text-[12px] font-medium text-[#202824]">
+                            <td className="px-4 py-3 font-mono text-[13px] font-medium text-[var(--color-ink)]">
                               {rec.receipt_id}
                             </td>
                             <td className="px-4 py-3">
@@ -1214,20 +1214,20 @@ export function CollectionsWorkspacePage({
                                 <button
                                   type="button"
                                   onClick={() => onOpenSponsor(rec.sponsor_id)}
-                                  className="inline-flex items-center gap-1 font-medium text-[#202824] hover:text-[#315F52]"
+                                  className="inline-flex items-center gap-1 font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)]"
                                 >
                                   <span>
                                     {rec.sponsor_name || rec.sponsor_id}
                                   </span>
-                                  <ArrowUpRight className="h-3.5 w-3.5 text-[#788C83]" />
+                                  <ArrowUpRight className="h-3.5 w-3.5 text-[var(--color-ink-subtle)]" />
                                 </button>
                               ) : (
-                                <span className="font-medium text-[#202824]">
+                                <span className="font-medium text-[var(--color-ink)]">
                                   {rec.sponsor_name || rec.sponsor_id}
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                            <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                               {rec.received_at
                                 ? rec.received_at.slice(0, 10)
                                 : '—'}
@@ -1235,9 +1235,9 @@ export function CollectionsWorkspacePage({
 
                             {permissionProfile.canReadReceiptsScope !==
                             'own_totals_only' ? (
-                              <td className="px-4 py-3 text-[12px] text-[#525E58]">
+                              <td className="px-4 py-3 text-[13px] text-[var(--color-ink-muted)]">
                                 <div>{formatReceiptMethod(rec.method)}</div>
-                                <div className="font-mono text-[11px] text-[#788C83]">
+                                <div className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                   {permissionProfile.canViewBankReference &&
                                   !rec.bank_reference_redacted
                                     ? rec.bank_reference || '—'
@@ -1246,15 +1246,15 @@ export function CollectionsWorkspacePage({
                               </td>
                             ) : null}
 
-                            <td className="px-4 py-3 text-right font-mono font-medium tabular-nums text-[#202824]">
+                            <td className="px-4 py-3 text-right font-mono font-medium tabular-nums text-[var(--color-ink)]">
                               {formatCollectionsCurrency(rec.amount)}
                             </td>
 
-                            <td className="px-4 py-3 text-[12px]">
+                            <td className="px-4 py-3 text-[13px]">
                               <span
                                 className={`font-medium ${
                                   rec.reconciled
-                                    ? 'text-[#315F52]'
+                                    ? 'text-[var(--color-accent)]'
                                     : 'text-[#9B6B2E]'
                                 }`}
                               >
@@ -1264,13 +1264,13 @@ export function CollectionsWorkspacePage({
                               </span>
                             </td>
 
-                            <td className="px-4 py-3 text-[12px]">
+                            <td className="px-4 py-3 text-[13px]">
                               <div className="space-y-1">
                                 <div
                                   className={`font-medium ${
                                     isCountedAsCollected
-                                      ? 'text-[#315F52]'
-                                      : 'text-[#525E58]'
+                                      ? 'text-[var(--color-accent)]'
+                                      : 'text-[var(--color-ink-muted)]'
                                   }`}
                                 >
                                   {isCountedAsCollected
@@ -1282,7 +1282,7 @@ export function CollectionsWorkspacePage({
 
                                 {permissionProfile.canReadReceiptsScope !==
                                   'own_totals_only' && recAllocs.length > 0 ? (
-                                  <div className="space-y-0.5 text-[11px] text-[#788C83]">
+                                  <div className="space-y-0.5 text-[12px] text-[var(--color-ink-subtle)]">
                                     {recAllocs.map((alloc) => (
                                       <div
                                         key={alloc.allocation_id}
@@ -1302,7 +1302,7 @@ export function CollectionsWorkspacePage({
                                   </div>
                                 ) : !joinedSupport.hasAllocations &&
                                   rec.allocated_amount === null ? (
-                                  <div className="text-[11px] text-[#788C83]">
+                                  <div className="text-[12px] text-[var(--color-ink-subtle)]">
                                     Allocation linkage unavailable
                                   </div>
                                 ) : null}
@@ -1322,7 +1322,7 @@ export function CollectionsWorkspacePage({
                                           : undefined
                                       }
                                       onClick={() => onOpenAllocateDrawer(rec)}
-                                      className="text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       Allocate
                                     </button>
@@ -1342,7 +1342,7 @@ export function CollectionsWorkspacePage({
                                       onClick={() =>
                                         onReconcileReceipt(rec.receipt_id)
                                       }
-                                      className="text-[12px] font-medium text-[#315F52] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="text-[13px] font-medium text-[var(--color-accent)] hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       {reconcilingReceiptId === rec.receipt_id
                                         ? 'Reconciling...'
@@ -1366,3 +1366,4 @@ export function CollectionsWorkspacePage({
     </div>
   );
 }
+

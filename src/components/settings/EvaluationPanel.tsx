@@ -20,14 +20,14 @@ export function EvaluationPanel(){
     void poll();return()=>{stopped=true;clearTimeout(timer);};
   },[set,busy]);
   const start=async(resume=false)=>{setBusy(true);setError('');setReport('');try{await request('run',{set,resume});setStatus({state:'running'});}catch(e){setError(e instanceof Error?e.message:'Evaluation failed');}finally{setBusy(false);}};
-  return <section className="rounded-md border border-[#D9D7D0] bg-white p-5">
+  return <section className="rounded-md border border-[var(--color-border)] bg-white p-5">
     <h2 className="font-semibold">Run evaluation</h2>
-    <p className="mt-1 text-sm text-[#525E58]">LIVE checks use the demo database. Analyst runs use free AI requests. Retrieval uses no AI requests. Proposed actions are inspected and cancelled.</p>
+    <p className="mt-1 text-sm text-[var(--color-ink-muted)]">LIVE checks use the demo database. Analyst runs use free AI requests. Retrieval uses no AI requests. Proposed actions are inspected and cancelled.</p>
     <div className="my-3 flex flex-wrap gap-2">
       <label className="text-sm">Test set <select value={set} onChange={e=>setSet(e.target.value as SetName)} className="ml-2 rounded border p-1" disabled={busy||status.state==='running'}>
         <option value="gate">Gate set</option><option value="full">Full</option><option value="retrieval">Retrieval</option>
       </select></label>
-      <button type="button" className="rounded bg-[#315F52] px-3 py-1 text-sm text-white disabled:opacity-50" disabled={busy||status.state==='running'} onClick={()=>void start()}>Run</button>
+      <button type="button" className="rounded bg-[var(--color-accent)] px-3 py-1 text-sm text-white disabled:opacity-50" disabled={busy||status.state==='running'} onClick={()=>void start()}>Run</button>
       {status.state==='paused'?<button type="button" className="rounded border px-3 py-1 text-sm" disabled={busy} onClick={()=>void start(true)}>Resume</button>:null}
     </div>
     <p role="status" className="text-sm">{status.state}{status.current_case?' · '+status.current_case:''}</p>

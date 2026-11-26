@@ -86,30 +86,30 @@ export function PaymentTermsDrawer({
         {errorMsg ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         ) : null}
 
-        <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] p-3.5 text-[12px]">
+        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-3.5 text-[13px]">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[#525E58]">Sponsor / Opportunity</span>
-            <span className="font-medium text-[#202824]">
+            <span className="text-[var(--color-ink-muted)]">Sponsor / Opportunity</span>
+            <span className="font-medium text-[var(--color-ink)]">
               {contract.sponsor_name ||
                 contract.opportunity_name ||
                 contract.opportunity_id}
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
-            <span className="text-[#525E58]">Signed value total (immutable)</span>
-            <span className="font-mono font-medium text-[#315F52] tabular-nums">
+            <span className="text-[var(--color-ink-muted)]">Signed value total (immutable)</span>
+            <span className="font-mono font-medium text-[var(--color-accent)] tabular-nums">
               {formatCollectionsCurrency(contract.signed_value_total)}
             </span>
           </div>
           {contract.lines && contract.lines.length > 0 ? (
-            <div className="mt-2 border-t border-[#E8E6E0] pt-2 text-[11px] text-[#525E58]">
+            <div className="mt-2 border-t border-[var(--color-border-subtle)] pt-2 text-[12px] text-[var(--color-ink-muted)]">
               {contract.lines
                 .map(
                   (l) =>
@@ -123,7 +123,7 @@ export function PaymentTermsDrawer({
         <div>
           <label
             htmlFor="payment-terms-select"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Payment terms
           </label>
@@ -135,7 +135,7 @@ export function PaymentTermsDrawer({
                 e.target.value as 'standard_50_50' | '100_upfront' | 'custom'
               )
             }
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
           >
             {PAYMENT_TERMS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -145,18 +145,18 @@ export function PaymentTermsDrawer({
           </select>
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2.5 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-4 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Updating...' : 'Save payment terms'}
           </button>

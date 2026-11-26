@@ -66,18 +66,18 @@ export function CampaignPerformanceSection({
   }, [campaigns, sortConfig]);
 
   const skeleton = (
-    <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
-      <div className="border-b border-[#E8E6E0] bg-[#FAF9F6] px-4 py-3">
-        <div className="h-3.5 w-full rounded bg-[#E8E6E0]" />
+    <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
+      <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-4 py-3">
+        <div className="h-3.5 w-full rounded bg-[var(--color-border-subtle)]" />
       </div>
       {[0, 1, 2, 3].map((row) => (
         <div
           key={row}
-          className="flex items-center gap-4 border-b border-[#E8E6E0] px-4 py-3.5 last:border-b-0"
+          className="flex items-center gap-4 border-b border-[var(--color-border-subtle)] px-4 py-3.5 last:border-b-0"
         >
-          <div className="h-3.5 w-44 rounded bg-[#E8E6E0]" />
-          <div className="h-3.5 w-24 rounded bg-[#F3F1EB]" />
-          <div className="ml-auto h-3.5 w-20 rounded bg-[#E8E6E0]" />
+          <div className="h-3.5 w-44 rounded bg-[var(--color-border-subtle)]" />
+          <div className="h-3.5 w-24 rounded bg-[var(--color-canvas)]" />
+          <div className="ml-auto h-3.5 w-20 rounded bg-[var(--color-border-subtle)]" />
         </div>
       ))}
     </div>
@@ -97,11 +97,11 @@ export function CampaignPerformanceSection({
         onRetry={onRetry}
         loadingSkeleton={skeleton}
       >
-        <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+        <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6]">
+                <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
                   {COLUMNS.map((col) => {
                     const isActive = sortConfig.key === col.key;
                     const SortIcon = !isActive
@@ -120,21 +120,21 @@ export function CampaignPerformanceSection({
                               : 'descending'
                             : 'none'
                         }
-                        className={`px-4 py-3 text-[12px] font-medium text-[#525E58] whitespace-nowrap ${
+                        className={`px-4 py-3 text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap ${
                           col.align === 'right' ? 'text-right' : 'text-left'
                         }`}
                       >
                         <button
                           type="button"
                           onClick={() => onChangeSort(col.key)}
-                          className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[#202824] ${
-                            isActive ? 'font-semibold text-[#315F52]' : ''
+                          className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[var(--color-ink)] ${
+                            isActive ? 'font-semibold text-[var(--color-accent)]' : ''
                           }`}
                         >
                           <span>{col.label}</span>
                           <SortIcon
                             className={`h-3 w-3 ${
-                              isActive ? 'text-[#315F52]' : 'text-[#788C83]'
+                              isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-ink-subtle)]'
                             }`}
                             aria-hidden="true"
                           />
@@ -144,49 +144,49 @@ export function CampaignPerformanceSection({
                   })}
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-[12px] font-medium text-[#525E58] whitespace-nowrap"
+                    className="px-4 py-3 text-right text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap"
                   >
                     Profile
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+              <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                 {sortedCampaigns.length > 0 ? (
                   sortedCampaigns.map((row) => (
                     <tr
                       key={row.id}
-                      className="transition-colors duration-150 hover:bg-[#FAF9F6]"
+                      className="transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                     >
-                      <td className="px-4 py-3 font-medium text-[#202824]">
+                      <td className="px-4 py-3 font-medium text-[var(--color-ink)]">
                         {row.campaignName}
                       </td>
-                      <td className="px-4 py-3 text-[#525E58]">
+                      <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                         {row.ownerName}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                         {row.pipelineFormatted ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                         {row.proposalCount ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                         {row.signedFormatted ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                      <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                         {row.signedCashFormatted ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[#315F52]">
+                      <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[var(--color-accent)]">
                         {row.collectedCashFormatted ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-[#525E58]">
+                      <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                         {row.healthLabel}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
                           onClick={() => onOpenCampaignProfile(row)}
-                          className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline whitespace-nowrap"
+                          className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline whitespace-nowrap"
                         >
                           Open
                           <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -197,17 +197,17 @@ export function CampaignPerformanceSection({
                 ) : (
                   <tr>
                     <td colSpan={9} className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No campaigns yet
                       </p>
                       <div className="mt-3">
                         <button
                           type="button"
                           onClick={onNavigateCampaigns}
-                          className="inline-flex items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 py-1.5 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6]"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                         >
                           Go to Campaigns
-                          <ArrowUpRight className="h-3.5 w-3.5 text-[#788C83]" aria-hidden="true" />
+                          <ArrowUpRight className="h-3.5 w-3.5 text-[var(--color-ink-subtle)]" aria-hidden="true" />
                         </button>
                       </div>
                     </td>

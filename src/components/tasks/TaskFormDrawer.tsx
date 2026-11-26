@@ -298,7 +298,7 @@ export function TaskFormDrawer({
         {formError ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle
               className="mt-0.5 h-3.5 w-3.5 shrink-0"
@@ -309,30 +309,30 @@ export function TaskFormDrawer({
         ) : null}
 
         {/* Inherited read-only context & provenance */}
-        <div className="grid grid-cols-1 gap-3 rounded border border-[#E8E6E0] bg-[#FAF9F6] px-3.5 py-2.5 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 sm:grid-cols-3">
           <div>
-            <p className="text-[11px] font-medium text-[#788C83]">
+            <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
               Data context
             </p>
-            <p className="mt-0.5 font-mono text-[12px] text-[#202824]">
+            <p className="mt-0.5 font-mono text-[13px] text-[var(--color-ink)]">
               {effectiveRecordClass}
             </p>
           </div>
           <div>
-            <p className="text-[11px] font-medium text-[#788C83]">Edition</p>
-            <p className="mt-0.5 font-mono text-[12px] text-[#202824]">
+            <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Edition</p>
+            <p className="mt-0.5 font-mono text-[13px] text-[var(--color-ink)]">
               {effectiveEditionId}
             </p>
           </div>
           <div>
             <div className="flex items-center gap-1">
-              <p className="text-[11px] font-medium text-[#788C83]">Origin</p>
+              <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">Origin</p>
               <InfoHint
                 label="Task origin provenance"
                 content="Manual tasks always record origin as manual. Rule and AI-confirmed origins are assigned only by automated rules or confirmed assistant actions."
               />
             </div>
-            <p className="mt-0.5 text-[12px] font-medium text-[#202824]">
+            <p className="mt-0.5 text-[13px] font-medium text-[var(--color-ink)]">
               {isEditing
                 ? formatTaskOrigin(editingTask?.origin ?? 'manual')
                 : 'Manual'}
@@ -344,7 +344,7 @@ export function TaskFormDrawer({
         <div>
           <label
             htmlFor="task-form-title"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Task title
           </label>
@@ -356,7 +356,7 @@ export function TaskFormDrawer({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Follow up on title proposal"
-            className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           />
         </div>
 
@@ -365,7 +365,7 @@ export function TaskFormDrawer({
           <div>
             <label
               htmlFor="task-form-type"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Task type
             </label>
@@ -375,7 +375,7 @@ export function TaskFormDrawer({
               disabled={submitting}
               value={taskType}
               onChange={(e) => setTaskType(e.target.value as TaskType)}
-              className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {ALL_TASK_TYPES.map((t) => (
                 <option key={t} value={t}>
@@ -389,7 +389,7 @@ export function TaskFormDrawer({
             <div className="flex items-center gap-1">
               <label
                 htmlFor="task-form-status"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Status
               </label>
@@ -404,7 +404,7 @@ export function TaskFormDrawer({
               disabled={submitting}
               value={status}
               onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               {ALL_TASK_STATUSES.map((st) => (
                 <option key={st} value={st}>
@@ -416,7 +416,7 @@ export function TaskFormDrawer({
         </div>
 
         {status === 'done' ? (
-          <p className="text-[12px] text-[#525E58]">
+          <p className="text-[13px] text-[var(--color-ink-muted)]">
             Completion time is recorded when the task is saved as Done.
           </p>
         ) : null}
@@ -426,7 +426,7 @@ export function TaskFormDrawer({
           <div className="flex items-center gap-1">
             <label
               htmlFor="task-form-owner"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Owner
             </label>
@@ -442,7 +442,7 @@ export function TaskFormDrawer({
               disabled={ownerSelectionDisabled}
               value={ownerMemberId}
               onChange={(e) => setOwnerMemberId(e.target.value)}
-              className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6] disabled:text-[#525E58]"
+              className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)] disabled:text-[var(--color-ink-muted)]"
             >
               <option value="">Select owner</option>
               {ownerChoices.map((member) => (
@@ -452,12 +452,12 @@ export function TaskFormDrawer({
               ))}
             </select>
           ) : (
-            <div className="mt-1 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 py-2 text-[12px] text-[#525E58]">
+            <div className="mt-1 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-2 text-[13px] text-[var(--color-ink-muted)]">
               No team-member identity is available in the current session.
             </div>
           )}
           {isEditing && !permissionProfile.canReassignOwner ? (
-            <p className="mt-1 text-[11px] text-[#788C83]">
+            <p className="mt-1 text-[12px] text-[var(--color-ink-subtle)]">
               Reassigning tasks to another owner requires Coordination lead or
               Pipeline ops permission.
             </p>
@@ -469,7 +469,7 @@ export function TaskFormDrawer({
           <div>
             <label
               htmlFor="task-form-due-date"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Due date
             </label>
@@ -480,13 +480,13 @@ export function TaskFormDrawer({
               disabled={submitting}
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
           <div>
             <label
               htmlFor="task-form-due-time"
-              className="block text-[12px] font-medium text-[#525E58]"
+              className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
               Due time
             </label>
@@ -497,18 +497,18 @@ export function TaskFormDrawer({
               disabled={submitting}
               value={dueTime}
               onChange={(e) => setDueTime(e.target.value)}
-              className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+              className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             />
           </div>
         </div>
 
         {/* Linked record pair */}
-        <div className="space-y-3 border-t border-[#E8E6E0] pt-4">
+        <div className="space-y-3 border-t border-[var(--color-border-subtle)] pt-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="task-form-linked-type"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Linked record type
               </label>
@@ -521,7 +521,7 @@ export function TaskFormDrawer({
                   setLinkedType(next);
                   setLinkedId('');
                 }}
-                className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
               >
                 <option value="">None (standalone task)</option>
                 {ALL_TASK_LINKED_TYPES.map((lt) => (
@@ -535,20 +535,20 @@ export function TaskFormDrawer({
             <div>
               <label
                 htmlFor="task-form-linked-id"
-                className="block text-[12px] font-medium text-[#525E58]"
+                className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
               >
                 Linked record
               </label>
               {!linkedType ? (
-                <div className="mt-1 flex h-10 items-center rounded-md border border-[#E8E6E0] bg-[#FAF9F6] px-3 text-[12px] text-[#788C83]">
+                <div className="mt-1 flex h-10 items-center rounded-md border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3 text-[13px] text-[var(--color-ink-subtle)]">
                   Select a linked record type first
                 </div>
               ) : preservedExistingUnsupportedLink ? (
-                <div className="mt-1 flex h-10 items-center rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 font-mono text-[12px] text-[#202824]">
+                <div className="mt-1 flex h-10 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 font-mono text-[13px] text-[var(--color-ink)]">
                   {editingTask?.linked_label || editingTask?.linked_id}
                 </div>
               ) : isUnsupportedLookupType ? (
-                <div className="mt-1 flex h-10 items-center rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3 text-[12px] text-[#788C83]">
+                <div className="mt-1 flex h-10 items-center rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 text-[13px] text-[var(--color-ink-subtle)]">
                   Lookup unavailable
                 </div>
               ) : (
@@ -557,7 +557,7 @@ export function TaskFormDrawer({
                   disabled={submitting || linkedRecordOptions.length === 0}
                   value={linkedId}
                   onChange={(e) => setLinkedId(e.target.value)}
-                  className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+                  className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
                 >
                   <option value="">
                     {!linkedTypeLoaded
@@ -578,7 +578,7 @@ export function TaskFormDrawer({
           </div>
 
           {linkedType && isUnsupportedLookupType && !preservedExistingUnsupportedLink ? (
-            <p className="text-[12px] text-[#9B3B32]">
+            <p className="text-[13px] text-[#9B3B32]">
               {formatTaskLinkedType(linkedType)} lookup is not yet supported in
               this workspace. Leave the task unlinked or link it to a sponsor,
               opportunity, or campaign.
@@ -588,7 +588,7 @@ export function TaskFormDrawer({
           {linkedType &&
           !isUnsupportedLookupType &&
           (!linkedTypeLoaded || linkedRecordOptions.length === 0) ? (
-            <p className="text-[12px] text-[#525E58]">
+            <p className="text-[13px] text-[var(--color-ink-muted)]">
               Real {formatTaskLinkedType(linkedType).toLowerCase()} records are
               not loaded for this edition, so this relationship must remain
               unset.
@@ -600,7 +600,7 @@ export function TaskFormDrawer({
         <div>
           <label
             htmlFor="task-form-bet"
-            className="block text-[12px] font-medium text-[#525E58]"
+            className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
           >
             Strategic bet (optional)
           </label>
@@ -609,7 +609,7 @@ export function TaskFormDrawer({
             disabled={submitting}
             value={betId}
             onChange={(e) => setBetId(e.target.value)}
-            className="mt-1 h-10 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none disabled:bg-[#FAF9F6]"
+            className="mt-1 h-10 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
           >
             <option value="">Unassigned</option>
             {CANONICAL_BETS.map((bet) => (
@@ -620,18 +620,18 @@ export function TaskFormDrawer({
           </select>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-10 rounded-md border border-[#D9D7D0] bg-white px-4 text-[13px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6]"
+            className="h-10 rounded-md border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting || ownerChoices.length === 0}
-            className="h-10 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:opacity-60"
+            className="h-10 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
           >
             {submitting
               ? 'Saving...'

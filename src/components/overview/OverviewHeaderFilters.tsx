@@ -68,27 +68,27 @@ export function OverviewHeaderFilters({
   return (
     <section
       aria-labelledby="overview-heading"
-      className="border-b border-[#D9D7D0] pb-6"
+      className="border-b border-[var(--color-border)] pb-6"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1
               id="overview-heading"
-              className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-[#202824]"
+              className="page-heading text-[var(--color-ink)]"
             >
               Growth overview
             </h1>
             {isReadOnlyHistorical ? (
-              <span className="inline-flex items-center gap-1 rounded border border-[#D9D7D0] bg-[#FAF9F6] px-2 py-0.5 font-mono text-[11px] font-medium text-[#525E58]">
-                <Lock className="h-3 w-3 text-[#788C83]" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1 rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2 py-0.5 font-mono text-[12px] font-medium text-[var(--color-ink-muted)]">
+                <Lock className="h-3 w-3 text-[var(--color-ink-subtle)]" aria-hidden="true" />
                 {READ_ONLY_2025_MESSAGE}
               </span>
             ) : null}
           </div>
-          <p className="mt-1 text-[14px] text-[#525E58]">
+          <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
             Sponsorship performance, pacing gates, and rule status.{' '}
-            <span className="font-mono text-[12px] text-[#788C83]">
+            <span className="font-mono text-[13px] text-[var(--color-ink-subtle)]">
               {editionId} · {recordClass} · As of {asOfTimestamp || asOf}
             </span>
           </p>
@@ -96,14 +96,14 @@ export function OverviewHeaderFilters({
 
         <div className="flex flex-wrap items-center gap-3">
           {showDevControls ? (
-            <div className="flex items-center gap-2 rounded-md border border-dashed border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1">
-              <span className="font-mono text-[11px] text-[#788C83] whitespace-nowrap">
+            <div className="flex items-center gap-2 rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1">
+              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] whitespace-nowrap">
                 Dev state
               </span>
               <div
                 role="group"
                 aria-label="Developer preview dashboard data state"
-                className="inline-flex rounded border border-[#D9D7D0] bg-white p-0.5"
+                className="inline-flex rounded border border-[var(--color-border)] bg-white p-0.5"
               >
                 {(
                   [
@@ -116,10 +116,10 @@ export function OverviewHeaderFilters({
                     key={mode.id}
                     type="button"
                     onClick={() => onChangePreviewMode(mode.id)}
-                    className={`rounded px-2.5 py-0.5 text-[12px] font-medium transition-colors duration-150 whitespace-nowrap ${
+                    className={`rounded px-2.5 py-0.5 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
                       previewMode === mode.id
-                        ? 'bg-[#315F52] text-white'
-                        : 'text-[#525E58] hover:text-[#202824]'
+                        ? 'bg-[var(--color-accent)] text-white'
+                        : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                     }`}
                   >
                     {mode.label}
@@ -129,7 +129,7 @@ export function OverviewHeaderFilters({
             </div>
           ) : null}
 
-          <span className="font-mono text-[11px] text-[#788C83] tabular-nums whitespace-nowrap">
+          <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums whitespace-nowrap">
             As of {asOfTimestamp || asOf} · {recordClass}
           </span>
 
@@ -152,7 +152,7 @@ export function OverviewHeaderFilters({
                   const found = savedViews.find((v) => v.id === val);
                   if (found) onSelectSavedView(found);
                 }}
-                className="h-8 max-w-[200px] rounded-md border border-[#D9D7D0] bg-white px-2.5 text-[12px] font-medium text-[#202824] focus:border-[#315F52] focus:outline-none"
+                className="h-8 max-w-[200px] rounded-xl border border-[var(--color-border)] bg-white px-2.5 text-[13px] font-medium text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               >
                 <option value="">
                   {savedViews.length > 0
@@ -174,7 +174,7 @@ export function OverviewHeaderFilters({
                   onClick={() => onDeleteSavedView(activeSavedViewId)}
                   aria-label="Delete selected saved view"
                   title="Delete saved view"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#D9D7D0] bg-white text-[#788C83] hover:text-[#9B3B32]"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--color-border)] bg-white text-[var(--color-ink-subtle)] hover:text-[#9B3B32]"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
@@ -185,9 +185,9 @@ export function OverviewHeaderFilters({
           <button
             type="button"
             onClick={onRefresh}
-            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] whitespace-nowrap"
+            className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] whitespace-nowrap"
           >
-            <RefreshCw className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
+            <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
             Refresh
           </button>
         </div>
@@ -206,7 +206,7 @@ export function OverviewHeaderFilters({
         <div className="flex flex-col gap-1">
           <label
             htmlFor="filter-as-of"
-            className="text-[11px] font-medium text-[#788C83]"
+            className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
           >
             As of date (IST)
           </label>
@@ -217,7 +217,7 @@ export function OverviewHeaderFilters({
             onChange={(e) => {
               if (e.target.value) setAsOf(e.target.value);
             }}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="h-9 rounded-xl border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
           />
         </div>
 
@@ -244,3 +244,4 @@ export function OverviewHeaderFilters({
     </section>
   );
 }
+

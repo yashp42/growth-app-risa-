@@ -102,7 +102,7 @@ export function CollectionsOverviewSection({
     <section aria-label="Collections summary" className="space-y-3">
       {!permissionProfile.canViewSummaryMetrics &&
       permissionProfile.verifiedByServer ? (
-        <div className="rounded-md border border-[#D9D7D0] bg-white px-5 py-4 text-[13px] text-[#525E58]">
+        <div className="rounded-md border border-[var(--color-border)] bg-white px-5 py-4 text-[14px] text-[var(--color-ink-muted)]">
           Your role does not include access to payment schedules, invoices, or
           cash collection metrics.
         </div>
@@ -111,11 +111,11 @@ export function CollectionsOverviewSection({
           {cards.map((card) => (
             <div
               key={card.id}
-              className="rounded-md border border-[#D9D7D0] bg-white p-4"
+              className={`rounded-xl border p-5 ${card.isPrimary?'metric-hero':'border-[var(--color-border)] bg-white'}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[12px] font-medium text-[#525E58]">
+                  <span className="text-[13px] font-medium text-[var(--color-ink-muted)]">
                     {card.label}
                   </span>
                   <InfoHint
@@ -123,48 +123,49 @@ export function CollectionsOverviewSection({
                     content={`${card.id}: ${card.meta.formula}. ${card.meta.inclusion_exclusion}`}
                   />
                 </div>
-                <span className="font-mono text-[11px] text-[#788C83]">
+                <span className="sr-only">
                   {card.id}
                 </span>
               </div>
 
               {loading ? (
-                <div className="mt-3 h-7 w-28 animate-pulse rounded bg-[#F3F1EB]" />
+                <div className="mt-3 h-7 w-28 animate-pulse rounded bg-[var(--color-canvas)]" />
               ) : (
                 <p
-                  className={`mt-2 font-mono text-[22px] font-semibold tracking-tight tabular-nums ${
-                    card.isPrimary ? 'text-[#315F52]' : 'text-[#202824]'
+                  className={`mt-2 text-[30px] font-semibold tracking-tight tabular-nums ${
+                    card.isPrimary ? 'text-[var(--color-accent)]' : 'text-[var(--color-ink)]'
                   }`}
                 >
                   {summary.metricsUnavailable ? 'Unavailable' : card.value}
                 </p>
               )}
 
-              <p className="mt-1.5 text-[12px] text-[#788C83]">{card.subtext}</p>
+              <p className="mt-1.5 text-[13px] text-[var(--color-ink-subtle)]">{card.subtext}</p>
             </div>
           ))}
         </div>
       )}
 
       {/* Context strip: freshness + separate M-02 / M-04 / historical guardrail */}
-      <div className="flex flex-col gap-2 rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-4 py-3 text-[12px] text-[#525E58] lg:flex-row lg:items-center lg:justify-between">
+      <details className="source-details"><summary>Financial definitions &amp; source context</summary>
+      <div className="flex flex-col gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3 text-[13px] text-[var(--color-ink-muted)] lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <span>
             Edition:{' '}
-            <strong className="font-mono font-medium text-[#202824]">
+            <strong className="font-mono font-medium text-[var(--color-ink)]">
               {editionId}
             </strong>
           </span>
           <span>
             Record class:{' '}
-            <strong className="font-mono font-medium text-[#202824]">
+            <strong className="font-mono font-medium text-[var(--color-ink)]">
               {recordClass}
             </strong>
           </span>
           {summary.asOf ? (
             <span>
               As of:{' '}
-              <strong className="font-mono font-medium text-[#202824]">
+              <strong className="font-mono font-medium text-[var(--color-ink)]">
                 {summary.asOf}
               </strong>
             </span>
@@ -172,28 +173,28 @@ export function CollectionsOverviewSection({
           {summary.dataVersion !== null && summary.dataVersion !== undefined ? (
             <span>
               Data version:{' '}
-              <strong className="font-mono font-medium text-[#202824]">
+              <strong className="font-mono font-medium text-[var(--color-ink)]">
                 {String(summary.dataVersion)}
               </strong>
             </span>
           ) : null}
           {!summary.metricsUnavailable && (m02 || m04) ? (
-            <span className="text-[#525E58]">
+            <span className="text-[var(--color-ink-muted)]">
               Separate non-collection totals — Total signed (M-02):{' '}
-              <strong className="font-mono font-medium text-[#202824]">
+              <strong className="font-mono font-medium text-[var(--color-ink)]">
                 {formatCollectionsMetricValue(m02, '₹')}
               </strong>
               {' · '}In-kind (M-04):{' '}
-              <strong className="font-mono font-medium text-[#202824]">
+              <strong className="font-mono font-medium text-[var(--color-ink)]">
                 {formatCollectionsMetricValue(m04, '₹')}
               </strong>
             </span>
           ) : null}
         </div>
 
-        <div className="flex items-start gap-1.5 text-[12px] text-[#525E58]">
+        <div className="flex items-start gap-1.5 text-[13px] text-[var(--color-ink-muted)]">
           <Info
-            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#788C83]"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--color-ink-subtle)]"
             aria-hidden="true"
           />
           {isHistorical ? (
@@ -209,6 +210,8 @@ export function CollectionsOverviewSection({
           )}
         </div>
       </div>
+      </details>
     </section>
   );
 }
+

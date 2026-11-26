@@ -459,7 +459,7 @@ export function OpportunityDetailView({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#525E58] transition-colors duration-150 hover:text-[#202824]"
+          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--color-ink-muted)] transition-colors duration-150 hover:text-[var(--color-ink)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back to Pipeline
@@ -471,17 +471,17 @@ export function OpportunityDetailView({
         error={oppError}
         onRetry={triggerReload}
         loadingSkeleton={
-          <div className="border-b border-[#D9D7D0] pb-6">
-            <div className="h-7 w-72 rounded bg-[#E8E6E0]" />
-            <div className="mt-2 h-4 w-80 rounded bg-[#F3F1EB]" />
+          <div className="border-b border-[var(--color-border)] pb-6">
+            <div className="h-7 w-72 rounded bg-[var(--color-border-subtle)]" />
+            <div className="mt-2 h-4 w-80 rounded bg-[var(--color-canvas)]" />
           </div>
         }
       >
         {opportunity ? (
-          <div className="border-b border-[#D9D7D0] pb-5">
+          <div className="border-b border-[var(--color-border)] pb-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-[#788C83]">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[var(--color-ink-subtle)]">
                   <span>
                     {opportunity.sponsor_name || opportunity.sponsor_id}
                   </span>
@@ -491,34 +491,34 @@ export function OpportunityDetailView({
                   <span
                     className={
                       curStage?.stage === 'partner_confirmed'
-                        ? 'font-medium text-[#315F52]'
+                        ? 'font-medium text-[var(--color-accent)]'
                         : curStage?.stage === 'lost' ||
                             curStage?.stage === 'withdrawn'
                           ? 'font-medium text-[#9B3B32]'
-                          : 'font-medium text-[#202824]'
+                          : 'font-medium text-[var(--color-ink)]'
                     }
                   >
                     {formatOpportunityStage(curStage?.stage)}
                   </span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono text-[11px]">
+                  <span className="font-mono text-[12px]">
                     {formatRecordClassLabel(opportunity.record_class)} ·{' '}
                     {opportunity.edition_id}
                   </span>
                   <span aria-hidden="true">·</span>
-                  <span className="font-mono text-[11px]">
+                  <span className="font-mono text-[12px]">
                     As of {asOf}
                   </span>
                   {readOnly ? (
                     <>
                       <span aria-hidden="true">·</span>
-                      <span className="font-mono text-[11px] text-[#525E58]">
+                      <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                         {isHistorical2025 ? READ_ONLY_2025_MESSAGE : 'Read-only'}
                       </span>
                     </>
                   ) : null}
                 </div>
-                <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.025em] text-[#202824]">
+                <h1 className="mt-1.5 text-[28px] font-semibold tracking-[-0.025em] text-[var(--color-ink)]">
                   {opportunity.name || opportunity.opportunity_id}
                 </h1>
               </div>
@@ -527,10 +527,10 @@ export function OpportunityDetailView({
                 <button
                   type="button"
                   onClick={triggerReload}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                 >
                   <RefreshCw
-                    className="h-3.5 w-3.5 text-[#525E58]"
+                    className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                     aria-hidden="true"
                   />
                   Refresh
@@ -545,10 +545,10 @@ export function OpportunityDetailView({
                         if (!editable || isHistorical2025) return;
                         onEditMetadata(opportunity);
                       }}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Pencil
-                        className="h-3.5 w-3.5 text-[#525E58]"
+                        className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                         aria-hidden="true"
                       />
                       Edit details
@@ -561,10 +561,10 @@ export function OpportunityDetailView({
                         if (!editable || isHistorical2025) return;
                         onUpdateStage(opportunity);
                       }}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3.5 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3.5 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <GitCommitHorizontal
-                        className="h-3.5 w-3.5 text-[#525E58]"
+                        className="h-3.5 w-3.5 text-[var(--color-ink-muted)]"
                         aria-hidden="true"
                       />
                       Update stage
@@ -573,7 +573,7 @@ export function OpportunityDetailView({
                       <button
                         type="button"
                         onClick={() => onConfirmDeal(opportunity)}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-3.5 text-[13px] font-medium text-white hover:bg-[#264B40]"
+                        className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 text-[14px] font-medium text-white hover:bg-[var(--color-accent-hover)]"
                       >
                         <Check className="h-3.5 w-3.5" aria-hidden="true" />
                         Confirm deal
@@ -587,7 +587,7 @@ export function OpportunityDetailView({
             <div
               role="tablist"
               aria-label="Opportunity workspace sections"
-              className="mt-6 flex flex-wrap gap-1 border-t border-[#E8E6E0] pt-4"
+              className="mt-6 flex flex-wrap gap-1 border-t border-[var(--color-border-subtle)] pt-4"
             >
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
@@ -598,17 +598,17 @@ export function OpportunityDetailView({
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap ${
+                    className={`rounded-md px-3 py-1.5 text-[14px] font-medium transition-colors duration-150 whitespace-nowrap ${
                       isActive
-                        ? 'bg-[#315F52] text-white'
-                        : 'text-[#525E58] hover:bg-white hover:text-[#202824]'
+                        ? 'bg-[var(--color-accent)] text-white'
+                        : 'text-[var(--color-ink-muted)] hover:bg-white hover:text-[var(--color-ink)]'
                     }`}
                   >
                     <span>{tab.label}</span>
                     {tab.count !== undefined ? (
                       <span
-                        className={`ml-1.5 font-mono text-[11px] tabular-nums ${
-                          isActive ? 'text-white/80' : 'text-[#788C83]'
+                        className={`ml-1.5 font-mono text-[12px] tabular-nums ${
+                          isActive ? 'text-white/80' : 'text-[var(--color-ink-subtle)]'
                         }`}
                       >
                         {tab.count}
@@ -626,33 +626,33 @@ export function OpportunityDetailView({
         <>
           {/* 1. Overview */}
           {activeTab === 'overview' ? (
-            <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
+            <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Sponsor
                   </p>
                   {onOpenSponsor ? (
                     <button
                       type="button"
                       onClick={() => onOpenSponsor(opportunity.sponsor_id)}
-                      className="mt-1 inline-flex items-center gap-1 text-[14px] font-medium text-[#315F52] hover:underline"
+                      className="mt-1 inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-accent)] hover:underline"
                     >
                       {opportunity.sponsor_name || opportunity.sponsor_id}
                       <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   ) : (
-                    <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                    <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                       {opportunity.sponsor_name || opportunity.sponsor_id}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Primary contact
                   </p>
-                  <p className="mt-1 text-[14px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {opportunity.primary_contact_name ||
                       opportunity.primary_contact_id ||
                       '—'}
@@ -660,26 +660,26 @@ export function OpportunityDetailView({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Support type
                   </p>
-                  <p className="mt-1 text-[14px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {formatSupportType(opportunity.support_type)}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Current stage
                   </p>
-                  <p className="mt-1 text-[14px] font-medium text-[#202824]">
+                  <p className="mt-1 text-[14px] font-medium text-[var(--color-ink)]">
                     {formatOpportunityStage(curStage?.stage)}
                   </p>
                 </div>
 
                 <div>
                   <div className="flex items-center gap-1">
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Originating campaign
                     </p>
                     <InfoHint
@@ -693,14 +693,14 @@ export function OpportunityDetailView({
                       onClick={() =>
                         onOpenCampaign(opportunity.originating_campaign_id!)
                       }
-                      className="mt-1 inline-flex items-center gap-1 text-[13px] font-medium text-[#315F52] hover:underline"
+                      className="mt-1 inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-accent)] hover:underline"
                     >
                       {opportunity.originating_campaign_name ||
                         opportunity.originating_campaign_id}
                       <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   ) : (
-                    <p className="mt-1 text-[13px] text-[#202824]">
+                    <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                       {opportunity.originating_campaign_name ||
                         opportunity.originating_campaign_id ||
                         '—'}
@@ -709,10 +709,10 @@ export function OpportunityDetailView({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Strategic bet
                   </p>
-                  <p className="mt-1 text-[13px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {opportunity.bet_id
                       ? formatBetDisplay(
                           opportunity.bet_id,
@@ -723,17 +723,17 @@ export function OpportunityDetailView({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Current owner
                   </p>
-                  <p className="mt-1 text-[13px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {curStage?.owner_name || curStage?.owner_member_id || '—'}
                   </p>
                 </div>
 
                 <div>
                   <div className="flex items-center gap-1">
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Proposed face value
                     </p>
                     <InfoHint
@@ -741,16 +741,16 @@ export function OpportunityDetailView({
                       content="Unweighted face value from the current stage version; not a probability-weighted forecast."
                     />
                   </div>
-                  <p className="mt-1 font-mono text-[14px] font-medium tabular-nums text-[#202824]">
+                  <p className="mt-1 font-mono text-[14px] font-medium tabular-nums text-[var(--color-ink)]">
                     {formatCurrencyInr(curStage?.proposed_value)}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-5 border-t border-[#E8E6E0] pt-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="mt-5 grid grid-cols-1 gap-5 border-t border-[var(--color-border-subtle)] pt-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <div className="flex items-center gap-1">
-                    <p className="text-[11px] font-medium text-[#788C83]">
+                    <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                       Confirmed signed value
                     </p>
                     <InfoHint
@@ -758,7 +758,7 @@ export function OpportunityDetailView({
                       content="Populated only when stage is partner_confirmed. Signed value is a leading indicator and never cash collected."
                     />
                   </div>
-                  <p className="mt-1 font-mono text-[14px] font-semibold tabular-nums text-[#315F52]">
+                  <p className="mt-1 font-mono text-[14px] font-semibold tabular-nums text-[var(--color-accent)]">
                     {curStage?.stage === 'partner_confirmed'
                       ? formatCurrencyInr(curStage?.confirmed_value)
                       : '—'}
@@ -766,10 +766,10 @@ export function OpportunityDetailView({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Renewal status
                   </p>
-                  <p className="mt-1 text-[13px] text-[#202824]">
+                  <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                     {opportunity.is_renewal ? 'Renewal' : 'New partnership'}
                     {opportunity.renewal_route
                       ? ` · ${opportunity.renewal_route}`
@@ -778,19 +778,19 @@ export function OpportunityDetailView({
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Opportunity ID
                   </p>
-                  <p className="mt-1 font-mono text-[12px] text-[#525E58]">
+                  <p className="mt-1 font-mono text-[13px] text-[var(--color-ink-muted)]">
                     {opportunity.opportunity_id}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-[11px] font-medium text-[#788C83]">
+                  <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                     Provenance
                   </p>
-                  <p className="mt-1 font-mono text-[12px] text-[#525E58]">
+                  <p className="mt-1 font-mono text-[13px] text-[var(--color-ink-muted)]">
                     {formatRecordClassLabel(opportunity.record_class)}
                     {opportunity.source_ref
                       ? ` · ${opportunity.source_ref}`
@@ -807,12 +807,12 @@ export function OpportunityDetailView({
 
           {/* 2. Stage history */}
           {activeTab === 'stage_history' ? (
-            <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+            <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
               {stageHistoryList.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse text-left">
                     <thead>
-                      <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                      <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                         <th className="px-4 py-3">Effective / recorded</th>
                         <th className="px-4 py-3">Stage</th>
                         <th className="px-4 py-3">Owner</th>
@@ -824,32 +824,32 @@ export function OpportunityDetailView({
                         <th className="px-4 py-3">Version ID</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                    <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                       {stageHistoryList.map((ver) => (
-                        <tr key={ver.history_id} className="hover:bg-[#FAF9F6]">
-                          <td className="px-4 py-3 font-mono text-[12px] text-[#525E58] tabular-nums whitespace-nowrap">
+                        <tr key={ver.history_id} className="hover:bg-[var(--color-surface-subtle)]">
+                          <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums whitespace-nowrap">
                             {ver.valid_from || ver.created_at || '—'}
                             {ver.is_current ? (
-                              <span className="ml-1.5 text-[11px] font-medium text-[#315F52]">
+                              <span className="ml-1.5 text-[12px] font-medium text-[var(--color-accent)]">
                                 Current
                               </span>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3 font-medium text-[#202824] whitespace-nowrap">
+                          <td className="px-4 py-3 font-medium text-[var(--color-ink)] whitespace-nowrap">
                             {formatOpportunityStage(ver.stage)}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {ver.owner_name || ver.owner_member_id || '—'}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                          <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                             {formatCurrencyInr(ver.proposed_value)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[#315F52]">
+                          <td className="px-4 py-3 text-right font-mono tabular-nums font-medium text-[var(--color-accent)]">
                             {ver.stage === 'partner_confirmed'
                               ? formatCurrencyInr(ver.confirmed_value)
                               : '—'}
                           </td>
-                          <td className="px-4 py-3 text-[12px] text-[#525E58]">
+                          <td className="px-4 py-3 text-[13px] text-[var(--color-ink-muted)]">
                             {ver.drop_reason || ver.loss_reason
                               ? [
                                   ver.drop_reason?.replace(/_/g, ' '),
@@ -859,7 +859,7 @@ export function OpportunityDetailView({
                                   .join(' · ')
                               : '—'}
                           </td>
-                          <td className="px-4 py-3 font-mono text-[11px] text-[#788C83]">
+                          <td className="px-4 py-3 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                             {ver.history_id}
                           </td>
                         </tr>
@@ -869,7 +869,7 @@ export function OpportunityDetailView({
                 </div>
               ) : (
                 <div className="px-6 py-10 text-center">
-                  <p className="text-[13px] font-medium text-[#202824]">
+                  <p className="text-[14px] font-medium text-[var(--color-ink)]">
                     No stage versions recorded
                   </p>
                 </div>
@@ -884,43 +884,43 @@ export function OpportunityDetailView({
               error={activityError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="space-y-3 rounded-md border border-[#D9D7D0] bg-white p-5">
+                <div className="space-y-3 rounded-md border border-[var(--color-border)] bg-white p-5">
                   {[0, 1, 2].map((i) => (
-                    <div key={i} className="h-10 rounded bg-[#FAF9F6]" />
+                    <div key={i} className="h-10 rounded bg-[var(--color-surface-subtle)]" />
                   ))}
                 </div>
               }
             >
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                 {activityItems.length > 0 ? (
-                  <ul className="divide-y divide-[#E8E6E0]">
+                  <ul className="divide-y divide-[var(--color-border-subtle)]">
                     {activityItems.map((item) => (
                       <li key={item.key} className="px-5 py-4">
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#788C83]">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-[var(--color-ink-subtle)]">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium capitalize text-[#315F52]">
+                            <span className="font-medium capitalize text-[var(--color-accent)]">
                               {item.title}
                             </span>
                             {item.status_or_outcome ? (
                               <>
                                 <span aria-hidden="true">·</span>
-                                <span className="font-mono text-[11px] text-[#525E58]">
+                                <span className="font-mono text-[12px] text-[var(--color-ink-muted)]">
                                   {item.status_or_outcome}
                                 </span>
                               </>
                             ) : null}
                           </div>
-                          <span className="font-mono text-[11px] tabular-nums">
+                          <span className="font-mono text-[12px] tabular-nums">
                             {item.occurred_at}
                           </span>
                         </div>
                         {item.note ? (
-                          <p className="mt-1.5 text-[13px] text-[#202824]">
+                          <p className="mt-1.5 text-[14px] text-[var(--color-ink)]">
                             {item.note}
                           </p>
                         ) : null}
                         {item.actor ? (
-                          <p className="mt-1 text-[12px] text-[#788C83]">
+                          <p className="mt-1 text-[13px] text-[var(--color-ink-subtle)]">
                             {item.actor}
                           </p>
                         ) : null}
@@ -929,7 +929,7 @@ export function OpportunityDetailView({
                   </ul>
                 ) : (
                   <div className="px-6 py-10 text-center">
-                    <p className="text-[13px] font-medium text-[#202824]">
+                    <p className="text-[14px] font-medium text-[var(--color-ink)]">
                       No meetings or interactions recorded yet
                     </p>
                   </div>
@@ -941,7 +941,7 @@ export function OpportunityDetailView({
           {/* 4. Proposals */}
           {activeTab === 'proposals' ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-1.5 text-[12px] text-[#788C83]">
+              <div className="flex items-center gap-1.5 text-[13px] text-[var(--color-ink-subtle)]">
                 <span>Versioned proposals</span>
                 <InfoHint
                   label="Proposal vs contract"
@@ -949,12 +949,12 @@ export function OpportunityDetailView({
                 />
               </div>
 
-              <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+              <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                 {proposals.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left">
                       <thead>
-                        <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                        <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                           <th className="px-4 py-3">Proposal ID</th>
                           <th className="px-4 py-3">Package</th>
                           <th className="px-4 py-3">Status</th>
@@ -966,41 +966,41 @@ export function OpportunityDetailView({
                           <th className="px-4 py-3">Valid until</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                      <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                         {proposals.map((prop) => (
                           <tr
                             key={prop.proposal_id}
-                            className="hover:bg-[#FAF9F6]"
+                            className="hover:bg-[var(--color-surface-subtle)]"
                           >
-                            <td className="px-4 py-3 font-mono font-medium text-[#202824]">
+                            <td className="px-4 py-3 font-mono font-medium text-[var(--color-ink)]">
                               {prop.proposal_id}
                             </td>
-                            <td className="px-4 py-3 text-[#525E58]">
+                            <td className="px-4 py-3 text-[var(--color-ink-muted)]">
                               {prop.package_name || prop.package_id || 'Custom'}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span
                                 className={
                                   prop.status === 'accepted'
-                                    ? 'font-medium text-[#315F52]'
+                                    ? 'font-medium text-[var(--color-accent)]'
                                     : prop.status === 'declined'
                                       ? 'font-medium text-[#9B3B32]'
-                                      : 'text-[#202824]'
+                                      : 'text-[var(--color-ink)]'
                                 }
                               >
                                 {formatProposalStatus(prop.status)}
                               </span>
                             </td>
-                            <td className="px-4 py-3 capitalize text-[#525E58]">
+                            <td className="px-4 py-3 capitalize text-[var(--color-ink-muted)]">
                               {prop.exclusivity_requested ?? 'none'}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[#202824]">
+                            <td className="px-4 py-3 text-right font-mono tabular-nums text-[var(--color-ink)]">
                               {formatCurrencyInr(prop.proposed_value)}
                             </td>
-                            <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                            <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                               {prop.sent_at ? prop.sent_at.slice(0, 10) : '—'}
                             </td>
-                            <td className="px-4 py-3 font-mono text-[12px] text-[#525E58]">
+                            <td className="px-4 py-3 font-mono text-[13px] text-[var(--color-ink-muted)]">
                               {prop.valid_until || '—'}
                             </td>
                           </tr>
@@ -1010,7 +1010,7 @@ export function OpportunityDetailView({
                   </div>
                 ) : (
                   <div className="px-6 py-10 text-center">
-                    <p className="text-[13px] font-medium text-[#202824]">
+                    <p className="text-[14px] font-medium text-[var(--color-ink)]">
                       No proposals recorded for this opportunity
                     </p>
                   </div>
@@ -1032,7 +1032,7 @@ export function OpportunityDetailView({
                       if (!editable || isHistorical2025) return;
                       setShowNewTask(true);
                     }}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[#315F52] px-3 text-[12px] font-medium text-white hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3 text-[13px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                     New task
@@ -1043,13 +1043,13 @@ export function OpportunityDetailView({
               {showNewTask && editable ? (
                 <form
                   onSubmit={handleCreateTask}
-                  className="rounded-md border border-[#D9D7D0] bg-white p-4 space-y-3"
+                  className="rounded-md border border-[var(--color-border)] bg-white p-4 space-y-3"
                 >
-                  <p className="text-[13px] font-semibold text-[#202824]">
+                  <p className="text-[14px] font-semibold text-[var(--color-ink)]">
                     Add opportunity task
                   </p>
                   {taskFormError ? (
-                    <p className="text-[12px] text-[#9B3B32]">{taskFormError}</p>
+                    <p className="text-[13px] text-[#9B3B32]">{taskFormError}</p>
                   ) : null}
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <input
@@ -1058,14 +1058,14 @@ export function OpportunityDetailView({
                       value={taskTitle}
                       onChange={(e) => setTaskTitle(e.target.value)}
                       placeholder="Task title"
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                     />
                     <select
                       value={taskType}
                       onChange={(e) =>
                         setTaskType(e.target.value as CanonicalTaskType)
                       }
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                     >
                       {CANONICAL_TASK_TYPE_OPTIONS.map((opt) => (
                         <option key={opt.value} value={opt.value}>
@@ -1079,28 +1079,28 @@ export function OpportunityDetailView({
                       value={taskOwnerId}
                       onChange={(e) => setTaskOwnerId(e.target.value)}
                       placeholder="Owner member ID"
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                     />
                     <input
                       type="date"
                       required
                       value={taskDueAt}
                       onChange={(e) => setTaskDueAt(e.target.value)}
-                      className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+                      className="h-9 rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
                     />
                   </div>
                   <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setShowNewTask(false)}
-                      className="h-8 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+                      className="h-8 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={taskSubmitting}
-                      className="h-8 rounded-md bg-[#315F52] px-3.5 text-[12px] font-medium text-white hover:bg-[#264B40] disabled:opacity-60"
+                      className="h-8 rounded-md bg-[var(--color-accent)] px-3.5 text-[13px] font-medium text-white hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
                     >
                       {taskSubmitting ? 'Adding...' : 'Add task'}
                     </button>
@@ -1113,14 +1113,14 @@ export function OpportunityDetailView({
                 error={tasksError}
                 onRetry={triggerReload}
                 loadingSkeleton={
-                  <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                    <div className="h-24 rounded bg-[#FAF9F6]" />
+                  <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                    <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                   </div>
                 }
               >
-                <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+                <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
                   {tasks.length > 0 ? (
-                    <ul className="divide-y divide-[#E8E6E0]">
+                    <ul className="divide-y divide-[var(--color-border-subtle)]">
                       {tasks.map((task) => (
                         <li
                           key={task.task_id}
@@ -1135,8 +1135,8 @@ export function OpportunityDetailView({
                               aria-label={`Toggle task ${task.title}`}
                               className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded border transition-colors duration-150 ${
                                 task.status === 'done'
-                                  ? 'border-[#315F52] bg-[#315F52] text-white'
-                                  : 'border-[#D9D7D0] bg-white'
+                                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
+                                  : 'border-[var(--color-border)] bg-white'
                               } disabled:cursor-not-allowed disabled:opacity-50`}
                             >
                               {task.status === 'done' ? (
@@ -1145,15 +1145,15 @@ export function OpportunityDetailView({
                             </button>
                             <div>
                               <p
-                                className={`text-[13px] font-medium ${
+                                className={`text-[14px] font-medium ${
                                   task.status === 'done'
-                                    ? 'line-through text-[#788C83]'
-                                    : 'text-[#202824]'
+                                    ? 'line-through text-[var(--color-ink-subtle)]'
+                                    : 'text-[var(--color-ink)]'
                                 }`}
                               >
                                 {task.title}
                               </p>
-                              <p className="mt-0.5 text-[12px] text-[#788C83]">
+                              <p className="mt-0.5 text-[13px] text-[var(--color-ink-subtle)]">
                                 <span className="capitalize">
                                   {task.task_type.replace(/_/g, ' ')}
                                 </span>
@@ -1168,7 +1168,7 @@ export function OpportunityDetailView({
                               </p>
                             </div>
                           </div>
-                          <span className="font-mono text-[12px] text-[#525E58] tabular-nums whitespace-nowrap">
+                          <span className="font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums whitespace-nowrap">
                             {task.due_at ? task.due_at.slice(0, 10) : '—'}
                           </span>
                         </li>
@@ -1176,7 +1176,7 @@ export function OpportunityDetailView({
                     </ul>
                   ) : (
                     <div className="px-6 py-10 text-center">
-                      <p className="text-[13px] font-medium text-[#202824]">
+                      <p className="text-[14px] font-medium text-[var(--color-ink)]">
                         No tasks linked to this opportunity
                       </p>
                     </div>
@@ -1193,8 +1193,8 @@ export function OpportunityDetailView({
               error={contractsError}
               onRetry={triggerReload}
               loadingSkeleton={
-                <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-                  <div className="h-24 rounded bg-[#FAF9F6]" />
+                <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
+                  <div className="h-24 rounded bg-[var(--color-surface-subtle)]" />
                 </div>
               }
             >
@@ -1203,62 +1203,62 @@ export function OpportunityDetailView({
                   contracts.map((contract) => (
                     <div
                       key={contract.contract_id}
-                      className="rounded-md border border-[#D9D7D0] bg-white p-5 space-y-4"
+                      className="rounded-md border border-[var(--color-border)] bg-white p-5 space-y-4"
                     >
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Contract ID
                           </p>
-                          <p className="mt-1 font-mono text-[13px] font-medium text-[#202824]">
+                          <p className="mt-1 font-mono text-[14px] font-medium text-[var(--color-ink)]">
                             {contract.contract_id}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Signed at
                           </p>
-                          <p className="mt-1 font-mono text-[13px] text-[#202824]">
+                          <p className="mt-1 font-mono text-[14px] text-[var(--color-ink)]">
                             {contract.signed_at
                               ? contract.signed_at.slice(0, 10)
                               : '—'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Payment terms
                           </p>
-                          <p className="mt-1 text-[13px] text-[#202824]">
+                          <p className="mt-1 text-[14px] text-[var(--color-ink)]">
                             {contract.payment_terms || '—'}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Status
                           </p>
-                          <p className="mt-1 capitalize text-[13px] font-medium text-[#202824]">
+                          <p className="mt-1 capitalize text-[14px] font-medium text-[var(--color-ink)]">
                             {contract.status}
                           </p>
                         </div>
                         <div>
-                          <p className="text-[11px] font-medium text-[#788C83]">
+                          <p className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
                             Signed value total
                           </p>
-                          <p className="mt-1 font-mono text-[14px] font-semibold tabular-nums text-[#315F52]">
+                          <p className="mt-1 font-mono text-[14px] font-semibold tabular-nums text-[var(--color-accent)]">
                             {formatCurrencyInr(contract.signed_value_total)}
                           </p>
                         </div>
                       </div>
 
                       {contract.lines && contract.lines.length > 0 ? (
-                        <div className="border-t border-[#E8E6E0] pt-4">
-                          <p className="mb-2 text-[12px] font-medium text-[#525E58]">
+                        <div className="border-t border-[var(--color-border-subtle)] pt-4">
+                          <p className="mb-2 text-[13px] font-medium text-[var(--color-ink-muted)]">
                             Contract lines (cash vs in-kind separated)
                           </p>
                           <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-left">
                               <thead>
-                                <tr className="border-b border-[#E8E6E0] text-[11px] font-medium text-[#788C83]">
+                                <tr className="border-b border-[var(--color-border-subtle)] text-[12px] font-medium text-[var(--color-ink-subtle)]">
                                   <th className="py-2 pr-4">Line ID</th>
                                   <th className="py-2 pr-4">Asset</th>
                                   <th className="py-2 pr-4">
@@ -1267,21 +1267,21 @@ export function OpportunityDetailView({
                                   <th className="py-2 text-right">Value</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-[#F3F1EB] text-[13px]">
+                              <tbody className="divide-y divide-[var(--color-canvas)] text-[14px]">
                                 {contract.lines.map((line) => (
                                   <tr key={line.contract_line_id}>
-                                    <td className="py-2 pr-4 font-mono text-[12px] text-[#525E58]">
+                                    <td className="py-2 pr-4 font-mono text-[13px] text-[var(--color-ink-muted)]">
                                       {line.contract_line_id}
                                     </td>
-                                    <td className="py-2 pr-4 text-[#202824]">
+                                    <td className="py-2 pr-4 text-[var(--color-ink)]">
                                       {line.asset_name || line.asset_id || '—'}
                                     </td>
-                                    <td className="py-2 pr-4 text-[#525E58]">
+                                    <td className="py-2 pr-4 text-[var(--color-ink-muted)]">
                                       {line.consideration_type === 'in_kind'
                                         ? 'In-kind'
                                         : 'Cash'}
                                     </td>
-                                    <td className="py-2 text-right font-mono tabular-nums text-[#202824]">
+                                    <td className="py-2 text-right font-mono tabular-nums text-[var(--color-ink)]">
                                       {formatCurrencyInr(line.value)}
                                     </td>
                                   </tr>
@@ -1294,8 +1294,8 @@ export function OpportunityDetailView({
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-md border border-[#D9D7D0] bg-white px-6 py-10 text-center">
-                    <p className="text-[13px] font-medium text-[#202824]">
+                  <div className="rounded-md border border-[var(--color-border)] bg-white px-6 py-10 text-center">
+                    <p className="text-[14px] font-medium text-[var(--color-ink)]">
                       No contract recorded for this opportunity
                     </p>
                   </div>

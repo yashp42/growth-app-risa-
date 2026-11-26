@@ -134,7 +134,7 @@ export function PaymentScheduleFormDrawer({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {!permissionProfile.verifiedByServer ? (
-          <div className="rounded-md border border-[#D9D7D0] bg-[#FAF9F6] px-3.5 py-2.5 text-[12px] text-[#525E58]">
+          <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink-muted)]">
             Unverified session preview: Finance &amp; Collections role is
             required on the server to save schedule items.
           </div>
@@ -143,7 +143,7 @@ export function PaymentScheduleFormDrawer({
         {errorMsg ? (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[12px] text-[#9B3B32]"
+            className="flex items-start gap-2 rounded-md border border-[#9B3B32]/30 bg-[#9B3B32]/5 px-3.5 py-2.5 text-[13px] text-[#9B3B32]"
           >
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
@@ -153,7 +153,7 @@ export function PaymentScheduleFormDrawer({
         <div>
           <label
             htmlFor="schedule-contract"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Contract (cash lines)
           </label>
@@ -170,7 +170,7 @@ export function PaymentScheduleFormDrawer({
                 setDueDate(addDaysIso(nextContract.signed_at, 7));
               }
             }}
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             required
           >
             {cashEligibleContracts.length === 0 ? (
@@ -184,7 +184,7 @@ export function PaymentScheduleFormDrawer({
               ))
             )}
           </select>
-          <p className="mt-1 text-[11px] text-[#788C83]">
+          <p className="mt-1 text-[12px] text-[var(--color-ink-subtle)]">
             Total schedule items must match the sum of cash contract lines.
           </p>
         </div>
@@ -193,7 +193,7 @@ export function PaymentScheduleFormDrawer({
           <div>
             <label
               htmlFor="schedule-kind"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Instalment kind
             </label>
@@ -203,7 +203,7 @@ export function PaymentScheduleFormDrawer({
               onChange={(e) =>
                 handleKindChange(e.target.value as PaymentScheduleKind)
               }
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             >
               {ALL_PAYMENT_SCHEDULE_KINDS.map((k) => (
                 <option key={k} value={k}>
@@ -216,7 +216,7 @@ export function PaymentScheduleFormDrawer({
           <div>
             <label
               htmlFor="schedule-due-date"
-              className="block text-[12px] font-medium text-[#202824]"
+              className="block text-[13px] font-medium text-[var(--color-ink)]"
             >
               Due date
             </label>
@@ -225,7 +225,7 @@ export function PaymentScheduleFormDrawer({
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
               required
             />
           </div>
@@ -234,7 +234,7 @@ export function PaymentScheduleFormDrawer({
         <div>
           <label
             htmlFor="schedule-amount"
-            className="block text-[12px] font-medium text-[#202824]"
+            className="block text-[13px] font-medium text-[var(--color-ink)]"
           >
             Amount due (INR)
           </label>
@@ -246,23 +246,23 @@ export function PaymentScheduleFormDrawer({
             value={amountDue}
             onChange={(e) => setAmountDue(e.target.value)}
             placeholder="e.g. 125000"
-            className="mt-1.5 h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+            className="mt-1.5 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             required
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 border-t border-[#E8E6E0] pt-4">
+        <div className="flex items-center justify-end gap-2.5 border-t border-[var(--color-border-subtle)] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-md border border-[#D9D7D0] bg-white px-4 text-[13px] font-medium text-[#202824] hover:bg-[#FAF9F6]"
+            className="h-9 rounded-md border border-[var(--color-border)] bg-white px-4 text-[14px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={submitting || cashEligibleContracts.length === 0}
-            className="h-9 rounded-md bg-[#315F52] px-4 text-[13px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors hover:bg-[#274D42] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? 'Saving...' : 'Save schedule item'}
           </button>

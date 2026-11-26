@@ -54,12 +54,12 @@ export function AnalyticsMetricCard({
   const ratioBreakdown = formatNumeratorDenominator(result);
 
   return (
-    <div className="flex flex-col justify-between rounded-md border border-[#D9D7D0] bg-white p-4">
+    <div className="flex flex-col justify-between rounded-xl border border-[var(--color-border)] bg-white p-5">
       <div>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h3 className="truncate text-[13px] font-semibold text-[#202824]">
+              <h3 className="truncate text-[14px] font-semibold text-[var(--color-ink)]">
                 {title}
               </h3>
               {infoContentParts.length > 0 ? (
@@ -69,54 +69,54 @@ export function AnalyticsMetricCard({
                 />
               ) : null}
             </div>
-            <p className="mt-0.5 text-[11px] text-[#788C83]">
+            <p className="mt-0.5 text-[12px] text-[var(--color-ink-subtle)]">
               {grain}
               {result?.unit ? ` · ${result.unit}` : ''}
             </p>
           </div>
-          <span className="shrink-0 font-mono text-[11px] text-[#788C83]">
+          <span className="sr-only">
             {metricId}
           </span>
         </div>
 
         {loading ? (
-          <div className="mt-3 h-7 w-28 animate-pulse rounded bg-[#F3F1EB]" />
+          <div className="mt-3 h-7 w-28 animate-pulse rounded bg-[var(--color-canvas)]" />
         ) : restricted ? (
           <div className="mt-3">
-            <p className="text-[14px] font-medium text-[#525E58]">Restricted (viewer role)</p>
-            <p className="mt-0.5 text-[12px] text-[#788C83]">
+            <p className="text-[14px] font-medium text-[var(--color-ink-muted)]">Restricted (viewer role)</p>
+            <p className="mt-0.5 text-[13px] text-[var(--color-ink-subtle)]">
               {restrictedMessage}
             </p>
           </div>
         ) : !result ? (
           <div className="mt-3">
-            <p className="font-mono text-[16px] font-medium text-[#525E58]">
+            <p className="font-mono text-[16px] font-medium text-[var(--color-ink-muted)]">
               Unavailable
             </p>
-            <p className="mt-0.5 text-[12px] text-[#788C83]">
+            <p className="mt-0.5 text-[13px] text-[var(--color-ink-subtle)]">
               No metric result returned.
             </p>
           </div>
         ) : !result.computable ? (
           <div className="mt-3">
-            <p className="font-mono text-[15px] font-medium text-[#525E58]">
+            <p className="font-mono text-[15px] font-medium text-[var(--color-ink-muted)]">
               Not computable
             </p>
-            <p className="mt-1 text-[12px] leading-snug text-[#788C83]">
+            <p className="mt-1 text-[13px] leading-snug text-[var(--color-ink-subtle)]">
               {result.reason || 'Required underlying records are not available.'}
             </p>
           </div>
         ) : (
           <div className="mt-3">
             <p
-              className={`font-mono text-[22px] font-semibold tracking-tight tabular-nums ${
-                accentPrimary ? 'text-[#315F52]' : 'text-[#202824]'
+              className={`text-[28px] font-semibold tracking-tight tabular-nums ${
+                accentPrimary ? 'text-[var(--color-accent)]' : 'text-[var(--color-ink)]'
               }`}
             >
               {formatAnalyticsMetricValue(result)}
             </p>
             {ratioBreakdown ? (
-              <p className="mt-0.5 font-mono text-[12px] text-[#525E58] tabular-nums">
+              <p className="sr-only">
                 {ratioBreakdown}
               </p>
             ) : null}
@@ -124,14 +124,14 @@ export function AnalyticsMetricCard({
         )}
 
         {extraNote || hint?.caveat ? (
-          <p className="mt-2 text-[11px] leading-snug text-[#525E58]">
+          <p className="mt-2 text-[12px] leading-snug text-[var(--color-ink-muted)]">
             {extraNote || hint?.caveat}
           </p>
         ) : null}
       </div>
 
-      <div className="mt-3 border-t border-[#E8E6E0] pt-2.5 text-[11px] text-[#788C83]">
-        <div className="space-y-0.5">
+      <div className="mt-3 border-t border-[var(--color-border-subtle)] pt-2.5 text-[12px] text-[var(--color-ink-subtle)]">
+        <details className="space-y-1"><summary>Calculation &amp; source</summary>
           <div className="truncate font-mono">
             {result?.record_class || recordClass || 'simulated'}
             {result?.as_of || asOfDate ? ` · as of ${result?.as_of || asOfDate}` : ''}
@@ -147,13 +147,13 @@ export function AnalyticsMetricCard({
               Filters: {formatAppliedFiltersSummary(result.applied_filters)}
             </div>
           ) : null}
-        </div>
+        </details>
 
         {drillThroughLabel && onDrillThrough && !restricted ? (
           <button
             type="button"
             onClick={onDrillThrough}
-            className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-[#315F52] hover:underline"
+            className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-[var(--color-accent)] hover:underline"
           >
             <span>{drillThroughLabel}</span>
             <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
@@ -163,3 +163,4 @@ export function AnalyticsMetricCard({
     </div>
   );
 }
+

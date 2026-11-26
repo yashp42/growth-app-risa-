@@ -69,11 +69,11 @@ export function CampaignChannelComparisonSection({
         <div>
           <h2
             id="analytics-comparison-heading"
-            className="text-[16px] font-semibold tracking-[-0.01em] text-[#202824]"
+            className="text-[16px] font-semibold tracking-[-0.01em] text-[var(--color-ink)]"
           >
             Campaign and channel comparison
           </h2>
-          <p className="text-[12px] text-[#525E58]">
+          <p className="text-[13px] text-[var(--color-ink-muted)]">
             Scoped by channel_group or campaign_id via POST /api/metrics/query ({recordClass} · as of {asOfDate}). When viewing by channel group, a separate ED-2025 &ldquo;2025 synthetic&rdquo; comparison row is displayed underneath each group.
           </p>
         </div>
@@ -81,7 +81,7 @@ export function CampaignChannelComparisonSection({
         <div
           role="group"
           aria-label="Comparison dimension"
-          className="inline-flex rounded-md border border-[#D9D7D0] bg-white p-0.5"
+          className="inline-flex rounded-md border border-[var(--color-border)] bg-white p-0.5"
         >
           {(
             [
@@ -93,10 +93,10 @@ export function CampaignChannelComparisonSection({
               key={opt.id}
               type="button"
               onClick={() => onChangeScope(opt.id)}
-              className={`rounded px-3 py-1 text-[12px] font-medium transition-colors whitespace-nowrap ${
+              className={`rounded px-3 py-1 text-[13px] font-medium transition-colors whitespace-nowrap ${
                 scope === opt.id
-                  ? 'bg-[#315F52] text-white'
-                  : 'text-[#525E58] hover:text-[#202824]'
+                  ? 'bg-[var(--color-accent)] text-white'
+                  : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
               }`}
             >
               {opt.label}
@@ -106,12 +106,12 @@ export function CampaignChannelComparisonSection({
       </div>
 
       {loading ? (
-        <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
+        <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
           <div className="space-y-2.5">
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-9 animate-pulse rounded bg-[#FAF9F6]"
+                className="h-9 animate-pulse rounded bg-[var(--color-surface-subtle)]"
               />
             ))}
           </div>
@@ -126,11 +126,11 @@ export function CampaignChannelComparisonSection({
           description="Adjust the global filters or switch between channel group and campaign comparison."
         />
       ) : (
-        <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+        <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
-                <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6] text-[12px] font-medium text-[#525E58]">
+                <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)] text-[13px] font-medium text-[var(--color-ink-muted)]">
                   <th className="px-4 py-3">
                     {scope === 'channel' ? 'Channel group' : 'Campaign'}
                   </th>
@@ -147,7 +147,7 @@ export function CampaignChannelComparisonSection({
                             />
                           ) : null}
                         </div>
-                        <span className="block font-mono text-[10px] font-normal text-[#788C83]">
+                        <span className="block font-mono text-[12px] font-normal text-[var(--color-ink-subtle)]">
                           {col.id} · {col.grain}
                         </span>
                       </th>
@@ -156,7 +156,7 @@ export function CampaignChannelComparisonSection({
                   <th className="px-4 py-3">Provenance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+              <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                 {rows.map((row) => {
                   const sampleMetric = Object.values(row.metrics)[0];
                   const showSyntheticRow =
@@ -165,7 +165,7 @@ export function CampaignChannelComparisonSection({
                     Object.keys(row.synthetic2025Metrics).length > 0;
                   return (
                     <Fragment key={row.id}>
-                      <tr className="align-top hover:bg-[#FAF9F6]">
+                      <tr className="align-top hover:bg-[var(--color-surface-subtle)]">
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-0.5">
                             {scope === 'campaign' &&
@@ -174,17 +174,17 @@ export function CampaignChannelComparisonSection({
                               <button
                                 type="button"
                                 onClick={() => onOpenCampaign(row.id)}
-                                className="inline-flex w-fit items-center gap-1 text-left font-medium text-[#202824] hover:text-[#315F52]"
+                                className="inline-flex w-fit items-center gap-1 text-left font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)]"
                               >
                                 <span>{row.label}</span>
-                                <ArrowUpRight className="h-3.5 w-3.5 text-[#788C83]" />
+                                <ArrowUpRight className="h-3.5 w-3.5 text-[var(--color-ink-subtle)]" />
                               </button>
                             ) : (
-                              <span className="font-medium text-[#202824]">
+                              <span className="font-medium text-[var(--color-ink)]">
                                 {row.label}
                               </span>
                             )}
-                            <span className="font-mono text-[11px] text-[#788C83]">
+                            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                               {row.id}
                               {row.subtitle ? ` · ${row.subtitle}` : ''}
                               {row.betId ? ` · ${row.betId}` : ''}
@@ -197,7 +197,7 @@ export function CampaignChannelComparisonSection({
                             return (
                               <td
                                 key={col.id}
-                                className="px-4 py-3 text-right text-[12px] text-[#788C83]"
+                                className="px-4 py-3 text-right text-[13px] text-[var(--color-ink-subtle)]"
                               >
                                 Restricted
                               </td>
@@ -207,7 +207,7 @@ export function CampaignChannelComparisonSection({
                             return (
                               <td
                                 key={col.id}
-                                className="px-4 py-3 text-right text-[12px] text-[#9B3B32]"
+                                className="px-4 py-3 text-right text-[13px] text-[#9B3B32]"
                               >
                                 Error
                               </td>
@@ -218,7 +218,7 @@ export function CampaignChannelComparisonSection({
                             return (
                               <td
                                 key={col.id}
-                                className="px-4 py-3 text-right font-mono text-[12px] text-[#788C83]"
+                                className="px-4 py-3 text-right font-mono text-[13px] text-[var(--color-ink-subtle)]"
                               >
                                 Unavailable
                               </td>
@@ -228,7 +228,7 @@ export function CampaignChannelComparisonSection({
                             return (
                               <td
                                 key={col.id}
-                                className="px-4 py-3 text-right text-[11px] text-[#788C83]"
+                                className="px-4 py-3 text-right text-[12px] text-[var(--color-ink-subtle)]"
                                 title={`Applied filters: ${formatAppliedFiltersSummary(result.applied_filters)}`}
                               >
                                 Not scoped to {scope}
@@ -239,7 +239,7 @@ export function CampaignChannelComparisonSection({
                             return (
                               <td
                                 key={col.id}
-                                className="px-4 py-3 text-right text-[11px] text-[#525E58]"
+                                className="px-4 py-3 text-right text-[12px] text-[var(--color-ink-muted)]"
                                 title={result.reason || 'Not computable'}
                               >
                                 {result.reason || 'Not computable'}
@@ -252,11 +252,11 @@ export function CampaignChannelComparisonSection({
                               key={col.id}
                               className="px-4 py-3 text-right font-mono tabular-nums"
                             >
-                              <div className="font-medium text-[#202824]">
+                              <div className="font-medium text-[var(--color-ink)]">
                                 {formatAnalyticsMetricValue(result)}
                               </div>
                               {ratio ? (
-                                <div className="text-[11px] text-[#788C83]">
+                                <div className="text-[12px] text-[var(--color-ink-subtle)]">
                                   {ratio}
                                 </div>
                               ) : null}
@@ -264,7 +264,7 @@ export function CampaignChannelComparisonSection({
                           );
                         })}
 
-                        <td className="px-4 py-3 font-mono text-[11px] text-[#788C83]">
+                        <td className="px-4 py-3 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                           <div>{sampleMetric?.record_class || recordClass}</div>
                           <div>as of {sampleMetric?.as_of || asOfDate}</div>
                         </td>
@@ -273,9 +273,9 @@ export function CampaignChannelComparisonSection({
                       {showSyntheticRow ? (
                         <tr
                           key={`${row.id}-2025`}
-                          className="bg-[#FAF9F6]/70 align-top"
+                          className="bg-[var(--color-surface-subtle)]/70 align-top"
                         >
-                          <td className="px-4 py-2 pl-8 font-mono text-[11px] text-[#525E58]">
+                          <td className="px-4 py-2 pl-8 font-mono text-[12px] text-[var(--color-ink-muted)]">
                             2025 synthetic ({row.id})
                           </td>
                           {COMPARISON_COLUMNS.map((col) => {
@@ -284,7 +284,7 @@ export function CampaignChannelComparisonSection({
                               return (
                                 <td
                                   key={col.id}
-                                  className="px-4 py-2 text-right font-mono text-[11px] text-[#788C83]"
+                                  className="px-4 py-2 text-right font-mono text-[12px] text-[var(--color-ink-subtle)]"
                                 >
                                   —
                                 </td>
@@ -294,7 +294,7 @@ export function CampaignChannelComparisonSection({
                               return (
                                 <td
                                   key={col.id}
-                                  className="px-4 py-2 text-right text-[11px] text-[#788C83]"
+                                  className="px-4 py-2 text-right text-[12px] text-[var(--color-ink-subtle)]"
                                   title={syn.reason || 'Not computable'}
                                 >
                                   {syn.reason || 'Not computable'}
@@ -304,13 +304,13 @@ export function CampaignChannelComparisonSection({
                             return (
                               <td
                                 key={col.id}
-                                className="px-4 py-2 text-right font-mono text-[12px] text-[#525E58] tabular-nums"
+                                className="px-4 py-2 text-right font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums"
                               >
                                 {formatAnalyticsMetricValue(syn)}
                               </td>
                             );
                           })}
-                          <td className="px-4 py-2 font-mono text-[10px] text-[#788C83]">
+                          <td className="px-4 py-2 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                             <div>historical_synthetic</div>
                             <div>ED-2025 · as of 2025-12-31</div>
                           </td>

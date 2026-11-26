@@ -112,17 +112,17 @@ function MetricCell({
 }) {
   if (error) {
     return (
-      <span className="font-mono text-[12px] text-[#788C83]">Unavailable</span>
+      <span className="font-mono text-[13px] text-[var(--color-ink-subtle)]">Unavailable</span>
     );
   }
   if (!result) {
-    return <span className="font-mono text-[#788C83]">—</span>;
+    return <span className="font-mono text-[var(--color-ink-subtle)]">—</span>;
   }
   if (!result.computable || result.value === null) {
     return (
       <span
         title={result.reason ?? 'Not computable'}
-        className="font-mono text-[12px] text-[#788C83]"
+        className="font-mono text-[13px] text-[var(--color-ink-subtle)]"
       >
         Not computable
       </span>
@@ -141,13 +141,13 @@ function MetricCell({
     <div className="inline-flex flex-col items-end">
       <span
         className={`font-mono tabular-nums ${
-          highlight ? 'font-medium text-[#315F52]' : 'text-[#202824]'
+          highlight ? 'font-medium text-[var(--color-accent)]' : 'text-[var(--color-ink)]'
         }`}
       >
         {formatted}
       </span>
       {ratioDetail ? (
-        <span className="font-mono text-[11px] tabular-nums text-[#788C83]">
+        <span className="font-mono text-[12px] tabular-nums text-[var(--color-ink-subtle)]">
           {ratioDetail}
         </span>
       ) : null}
@@ -172,6 +172,7 @@ export function CampaignPortfolioPage({
   previewMode,
   onChangePreviewMode,
 }: CampaignPortfolioPageProps) {
+  const [showAllMetrics,setShowAllMetrics]=useState(false);
   const [sortKey, setSortKey] = useState<CampaignPortfolioSortKey>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -248,18 +249,18 @@ export function CampaignPortfolioPage({
   }, [rows, sortKey, sortDirection]);
 
   const skeleton = (
-    <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
-      <div className="border-b border-[#E8E6E0] bg-[#FAF9F6] px-4 py-3">
-        <div className="h-3.5 w-full rounded bg-[#E8E6E0]" />
+    <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
+      <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-4 py-3">
+        <div className="h-3.5 w-full rounded bg-[var(--color-border-subtle)]" />
       </div>
       {[0, 1, 2, 3].map((idx) => (
         <div
           key={idx}
-          className="flex items-center gap-4 border-b border-[#E8E6E0] px-4 py-3.5 last:border-b-0"
+          className="flex items-center gap-4 border-b border-[var(--color-border-subtle)] px-4 py-3.5 last:border-b-0"
         >
-          <div className="h-3.5 w-44 rounded bg-[#E8E6E0]" />
-          <div className="h-3.5 w-24 rounded bg-[#F3F1EB]" />
-          <div className="ml-auto h-3.5 w-20 rounded bg-[#E8E6E0]" />
+          <div className="h-3.5 w-44 rounded bg-[var(--color-border-subtle)]" />
+          <div className="h-3.5 w-24 rounded bg-[var(--color-canvas)]" />
+          <div className="ml-auto h-3.5 w-20 rounded bg-[var(--color-border-subtle)]" />
         </div>
       ))}
     </div>
@@ -268,13 +269,13 @@ export function CampaignPortfolioPage({
   return (
     <div className="space-y-8 pb-8">
       {/* Page header */}
-      <section className="border-b border-[#D9D7D0] pb-6">
+      <section className="border-b border-[var(--color-border)] pb-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.025em] text-[#202824]">
+            <h1 className="page-heading text-[var(--color-ink)]">
               Campaigns
             </h1>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[11px] text-[#788C83]">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[12px] text-[var(--color-ink-subtle)]">
               <span>{formatRecordClassLabel(filters.record_class)}</span>
               <span aria-hidden="true">·</span>
               <span>{filters.edition_id}</span>
@@ -289,7 +290,7 @@ export function CampaignPortfolioPage({
               {isHistoricalView ? (
                 <>
                   <span aria-hidden="true">·</span>
-                  <span className="font-medium text-[#525E58]">
+                  <span className="font-medium text-[var(--color-ink-muted)]">
                     {READ_ONLY_2025_MESSAGE}
                   </span>
                 </>
@@ -299,14 +300,14 @@ export function CampaignPortfolioPage({
 
           <div className="flex flex-wrap items-center gap-2.5">
             {showDevControls ? (
-              <div className="flex items-center gap-2 rounded-md border border-dashed border-[#D9D7D0] bg-[#FAF9F6] px-2.5 py-1">
-                <span className="font-mono text-[11px] text-[#788C83]">
+              <div className="flex items-center gap-2 rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2.5 py-1">
+                <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
                   Dev state
                 </span>
                 <div
                   role="group"
                   aria-label="Developer preview campaigns data state"
-                  className="inline-flex rounded border border-[#D9D7D0] bg-white p-0.5"
+                  className="inline-flex rounded border border-[var(--color-border)] bg-white p-0.5"
                 >
                   {(
                     [
@@ -319,10 +320,10 @@ export function CampaignPortfolioPage({
                       key={mode.id}
                       type="button"
                       onClick={() => onChangePreviewMode(mode.id)}
-                      className={`rounded px-2 py-0.5 text-[12px] font-medium transition-colors duration-150 ${
+                      className={`rounded px-2 py-0.5 text-[13px] font-medium transition-colors duration-150 ${
                         previewMode === mode.id
-                          ? 'bg-[#315F52] text-white'
-                          : 'text-[#525E58] hover:text-[#202824]'
+                          ? 'bg-[var(--color-accent)] text-white'
+                          : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
                       }`}
                     >
                       {mode.label}
@@ -335,9 +336,9 @@ export function CampaignPortfolioPage({
             <button
               type="button"
               onClick={onRefresh}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] whitespace-nowrap"
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] whitespace-nowrap"
             >
-              <RefreshCw className="h-3.5 w-3.5 text-[#525E58]" aria-hidden="true" />
+              <RefreshCw className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
               Refresh
             </button>
 
@@ -346,7 +347,7 @@ export function CampaignPortfolioPage({
               onClick={onCreateCampaign}
               disabled={isHistoricalView}
               title={isHistoricalView ? READ_ONLY_2025_MESSAGE : undefined}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[#315F52] px-3.5 text-[13px] font-medium text-white transition-colors duration-150 hover:bg-[#264B40] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-[var(--color-accent)] px-3.5 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               New campaign
@@ -359,13 +360,13 @@ export function CampaignPortfolioPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="campaigns-search"
-              className="text-[11px] font-medium text-[#788C83]"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
             >
               Search
             </label>
             <div className="relative">
               <Search
-                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[#788C83]"
+                className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[var(--color-ink-subtle)]"
                 aria-hidden="true"
               />
               <input
@@ -376,7 +377,7 @@ export function CampaignPortfolioPage({
                   onChangeFilters({ ...filters, search: e.target.value })
                 }
                 placeholder="Search campaigns..."
-                className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white pr-3 pl-8 text-[13px] text-[#202824] placeholder:text-[#788C83] focus:border-[#315F52] focus:outline-none"
+                className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white pr-3 pl-8 text-[14px] text-[var(--color-ink)] placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none"
               />
             </div>
           </div>
@@ -409,7 +410,7 @@ export function CampaignPortfolioPage({
           <div className="flex flex-col gap-1">
             <label
               htmlFor="campaigns-as-of"
-              className="text-[11px] font-medium text-[#788C83]"
+              className="text-[12px] font-medium text-[var(--color-ink-subtle)]"
             >
               As-of date
             </label>
@@ -423,7 +424,7 @@ export function CampaignPortfolioPage({
                   as_of: e.target.value || filters.as_of,
                 })
               }
-              className="h-9 w-full rounded-md border border-[#D9D7D0] bg-white px-3 font-mono text-[13px] text-[#202824] focus:border-[#315F52] focus:outline-none"
+              className="h-9 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none"
             />
           </div>
         </div>
@@ -470,47 +471,48 @@ export function CampaignPortfolioPage({
       </section>
 
       {/* Summary indicators */}
+      <div className="module-toolbar"><h2 className="section-title">Campaign portfolio</h2><button type="button" className="button-secondary" aria-pressed={showAllMetrics} aria-controls="campaign-portfolio-table" onClick={()=>setShowAllMetrics(v=>!v)}>{showAllMetrics?'Show core metrics':'Show all metrics'}</button></div>
       <section aria-label="Campaign portfolio summary">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
-            <p className="text-[12px] font-medium text-[#788C83]">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
+            <p className="text-[13px] font-medium text-[var(--color-ink-subtle)]">
               Active campaigns
             </p>
-            <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[#202824] tabular-nums">
+            <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
               {summary.active_campaigns_count !== null
                 ? summary.active_campaigns_count
                 : '—'}
             </p>
           </div>
 
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
             <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[#788C83]">
+              <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-ink-subtle)]">
                 <span>Open pipeline value</span>
                 <InfoHint
                   label="Definition of Open pipeline value (M-21)"
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-21'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-21'].inclusion_exclusion}`}
                 />
               </span>
-              <span className="font-mono text-[11px] text-[#788C83]">M-21</span>
+              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">M-21</span>
             </div>
-            <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[#202824] tabular-nums">
+            <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
               {formatMetricValue(summary.open_pipeline_metric)}
             </p>
           </div>
 
-          <div className="rounded-md border border-[#D9D7D0] bg-white p-5">
+          <div className="rounded-xl border border-[var(--color-border)] bg-white p-5">
             <div className="flex items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1 text-[12px] font-medium text-[#788C83]">
+              <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-ink-subtle)]">
                 <span>Signed (confirmed) value</span>
                 <InfoHint
                   label="Definition of Signed (confirmed) value (M-02)"
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-02'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-02'].inclusion_exclusion}`}
                 />
               </span>
-              <span className="font-mono text-[11px] text-[#788C83]">M-02</span>
+              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">M-02</span>
             </div>
-            <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[#315F52] tabular-nums">
+            <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-accent)] tabular-nums">
               {formatMetricValue(summary.signed_value_metric)}
             </p>
           </div>
@@ -525,11 +527,11 @@ export function CampaignPortfolioPage({
           onRetry={onRetry}
           loadingSkeleton={skeleton}
         >
-          <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+          <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left">
+              <table id="campaign-portfolio-table" data-density={showAllMetrics?'full':'core'} className="campaign-portfolio-table w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-[#D9D7D0] bg-[#FAF9F6]">
+                  <tr className="border-b border-[var(--color-border)] bg-[var(--color-surface-subtle)]">
                     {COLUMNS.map((col) => {
                       const isActive = sortKey === col.key;
                       const SortIcon = !isActive
@@ -551,7 +553,7 @@ export function CampaignPortfolioPage({
                                 : 'descending'
                               : 'none'
                           }
-                          className={`px-4 py-3 text-[12px] font-medium text-[#525E58] whitespace-nowrap ${
+                          className={`px-4 py-3 text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap ${
                             col.align === 'right' ? 'text-right' : 'text-left'
                           }`}
                         >
@@ -563,19 +565,19 @@ export function CampaignPortfolioPage({
                             <button
                               type="button"
                               onClick={() => handleSort(col.key)}
-                              className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[#202824] ${
-                                isActive ? 'font-semibold text-[#315F52]' : ''
+                              className={`inline-flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors duration-150 hover:text-[var(--color-ink)] ${
+                                isActive ? 'font-semibold text-[var(--color-accent)]' : ''
                               }`}
                             >
                               <span>{col.label}</span>
                               {col.metricId ? (
-                                <span className="font-mono text-[10px] text-[#788C83]">
+                                <span className="sr-only">
                                   {col.metricId}
                                 </span>
                               ) : null}
                               <SortIcon
                                 className={`h-3 w-3 ${
-                                  isActive ? 'text-[#315F52]' : 'text-[#788C83]'
+                                  isActive ? 'text-[var(--color-accent)]' : 'text-[var(--color-ink-subtle)]'
                                 }`}
                                 aria-hidden="true"
                               />
@@ -592,54 +594,54 @@ export function CampaignPortfolioPage({
                     })}
                     <th
                       scope="col"
-                      className="px-4 py-3 text-right text-[12px] font-medium text-[#525E58] whitespace-nowrap"
+                      className="px-4 py-3 text-right text-[13px] font-medium text-[var(--color-ink-muted)] whitespace-nowrap"
                     >
                       Actions
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-[#E8E6E0] text-[13px]">
+                <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
                   {sortedRows.length > 0 ? (
                     sortedRows.map(({ campaign, metrics, metrics_error }) => {
                       const readOnly = isCampaignReadOnly(campaign);
                       return (
                         <tr
                           key={campaign.campaign_id}
-                          className="transition-colors duration-150 hover:bg-[#FAF9F6]"
+                          className="transition-colors duration-150 hover:bg-[var(--color-surface-subtle)]"
                         >
                           <td className="px-4 py-3">
                             <button
                               type="button"
                               onClick={() => onOpenCampaign(campaign)}
-                              className="text-left font-medium text-[#202824] hover:text-[#315F52] hover:underline"
+                              className="text-left font-medium text-[var(--color-ink)] hover:text-[var(--color-accent)] hover:underline"
                             >
                               {campaign.name}
                             </button>
                             {readOnly ? (
-                              <span className="ml-2 font-mono text-[11px] text-[#788C83]">
+                              <span className="ml-2 font-mono text-[12px] text-[var(--color-ink-subtle)]">
                                 Read-only
                               </span>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {formatChannelDisplay(
                               campaign.channel_id,
                               campaign.channel_name
                             )}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {formatBetDisplay(
                               campaign.bet_id,
                               campaign.bet_name
                             )}
                           </td>
-                          <td className="px-4 py-3 text-[#525E58] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink-muted)] whitespace-nowrap">
                             {campaign.owner_name ||
                               campaign.owner_member_id ||
                               '—'}
                           </td>
-                          <td className="px-4 py-3 text-[#202824] whitespace-nowrap">
+                          <td className="px-4 py-3 text-[var(--color-ink)] whitespace-nowrap">
                             {formatCampaignStatus(campaign.status)}
                           </td>
                           <td className="px-4 py-3 text-right">
@@ -691,7 +693,7 @@ export function CampaignPortfolioPage({
                                       : undefined
                                   }
                                   onClick={() => onEditCampaign(campaign)}
-                                  className="text-[12px] font-medium text-[#525E58] hover:text-[#202824] disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="text-[13px] font-medium text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   Edit
                                 </button>
@@ -699,7 +701,7 @@ export function CampaignPortfolioPage({
                               <button
                                 type="button"
                                 onClick={() => onOpenCampaign(campaign)}
-                                className="inline-flex items-center gap-1 text-[12px] font-medium text-[#315F52] hover:underline"
+                                className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-accent)] hover:underline"
                               >
                                 Open
                                 <ArrowUpRight
@@ -715,7 +717,7 @@ export function CampaignPortfolioPage({
                   ) : (
                     <tr>
                       <td colSpan={12} className="px-6 py-10 text-center">
-                        <p className="text-[13px] font-medium text-[#202824]">
+                        <p className="text-[14px] font-medium text-[var(--color-ink)]">
                           No campaigns yet
                         </p>
                         <div className="mt-3">
@@ -728,10 +730,10 @@ export function CampaignPortfolioPage({
                                 : undefined
                             }
                             onClick={onCreateCampaign}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-[#D9D7D0] bg-white px-3 py-1.5 text-[12px] font-medium text-[#202824] transition-colors duration-150 hover:bg-[#FAF9F6] disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-border)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--color-ink)] transition-colors duration-150 hover:bg-[var(--color-surface-subtle)] disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <Plus
-                              className="h-3.5 w-3.5 text-[#315F52]"
+                              className="h-3.5 w-3.5 text-[var(--color-accent)]"
                               aria-hidden="true"
                             />
                             Create campaign
@@ -749,3 +751,4 @@ export function CampaignPortfolioPage({
     </div>
   );
 }
+

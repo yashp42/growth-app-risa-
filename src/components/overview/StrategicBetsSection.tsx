@@ -24,15 +24,15 @@ export function StrategicBetsSection({
   asOfDate,
 }: StrategicBetsSectionProps) {
   const skeleton = (
-    <div className="divide-y divide-[#E8E6E0] rounded-md border border-[#D9D7D0] bg-white">
+    <div className="divide-y divide-[var(--color-border-subtle)] rounded-md border border-[var(--color-border)] bg-white">
       {[0, 1, 2, 3, 4].map((idx) => (
         <div
           key={idx}
           className="flex items-center justify-between gap-4 px-5 py-3.5"
         >
-          <div className="h-3.5 w-48 rounded bg-[#E8E6E0]" />
-          <div className="h-2 w-32 rounded bg-[#F3F1EB]" />
-          <div className="h-3.5 w-16 rounded bg-[#E8E6E0]" />
+          <div className="h-3.5 w-48 rounded bg-[var(--color-border-subtle)]" />
+          <div className="h-2 w-32 rounded bg-[var(--color-canvas)]" />
+          <div className="h-3.5 w-16 rounded bg-[var(--color-border-subtle)]" />
         </div>
       ))}
     </div>
@@ -57,21 +57,21 @@ export function StrategicBetsSection({
         onRetry={onRetry}
         loadingSkeleton={skeleton}
       >
-        <div className="overflow-hidden rounded-md border border-[#D9D7D0] bg-white">
+        <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
           {recordClass === 'historical_synthetic' ? (
-            <div className="border-b border-[#E8E6E0] bg-[#FAF9F6] px-5 py-2.5 text-[12px] font-medium text-[#525E58]">
+            <div className="border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-5 py-2.5 text-[13px] font-medium text-[var(--color-ink-muted)]">
               Reference only: rules apply to the 2026 season
             </div>
           ) : null}
-          <ul className="divide-y divide-[#E8E6E0]">
+          <ul className="divide-y divide-[var(--color-border-subtle)]">
             {bets.map((bet) => {
               const hasProgress = bet.progressPct !== null;
               const statusTone =
                 bet.band === 'keep'
-                  ? 'text-[#315F52]'
+                  ? 'text-[var(--color-accent)]'
                   : bet.band === 'escalate' || bet.band === 'stop'
                     ? 'text-[#9B3B32]'
-                    : 'text-[#525E58]';
+                    : 'text-[var(--color-ink-muted)]';
 
               return (
                 <li
@@ -79,15 +79,15 @@ export function StrategicBetsSection({
                   className="grid grid-cols-1 items-center gap-3 px-5 py-3.5 sm:grid-cols-12"
                 >
                   <div className="flex items-baseline gap-3 sm:col-span-5">
-                    <span className="font-mono text-[11px] font-medium text-[#788C83] shrink-0">
+                    <span className="font-mono text-[12px] font-medium text-[var(--color-ink-subtle)] shrink-0">
                       {bet.indexLabel}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-[#202824]">
+                      <p className="truncate text-[14px] font-medium text-[var(--color-ink)]">
                         {bet.title}
                       </p>
                       {bet.metricSummary ? (
-                        <p className="truncate text-[12px] text-[#788C83]">
+                        <p className="truncate text-[13px] text-[var(--color-ink-subtle)]">
                           {bet.metricSummary}
                         </p>
                       ) : null}
@@ -96,11 +96,11 @@ export function StrategicBetsSection({
 
                   <div className="flex items-center gap-3 sm:col-span-4">
                     <div
-                      className="h-1.5 flex-1 overflow-hidden rounded-xs bg-[#E8E6E0]"
+                      className="h-1.5 flex-1 overflow-hidden rounded-xs bg-[var(--color-border-subtle)]"
                       aria-hidden="true"
                     >
                       <div
-                        className="h-full bg-[#315F52]"
+                        className="h-full bg-[var(--color-accent)]"
                         style={{
                           width: hasProgress
                             ? `${Math.min(100, Math.max(0, bet.progressPct ?? 0))}%`
@@ -108,13 +108,13 @@ export function StrategicBetsSection({
                         }}
                       />
                     </div>
-                    <span className="w-10 text-right font-mono text-[12px] text-[#525E58] tabular-nums">
+                    <span className="w-10 text-right font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums">
                       {hasProgress ? `${bet.progressPct}%` : '—'}
                     </span>
                   </div>
 
                   <div className="sm:col-span-3 sm:text-right">
-                    <span className={`font-mono text-[11px] font-medium ${statusTone}`}>
+                    <span className={`font-mono text-[12px] font-medium ${statusTone}`}>
                       {bet.thresholdStatus ?? '—'}
                     </span>
                   </div>
