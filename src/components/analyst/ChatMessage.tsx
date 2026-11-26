@@ -73,6 +73,8 @@ export function ChatMessage({
   const reduceMotion = useReducedMotion() ?? false;
   const [speaking, setSpeaking] = useState(false);
 
+  const answerContent = message.content.replace(/(?:^|\n)Source notes:\s*\n[\s\S]*$/i, '').trim();
+
   const ttsSupported = isSpeechSynthesisSupported();
 
   useEffect(() => () => stopSpeaking(), []);
@@ -84,7 +86,7 @@ export function ChatMessage({
       setSpeaking(false);
       return;
     }
-    if (speakAnswer(message.content, { onEnd: () => setSpeaking(false) })) {
+    if (speakAnswer(answerContent, { onEnd: () => setSpeaking(false) })) {
       setSpeaking(true);
     }
   };
@@ -157,7 +159,7 @@ export function ChatMessage({
       </div>
       {/* Main answer prose */}
       <div className="mt-3 text-[14px] leading-relaxed text-[var(--color-ink)]">
-        <MarkdownAnswer>{message.content.replace(/(?:^|\n)Source notes:\s*\n[\s\S]*$/i, '').trim()}</MarkdownAnswer>
+        <MarkdownAnswer>{answerContent}</MarkdownAnswer>
       </div>
 
       {/* Server-built tables / charts / KPIs (numbers from tool results only) */}
