@@ -1535,6 +1535,7 @@ export async function executeReadTool(
       // A name search that finds nothing is stated explicitly, so the answer
       // says "no record of ..." instead of inventing details (guardrail D6).
       ...(f.search ? { search: f.search } : {}),
+      ...(f.state ? { state: f.state === 'signed' || f.state === 'won' ? 'confirmed' : f.state } : {}),
       ...(f.search && rows.length === 0
         ? { no_record: `I have no record of "${f.search}" in ${args.kind} (${ed.edition_id}).` }
         : {}),
