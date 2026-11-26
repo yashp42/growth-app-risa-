@@ -5,7 +5,7 @@ import { querySponsorMetrics } from '../server/llm/sponsorMetrics.ts';
 import { createToolAccumulator } from '../server/llm/tools.ts';
 import { verifyAnswerNumbers } from '../server/llm/answerCheck.ts';
 import { buildAnswerBlocks } from '../server/llm/answerBlocks.ts';
-import { lexicalRank } from '../server/llm/lexicalSearch.ts';
+import { morphologicalRank as lexicalRank } from '../server/llm/lexicalSearchCandidate.ts';
 const groups:Record<string,string[]>={
  'M-01':['Which sponsor paid us the most?','Who paid us most?','What is the highest amount that we got from a sponsor?','Who is our biggest contributor by cash received?','Which specific sponsor has given the highest amount of money?','Show cash collected by sponsor','Which company brought in the most cash?'],
  'M-02':['Which sponsor has the largest signed commitment?','Which company has the biggest signed sponsorship deal?','Top sponsors by signed value'],

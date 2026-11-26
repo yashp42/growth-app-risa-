@@ -1,3 +1,4 @@
+import { morphologicalRank, expandedCandidateTerms } from './lexicalSearchCandidate.ts';
 import { querySponsorMetrics, SPONSOR_METRICS } from './sponsorMetrics.ts';
 import { getInventory } from './financialAnswers.ts';
 import { expandedTerms, lexicalRank } from './lexicalSearch.ts';
@@ -505,7 +506,7 @@ function scoreTitleMatch(title: string | null | undefined, queryWords: string[])
  * chunk's document title and section (needs the pg_trgm extension). Chosen by
  * scripts/eval-retrieval.ts; never by the model.
  */
-export type KnowledgeRankMode = 'fts' | 'fts_trgm' | 'fts_enriched';
+export type KnowledgeRankMode = 'fts' | 'fts_trgm' | 'fts_enriched' | 'fts_morph';
 
 export async function executeSearchKnowledge(
   pool: QueryablePool,
@@ -517,7 +518,8 @@ export async function executeSearchKnowledge(
   const args = SearchKnowledgeArgsSchema.parse(rawArgs);
   const rankMode = opts.rankMode ?? getKnowledgeRankMode();
   const trgm = rankMode === 'fts_trgm';
-  const enriched = rankMode === 'fts_enriched';
+  const candidate = rankMode === 'fts_morph';
+  const enriched = rankMode === 'fts_enriched' || candidate;
   const historyClause = args.include_history
     ? ''
     : `AND retrieval_rule <> 'contradiction_and_history_only'
@@ -556,7 +558,7 @@ export async function executeSearchKnowledge(
        AND (tsv @@ websearch_to_tsquery('english', $${tsQueryParamIndex})
             ${trgm ? `OR similarity(COALESCE(document_title, ''), $${trgmParamIndex}) > 0.12 OR similarity(COALESCE(section, ''), $${trgmParamIndex}) > 0.12` : ''})
      ORDER BY base_rank ${trgm ? '+ GREATEST(similarity(COALESCE(document_title, \'\'), $' + trgmParamIndex + '), similarity(COALESCE(section, \'\'), $' + trgmParamIndex + '))' : ''} DESC, chunk_id ASC
-     LIMIT ${enriched ? 96 : 12}`;
+     LIMIT ${candidate ? 256 : enriched ? 96 : 12}`;
 
   const strictRes = await pool.query<Record<string, unknown>>(
     querySql(1),
@@ -568,7 +570,7 @@ export async function executeSearchKnowledge(
   // Special prompt rule: if strict search returns < 2 chunks, retry once with same words joined by OR,
   // and rank chunks whose doc title matches higher.
   if (enriched || rows.length < 2) {
-    const orQuery = enriched ? expandedTerms(args.query).join(' OR ') : buildOrQueryFromStrict(args.query);
+    const orQuery = candidate ? expandedCandidateTerms(args.query).join(' OR ') : enriched ? expandedTerms(args.query).join(' OR ') : buildOrQueryFromStrict(args.query);
     if (orQuery) {
       usedOrFallback = true;
       const orParams = [orQuery, ...baseParams.slice(1)];
@@ -607,7 +609,8 @@ export async function executeSearchKnowledge(
     return bScore - aScore;
   });
 
-  if (enriched) rows = lexicalRank(args.query, rows);
+  if (candidate) rows = morphologicalRank(args.query, rows);
+  else if (enriched) rows = lexicalRank(args.query, rows);
   const topChunks = rows.slice(0, 6).map((r) => {
     const decisionStatus = String(r.decision_status ?? '');
     const retrievalRule = String(r.retrieval_rule ?? 'default');

@@ -1175,3 +1175,26 @@ test('[MOCKED] inventory and forecast actual HTTP paths remain grounded with an 
   assert.equal(modelCalls,0);
  }finally{client.stop();await srv.close();}
 });
+
+test('[MOCKED] provider schema rejection switches to another configured free entry instead of aborting the turn',async()=>{
+ let chats=0;
+ const client=createOpenRouterClient(createBaseConfig({groqApiKey:'gsk-mock'}),{startBackgroundRefresh:false,fetchFn:async(input)=>{
+  if(!String(input).endsWith('/chat/completions'))return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,remaining:50}}}),{status:200});
+  chats++;
+  if(chats===1)return new Response(JSON.stringify({error:{message:'Tool call validation failed: parameters for tool list_records did not match schema: limit maximum got 50 want 25',code:'tool_use_failed'}}),{status:400});
+  return new Response(JSON.stringify({choices:[{message:{role:'assistant',content:'Read the source records.'}}]}),{status:200});
+ }});
+ try{const result=await client.createChatCompletion({messages:[{role:'user',content:'List open deals'}],tools:[{type:'function',function:{name:'list_records',description:'Read scoped records',parameters:{type:'object',properties:{limit:{type:'integer',maximum:25}}}}}]});assert.equal(chats,2);assert.equal(result.usedFallback,true);}
+ finally{client.stop();}
+});
+test('[MOCKED] sponsor ranking HTTP path uses the source grain with zero model requests and renders a table',async()=>{
+ const store=createMockStore(),dbState=createMockDbState(store),original=dbState.pool!.query.bind(dbState.pool);
+ dbState.pool!.query=(async(sql:any,params?:any[])=>{
+  if(String(sql).includes('WITH scoped AS'))return {rows:[{sponsor_id:'CHANGED-A',sponsor_name:'Current Alpha',value:'180001',position:1,total_sponsors:2,breakdown_total:'280002',canonical_total:'280002'},{sponsor_id:'CHANGED-B',sponsor_name:'Current Beta',value:'100001',position:2,total_sponsors:2,breakdown_total:'280002',canonical_total:'280002'}]};
+  return original(sql,params);
+ }) as typeof original;
+ let calls=0;const client=createOpenRouterClient(createBaseConfig(),{startBackgroundRefresh:false,fetchFn:async(input)=>{if(String(input).endsWith('/chat/completions')){calls++;throw Error('No model needed');}return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,remaining:0,used:50}}}),{status:200});}});
+ const app=express();app.use(express.json());app.use('/api',createAiApiRouter(createBaseConfig(),dbState,createAuthDeps(store,dbState),{openrouter:client}).router);app.use(apiErrorHandler);const srv=await startServer(app);
+ try{const response=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question:'What is the highest amount that we got from a sponsor?',edition_id:'ED-2026-DEMO',as_of:'2026-11-26'})});const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.answer_check_passed,true,JSON.stringify(body));assert.equal(body.token_usage.model_requests,0);assert.equal(calls,0);assert.match(body.answer,/Current Alpha/);assert.match(body.answer,/1,80,001/);assert.ok(body.blocks.some((b:any)=>b.type==='table'&&b.rows[0].sponsor_name==='Current Alpha'));}
+ finally{client.stop();await srv.close();}
+});
