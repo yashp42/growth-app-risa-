@@ -65,6 +65,12 @@ interface ChatComposerProps {
   placeholder?: string;
   compact?: boolean;
   autoStartVoiceNonce?: number;
+  /** Incremented by the orb (space bar) to toggle the mic. */
+  toggleVoiceNonce?: number;
+  /** Real mic on/off, for the orb's listening state. */
+  onListeningChange?: (listening: boolean) => void;
+  /** Interim transcript, shown under the orb while listening. */
+  onInterimTranscript?: (text: string) => void;
 }
 
 export function ChatComposer({
@@ -75,6 +81,9 @@ export function ChatComposer({
   placeholder = 'Ask about funnel leaks, metrics, D-010 strategy, or propose a follow-up task...',
   compact = false,
   autoStartVoiceNonce = 0,
+  toggleVoiceNonce = 0,
+  onListeningChange,
+  onInterimTranscript,
 }: ChatComposerProps) {
   const [draft, setDraft] = useState(initialDraft ?? '');
   const [interimText, setInterimText] = useState('');
@@ -265,6 +274,35 @@ export function ChatComposer({
     }
     startVoice();
   };
+
+  // Report real mic state and interim transcript to the orb.
+  const onListeningChangeRef = useRef(onListeningChange);
+  onListeningChangeRef.current = onListeningChange;
+  const onInterimRef = useRef(onInterimTranscript);
+  onInterimRef.current = onInterimTranscript;
+  useEffect(() => {
+    onListeningChangeRef.current?.(listening);
+  }, [listening]);
+  useEffect(() => {
+    onInterimRef.current?.(listening ? interimText : '');
+  }, [interimText, listening]);
+  useEffect(
+    () => () => {
+      onListeningChangeRef.current?.(false);
+      onInterimRef.current?.('');
+    },
+    []
+  );
+
+  const lastToggleNonceRef = useRef(toggleVoiceNonce);
+  const toggleVoiceRef = useRef(toggleVoice);
+  toggleVoiceRef.current = toggleVoice;
+  useEffect(() => {
+    if (toggleVoiceNonce !== lastToggleNonceRef.current) {
+      lastToggleNonceRef.current = toggleVoiceNonce;
+      if (voiceAvailable && !disabled && !sending) toggleVoiceRef.current();
+    }
+  }, [toggleVoiceNonce, voiceAvailable, disabled, sending]);
 
   const displayValue = interimText
     ? `${draft}${draft && !draft.endsWith(' ') ? ' ' : ''}${interimText}`

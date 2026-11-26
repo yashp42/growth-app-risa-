@@ -199,3 +199,41 @@ test('[MOCKED] 4D blocks render: sortable table, bar, line and KPI, each with it
   assert.match(html, /Not computable/);
   assert.match(html, /No receipts in 2025 synthetic data/);
 });
+
+// ---------------------------------------------------------------------------
+// 4D orb: states from real events only
+// ---------------------------------------------------------------------------
+import { AnalystOrb } from '../src/components/analyst/AnalystOrb.tsx';
+import { ANSWERING_MS, deriveOrbState, ERROR_FLASH_MS, ORB_STATE_LABEL } from '../src/lib/orbState.ts';
+
+test('[MOCKED] 4D orb state machine: error > listening > thinking > answering > confirm > idle, transitions end with their animation', () => {
+  const base = { micOn: false, sending: false, pendingConfirm: false, lastErrorAt: null, lastAnsweredAt: null, now: 10_000 };
+  assert.equal(deriveOrbState(base), 'idle');
+  assert.equal(deriveOrbState({ ...base, pendingConfirm: true }), 'confirm');
+  assert.equal(deriveOrbState({ ...base, sending: true }), 'thinking');
+  assert.equal(deriveOrbState({ ...base, micOn: true, sending: true }), 'listening');
+  assert.equal(deriveOrbState({ ...base, lastAnsweredAt: 10_000 - 100 }), 'answering');
+  assert.equal(deriveOrbState({ ...base, lastAnsweredAt: 10_000 - ANSWERING_MS }), 'idle');
+  assert.equal(deriveOrbState({ ...base, lastAnsweredAt: 10_000 - ANSWERING_MS, pendingConfirm: true }), 'confirm');
+  assert.equal(deriveOrbState({ ...base, micOn: true, lastErrorAt: 10_000 - 10 }), 'error');
+  assert.equal(deriveOrbState({ ...base, lastErrorAt: 10_000 - ERROR_FLASH_MS }), 'idle');
+});
+
+test('[MOCKED] 4D orb markup: one accessible control per state, aria-live status, caption shows real steps; decorative mode nests safely', () => {
+  for (const state of ['idle', 'listening', 'thinking', 'answering', 'confirm', 'error'] as const) {
+    const html = renderToStaticMarkup(
+      createElement(AnalystOrb, { state, showCaption: true, statusText: 'Looking up M-01…', transcript: 'move voltyatra' })
+    );
+    assert.match(html, new RegExp(`data-orb-state="${state}"`));
+    assert.match(html, /<button[^>]*aria-label="Growth Analyst: /);
+    assert.match(html, /aria-live="polite"/);
+    assert.ok(html.includes(ORB_STATE_LABEL[state].replace('…', '')), state);
+  }
+  const thinking = renderToStaticMarkup(createElement(AnalystOrb, { state: 'thinking', showCaption: true, statusText: 'Looking up M-01…' }));
+  assert.match(thinking, /Looking up M-01…/);
+  const listening = renderToStaticMarkup(createElement(AnalystOrb, { state: 'listening', showCaption: true, transcript: 'move voltyatra to negotiating' }));
+  assert.match(listening, /move voltyatra to negotiating/);
+  const decorative = renderToStaticMarkup(createElement(AnalystOrb, { state: 'idle', size: 22, decorative: true }));
+  assert.ok(!decorative.includes('<button'), 'no nested button inside the Ask launcher');
+  assert.ok(!decorative.includes('aria-live'));
+});

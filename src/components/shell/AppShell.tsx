@@ -242,6 +242,7 @@ export function AppShell({
       </div>
 
       <GrowthAnalystLauncher
+        orbState={analystSession.orbState}
         visible={!analystPanelOpen}
         onClick={() => {
           if (activeSection === 'growth-analyst') {

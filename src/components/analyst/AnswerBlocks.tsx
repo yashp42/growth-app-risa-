@@ -192,8 +192,9 @@ export function BarBlockView({ block }: { block: AnswerBarBlock }) {
 }
 
 export function LineBlockView({ block }: { block: AnswerLineBlock }) {
-  const W = 520;
-  const H = 150;
+  // viewBox close to the rendered width so labels stay ~10px in wide panels.
+  const W = 720;
+  const H = 170;
   const PAD = { l: 8, r: 8, t: 10, b: 22 };
   const points = block.series;
   const ys = points.map((p) => p.y).filter((y): y is number => y !== null);

@@ -258,6 +258,8 @@ export function GrowthAnalystPanel({
             }
             compact
             autoStartVoiceNonce={autoStartVoiceNonce}
+            onListeningChange={session.setVoiceListening}
+            onInterimTranscript={session.setInterimTranscript}
             placeholder="Ask Growth Analyst..."
           />
         </div>

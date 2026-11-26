@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSeason } from '../contexts/SeasonContext';
+import { ANSWERING_MS, deriveOrbState, ERROR_FLASH_MS, type OrbState } from '../lib/orbState';
 import {
   isSpeechSynthesisSupported,
   loadAutoReadPreference,
@@ -15,7 +16,9 @@ import {
   confirmAiAction,
   confirmAiActionBatch,
   deleteSavedAnalystView,
+  fetchAiProgress,
   fetchAiQuota,
+  newClientRequestId,
   fetchAnalystConversation,
   getAnalystPermissionProfile,
   getDefaultAnalystEditionForClass,
@@ -170,6 +173,14 @@ export interface UseGrowthAnalystSessionResult {
   resetConversation: () => void;
   dismissError: () => void;
   clearDataVersionChanged: () => void;
+  /** Orb state derived from real events (mic, request, pending card, error, answer). */
+  orbState: OrbState;
+  /** Real tool steps of the in-flight turn, newest last. */
+  progressSteps: string[];
+  voiceListening: boolean;
+  setVoiceListening: (on: boolean) => void;
+  interimTranscript: string;
+  setInterimTranscript: (text: string) => void;
   /** Speaker toggle: read each new answer aloud (en-IN, answer text only). */
   autoReadAloud: boolean;
   setAutoReadAloud: (on: boolean) => void;
@@ -679,7 +690,9 @@ export function useGrowthAnalystSession(
                 ? { entity_type: 'task' as const, entity_id: contextMeta.selectedTaskId }
                 : { entity_type: null, entity_id: null };
 
+        const clientRequestId = newClientRequestId();
         const requestPayload = {
+          client_request_id: clientRequestId,
           conversation_id: conversationId,
           message: trimmed,
           record_class: filters.record_class,
@@ -700,8 +713,27 @@ export function useGrowthAnalystSession(
           requestPayload
         ).catch(() => null);
 
-        const structured =
-          shortcutResult ?? (await sendAnalystChatMessage(requestPayload));
+        let structured;
+        if (shortcutResult) {
+          structured = shortcutResult;
+        } else {
+          setProgressSteps([]);
+          let polling = true;
+          const poll = async () => {
+            while (polling) {
+              await new Promise((r) => setTimeout(r, 450));
+              if (!polling) break;
+              const p = await fetchAiProgress(clientRequestId);
+              if (polling && p.steps.length > 0) setProgressSteps(p.steps);
+            }
+          };
+          void poll();
+          try {
+            structured = await sendAnalystChatMessage(requestPayload);
+          } finally {
+            polling = false;
+          }
+        }
 
         if (!structured.shortcut && structured.conversation_id) {
           setConversationId(structured.conversation_id);
@@ -749,7 +781,10 @@ export function useGrowthAnalystSession(
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
+        setLastAnsweredAt(Date.now());
+        if (structured.quota?.exhausted) setLastErrorAt(Date.now());
       } catch (err: unknown) {
+        setLastErrorAt(Date.now());
         setError(
           err instanceof AnalystApiError
             ? err
@@ -883,6 +918,43 @@ export function useGrowthAnalystSession(
   }, [messages, autoReadAloud]);
   useEffect(() => () => stopSpeaking(), []);
 
+  // ---- Orb: state from real events only.
+  const [progressSteps, setProgressSteps] = useState<string[]>([]);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [lastErrorAt, setLastErrorAt] = useState<number | null>(null);
+  const [lastAnsweredAt, setLastAnsweredAt] = useState<number | null>(null);
+  const [orbTick, setOrbTick] = useState(0);
+  // End the two short transitions (answering, error flicker) after their animation.
+  useEffect(() => {
+    const until = Math.max(
+      lastAnsweredAt !== null ? lastAnsweredAt + ANSWERING_MS : 0,
+      lastErrorAt !== null ? lastErrorAt + ERROR_FLASH_MS : 0
+    );
+    const wait = until - Date.now();
+    if (wait <= 0) return;
+    const t = window.setTimeout(() => setOrbTick((n) => n + 1), wait + 10);
+    return () => window.clearTimeout(t);
+  }, [lastAnsweredAt, lastErrorAt]);
+  const pendingConfirm = useMemo(
+    () => Object.values(actionsMap).some((a) => a.status === 'proposed'),
+    [actionsMap]
+  );
+  const orbState = useMemo(
+    () =>
+      deriveOrbState({
+        micOn: voiceListening,
+        sending,
+        pendingConfirm,
+        lastErrorAt,
+        lastAnsweredAt,
+        now: Date.now(),
+      }),
+    // orbTick re-evaluates when a transition window ends.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [voiceListening, sending, pendingConfirm, lastErrorAt, lastAnsweredAt, orbTick]
+  );
+
   const actions = useMemo(() => Object.values(actionsMap), [actionsMap]);
 
   return {
@@ -928,5 +1000,11 @@ export function useGrowthAnalystSession(
     autoReadAloud,
     setAutoReadAloud,
     readAloudSupported,
+    orbState,
+    progressSteps,
+    voiceListening,
+    setVoiceListening,
+    interimTranscript,
+    setInterimTranscript,
   };
 }

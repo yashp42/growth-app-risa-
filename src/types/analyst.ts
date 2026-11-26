@@ -266,6 +266,8 @@ export interface AiChatRequest {
   as_of: string;
   filters?: Record<string, string | undefined>;
   view_context?: AiViewContextPayload;
+  /** Client-generated id to poll live progress steps while in flight. */
+  client_request_id?: string;
 }
 
 export interface AiChatMessage {

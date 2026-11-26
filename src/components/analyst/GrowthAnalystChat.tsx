@@ -33,6 +33,9 @@ interface GrowthAnalystChatProps {
   batchErrorById?: Record<string, string>;
   initialDraft?: string | null;
   autoStartVoiceNonce?: number;
+  toggleVoiceNonce?: number;
+  onListeningChange?: (listening: boolean) => void;
+  onInterimTranscript?: (text: string) => void;
   onSend: (
     message: string,
     options?: { fromVoice?: boolean }
@@ -68,6 +71,9 @@ export function GrowthAnalystChat({
   batchErrorById = {},
   initialDraft,
   autoStartVoiceNonce = 0,
+  toggleVoiceNonce,
+  onListeningChange,
+  onInterimTranscript,
   onSend,
   onDismissError,
   onClearDataVersionChanged,
@@ -225,6 +231,9 @@ export function GrowthAnalystChat({
           }
           initialDraft={initialDraft}
           autoStartVoiceNonce={autoStartVoiceNonce}
+          toggleVoiceNonce={toggleVoiceNonce}
+          onListeningChange={onListeningChange}
+          onInterimTranscript={onInterimTranscript}
           compact={compact}
         />
       </div>

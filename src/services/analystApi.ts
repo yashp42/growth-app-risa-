@@ -753,6 +753,7 @@ export async function sendAnalystChatMessage(
     as_of: request.as_of,
     filters: request.filters,
     view_context: request.view_context,
+    client_request_id: request.client_request_id,
   };
 
   const raw = await requestJson<Record<string, unknown>>(
@@ -765,6 +766,33 @@ export async function sendAnalystChatMessage(
   );
 
   return normalizeStructuredResponse(raw);
+}
+
+/** Real tool steps of an in-flight /api/ai/ask turn (empty when unknown). */
+export async function fetchAiProgress(
+  requestId: string,
+  signal?: AbortSignal
+): Promise<{ steps: string[]; done: boolean }> {
+  try {
+    const res = await requestJson<{ steps?: unknown; done?: unknown }>(
+      `/api/ai/progress/${encodeURIComponent(requestId)}`,
+      { signal }
+    );
+    return {
+      steps: Array.isArray(res.steps) ? res.steps.map(String) : [],
+      done: Boolean(res.done),
+    };
+  } catch {
+    return { steps: [], done: false };
+  }
+}
+
+export function newClientRequestId(): string {
+  const rand =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID().replace(/-/g, '')
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+  return `req-${rand.slice(0, 24)}`;
 }
 
 export async function fetchAiQuota(
