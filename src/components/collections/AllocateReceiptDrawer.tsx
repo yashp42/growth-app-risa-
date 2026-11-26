@@ -172,6 +172,7 @@ export function AllocateReceiptDrawer({
       title="Allocate receipt"
       subtitle="Link this receipt to an issued invoice or payment schedule item for the same sponsor. Reconciling and allocating together updates collected cash."
     >
+      {sponsorSchedules.length===0&&sponsorInvoices.length===0?<div role="status" className="mb-5 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-subtle)] p-4"><h3 className="text-sm font-semibold">No invoices or payment schedules to link</h3><p className="mt-1 text-sm text-[var(--color-ink-muted)]">This sponsor has no issued invoices or payment schedule items available. Add them in Collections, then return to link this receipt.</p></div>:null}
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg ? (
           <div
@@ -207,7 +208,7 @@ export function AllocateReceiptDrawer({
             <span className="font-medium text-[var(--color-ink)]">
               {receipt.reconciled
                 ? 'Reconciled'
-                : 'Unreconciled (reconcile to count in M-01)'}
+                : 'Unreconciled (reconcile to include in collected cash)'}
             </span>
           </div>
         </div>
@@ -295,3 +296,4 @@ export function AllocateReceiptDrawer({
     </SlideOverDrawer>
   );
 }
+

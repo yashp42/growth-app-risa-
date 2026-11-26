@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import { Info } from 'lucide-react';
 import {
   COLLECTIONS_METRIC_DICTIONARY,
@@ -140,7 +141,7 @@ export function CollectionsOverviewSection({
                 </p>
               )}
 
-              <p className="mt-1.5 text-[13px] text-[var(--color-ink-subtle)]">{card.subtext}</p>
+              <p className="mt-1.5 text-[13px] text-[var(--color-ink-subtle)]">{businessText(card.subtext)}</p>
             </div>
           ))}
         </div>
@@ -180,11 +181,11 @@ export function CollectionsOverviewSection({
           ) : null}
           {!summary.metricsUnavailable && (m02 || m04) ? (
             <span className="text-[var(--color-ink-muted)]">
-              Separate non-collection totals — Total signed (M-02):{' '}
+              Separate non-collection totals — Total signed:{' '}
               <strong className="font-mono font-medium text-[var(--color-ink)]">
                 {formatCollectionsMetricValue(m02, '₹')}
               </strong>
-              {' · '}In-kind (M-04):{' '}
+              {' · '}In-kind:{' '}
               <strong className="font-mono font-medium text-[var(--color-ink)]">
                 {formatCollectionsMetricValue(m04, '₹')}
               </strong>

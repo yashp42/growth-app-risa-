@@ -490,7 +490,7 @@ export function CampaignPortfolioPage({
               <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-ink-subtle)]">
                 <span>Open pipeline value</span>
                 <InfoHint
-                  label="Definition of Open pipeline value (M-21)"
+                  label="Definition of Open pipeline value"
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-21'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-21'].inclusion_exclusion}`}
                 />
               </span>
@@ -506,7 +506,7 @@ export function CampaignPortfolioPage({
               <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-ink-subtle)]">
                 <span>Signed (confirmed) value</span>
                 <InfoHint
-                  label="Definition of Signed (confirmed) value (M-02)"
+                  label="Definition of Signed (confirmed) value"
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-02'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-02'].inclusion_exclusion}`}
                 />
               </span>

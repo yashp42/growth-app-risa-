@@ -1,3 +1,4 @@
+import { attentionTitle, businessText } from '../../lib/businessCopy';
 import { ArrowUpRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ATTENTION_CATEGORY_OPTIONS } from '../../services/overviewApi';
@@ -121,7 +122,7 @@ export function NeedsAttentionQueueSection({
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[var(--color-ink-subtle)]">
                             <span className="font-medium text-[var(--color-accent)]">
-                              {item.categoryLabel}
+                              {item.categoryLabel === 'Threshold rule' ? 'Performance alert' : item.categoryLabel}
                             </span>
                             <span aria-hidden="true">·</span>
                             <span>{item.responsibleOwner}</span>
@@ -131,10 +132,10 @@ export function NeedsAttentionQueueSection({
                             </span>
                           </div>
                           <p className="mt-1 text-[14px] font-semibold text-[var(--color-ink)]">
-                            {item.title}
+                            {attentionTitle(item.title)}
                           </p>
                           <p className="mt-0.5 text-[14px] text-[var(--color-ink-muted)]">
-                            {item.whatHappened}
+                            {businessText(item.whatHappened)}
                           </p>
                         </div>
                       </div>
@@ -145,6 +146,7 @@ export function NeedsAttentionQueueSection({
 
                     {isExpanded ? (
                       <div className="border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-5 py-4 pl-12">
+                        <p className="mb-3 text-sm text-[var(--color-ink-muted)]">{item.title}</p>
                         <dl className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <div>
                             <dt className="text-[12px] font-medium text-[var(--color-ink-subtle)]">
@@ -214,3 +216,4 @@ export function NeedsAttentionQueueSection({
     </section>
   );
 }
+

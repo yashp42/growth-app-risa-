@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import type {
   ApiErrorInfo,
   DataLoadStatus,
@@ -81,9 +82,9 @@ export function GrowthPulseSection({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1 text-[14px] font-medium text-[var(--color-ink-muted)]">
-                    <span>{metric.label}</span>
+                    <span>{businessText(metric.label)}</span>
                     <InfoHint
-                      label={`Definition for ${metric.label}`}
+                      label={`Definition for ${businessText(metric.label)}`}
                       content={metric.supportingLabel}
                     />
                   </span>
@@ -104,7 +105,7 @@ export function GrowthPulseSection({
                   )}
                   {metric.comparisonText && hasValue ? (
                     <span className="font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums">
-                      {metric.comparisonText}
+                      {businessText(metric.comparisonText)}
                     </span>
                   ) : null}
                 </div>
@@ -112,7 +113,7 @@ export function GrowthPulseSection({
                 <div className="mt-2.5 flex flex-col gap-0.5">
                   {metric.secondaryBreakdownLabel ? (
                     <p className="text-[12px] text-[var(--color-ink-subtle)]">
-                      {metric.secondaryBreakdownLabel}
+                      {businessText(metric.secondaryBreakdownLabel)}
                     </p>
                   ) : null}
                   {metric.recordClassLabel && metric.asOfDate ? (

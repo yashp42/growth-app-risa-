@@ -147,13 +147,11 @@ export function CampaignChannelComparisonSection({
                             />
                           ) : null}
                         </div>
-                        <span className="block font-mono text-[12px] font-normal text-[var(--color-ink-subtle)]">
-                          {col.id} · {col.grain}
-                        </span>
+
                       </th>
                     );
                   })}
-                  <th className="px-4 py-3">Provenance</th>
+                  <th className="px-4 py-3">Source</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border-subtle)] text-[14px]">
@@ -327,3 +325,4 @@ export function CampaignChannelComparisonSection({
     </section>
   );
 }
+
