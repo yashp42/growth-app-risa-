@@ -1,3 +1,4 @@
+import { prospectIntent, answerProspects } from '../llm/prospectAnswers.ts';
 import { basicAnalyticsIntent, answerBasicAnalytics } from '../llm/basicAnalytics.ts';
 import { isGreeting, requestBudget } from '../llm/requestBudget.ts';
 import { formatScenarioCash, hasRawToolCall } from '../llm/responsePolicy.ts';
@@ -1245,7 +1246,7 @@ export function createAiApiRouter(
     const collectedActions: Array<Record<string, unknown>> = [];
     const pendingActionInserts: PendingAiActionInsert[] = [];
     let viewSpec: Record<string, unknown> | undefined;
-    let routeOverride: 'sql' | 'action' | undefined;
+    let routeOverride: 'sql' | 'hybrid' | 'action' | undefined;
 
     const tokenUsage = {
       prompt_tokens: 0,
@@ -1271,15 +1272,16 @@ export function createAiApiRouter(
     };
 
     const basicIntent = basicAnalyticsIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
+    const prospectQuery = prospectIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
     if (greeting) {
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
-    } else if (basicIntent) {
-      routeOverride = 'sql';
-      usedMetrics = true;
+    } else if (basicIntent || prospectQuery) {
+      routeOverride = basicIntent || prospectQuery?.kind === 'routes' ? 'sql' : 'hybrid';
+      usedMetrics = Boolean(basicIntent);
       usedKnowledge = true;
-      finalAnswer = await answerBasicAnalytics(basicIntent, async (name, args) => {
+      const readDeterministic = async (name: string, args: Record<string, unknown>) => {
         reportStep(describeToolStep(name, args));
         const result = await executeReadTool(name, args, {
           pool, actorMemberId: actor.memberId, roles, defaultEditionId: config.editionIdDefault,
@@ -1287,7 +1289,8 @@ export function createAiApiRouter(
         }, acc);
         toolTrace.push({ tool_call_id: 'basic-' + (toolTrace.length + 1), tool_name: name, status: 'ok', summary: String(args.metric_id ?? name), record_class: result.record_class, data_version: dataVersion });
         return result;
-      }, acc);
+      };
+      finalAnswer = basicIntent ? await answerBasicAnalytics(basicIntent, readDeterministic, acc) : await answerProspects(prospectQuery!, readDeterministic, acc);
       const check = verifyAnswerNumbers(finalAnswer, { toolResults: acc.toolResults, knowledgeTexts: acc.knowledgeTexts, userQuestion: question });
       answerCheckPassed = check.passed;
       if (!check.passed) {
