@@ -1147,3 +1147,31 @@ test('[MOCKED] prospect prioritisation, research status and verified-route answe
   assert.equal(modelCalls,0);
  }finally{client.stop();await srv.close();}
 });
+
+test('[MOCKED] enriched knowledge search uses expanded bounded candidates and keeps history excluded',async()=>{
+ const store=createMockStore();const dbState=createMockDbState(store);const state=createToolAccumulator();
+ const result=await executeSearchKnowledge(dbState.pool as any,{query:'Can the team execute the stretch plan?'},7,state,{rankMode:'fts_enriched'});
+ assert.equal(result.rank_mode,'fts_enriched');assert.equal(result.used_or_fallback,true);assert.ok((result.chunks as any[]).every(c=>c.chunk_id!=='KB-99.1'));
+});
+test('[MOCKED] inventory and forecast actual HTTP paths remain grounded with an exhausted model quota',async()=>{
+ const store=createMockStore();const dbState=createMockDbState(store);const original=dbState.pool!.query.bind(dbState.pool);
+ dbState.pool!.query=(async(sql:any,params?:any[])=>{
+  if(String(sql).includes('FROM ref.dataset WHERE'))return {rows:[{dataset_id:params?.[0],title:'Inventory',source_path:'inventory.csv',columns:['asset','slots','price_lakh'],status:'approved',record_class:'model_output'}]};
+  if(String(sql).includes('FROM ref.dataset_row r'))return {rows:[{row_no:1,data:{asset:'activation',slots:17,price_lakh:0.19}}]};
+  return original(sql,params);
+ }) as typeof original;
+ let modelCalls=0;
+ const client=createOpenRouterClient(createBaseConfig(),{startBackgroundRefresh:false,fetchFn:async(input)=>{
+  if(String(input).endsWith('/chat/completions')){modelCalls++;throw Error('No model request allowed');}
+  return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,used:50,remaining:0}}}),{status:200});
+ }});
+ const app=express();app.use(express.json());app.use('/api',createAiApiRouter(createBaseConfig(),dbState,createAuthDeps(store,dbState),{openrouter:client}).router);app.use(apiErrorHandler);const srv=await startServer(app);
+ try{
+  for(const question of ['What do activation slots cost?','Has the stretch forecast already been collected?']){
+   const response=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question,edition_id:'ED-2026-DEMO',as_of:'2026-11-26'})});
+   const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.token_usage.model_requests,0);assert.equal(body.answer_check_passed,true,JSON.stringify(body));assert.equal(body.generation_status,'complete');
+   assert.ok(body.tool_calls.some((t:any)=>t.tool_name===(question.includes('activation')?'get_register':'get_scenario')));
+  }
+  assert.equal(modelCalls,0);
+ }finally{client.stop();await srv.close();}
+});

@@ -3,7 +3,10 @@ import type { ToolRunAccumulator } from './tools.ts';
 export type BasicAnalyticsIntent = 'signed' | 'campaign_conversion';
 export function basicAnalyticsIntent(question: string, hasFilters = false): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
+  if (/\b(?:19\d{2}|20(?:0\d|1\d|2[0-4]|[3-9]\d))\b/.test(question)) return null;
   const q = question.trim().replace(/[?!.]+$/, '').toLowerCase();
+  if (/^(?:what(?:'s| is) (?:the |our )?(?:total )?signed sponsorship value|show (?:me )?(?:the |our )?signed total|how much have we signed)(?: (?:in|for) 202[56])?$/.test(q)) return 'signed';
+  if (/^(?:compare|show|give me) (?:the )?proposal[- ]to[- ]win conversion (?:across|by|for each) campaigns?$/.test(q)) return 'campaign_conversion';
   if (/^(?:how much sponsorship value did we sign(?: in \d{4})?|(?:what is (?:the |our )?)?(?:signed sponsorship value|signed total|total signed)(?: in \d{4})?)$/.test(q)) return 'signed';
   if (/^(?:what is |show (?:me )?)?(?:the )?proposal[- ]to[- ]win conversion (?:for each|by) campaign$/.test(q)) return 'campaign_conversion';
   return null;
