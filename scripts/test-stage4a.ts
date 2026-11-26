@@ -564,7 +564,7 @@ test('[MOCKED] OpenRouter client tries fallback once on 429 and never sends mode
     const url = String(input);
     if (url.endsWith('/key')) {
       return new Response(
-        JSON.stringify({ data: { limit: 50, limit_remaining: 40, usage_daily: 10 } }),
+        JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 40 }, usage_daily: 10 } }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -679,7 +679,7 @@ test('[MOCKED] Answer Check catches fabricated ₹99L, ignores years/IDs/week la
   assert.ok(badCheck.warningMessage?.includes('₹99L'));
 });
 
-test('[MOCKED] /api/ai/ask end-to-end: 2025 signed vs non-computable M-01, T-55 KB history, Answer Check retry, cache, 15/hr cap, quota exhausted, health', async () => {
+test('[MOCKED] /api/ai/ask end-to-end: 2025 signed vs non-computable M-01, T-55 KB history, Answer Check retry, cache, 60/hr demo cap, quota exhausted, health', async () => {
   const store = createMockStore();
   const dbState = createMockDbState(store);
   const config = createBaseConfig();
@@ -712,7 +712,7 @@ test('[MOCKED] /api/ai/ask end-to-end: 2025 signed vs non-computable M-01, T-55 
         JSON.stringify({
           data: {
             limit: 50,
-            limit_remaining: quotaRemaining,
+            free_model_daily_requests: { limit: 50, remaining: quotaRemaining },
             usage_daily: 50 - quotaRemaining,
           },
         }),
@@ -1040,11 +1040,11 @@ test('[MOCKED] /api/ai/ask end-to-end: 2025 signed vs non-computable M-01, T-55 
     assert.equal(dExh.answer, QUOTA_EXHAUSTED_MESSAGE);
     assert.equal(llmCallCount, callsBeforeExhausted);
 
-    // 8. 15 turns/hr session cap returns 429
+    // 8. Demo reviewers have 60 turns/hr; evaluation has a separate private bucket.
     quotaRemaining = 50;
     await openrouter.fetchQuota(true);
     let saw429 = false;
-    for (let i = 0; i < 16; i += 1) {
+    for (let i = 0; i < 61; i += 1) {
       const rLoop = await fetch(`${srv.baseUrl}/api/ai/ask`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer tok' },
@@ -1059,10 +1059,47 @@ test('[MOCKED] /api/ai/ask end-to-end: 2025 signed vs non-computable M-01, T-55 
         break;
       }
     }
-    assert.equal(saw429, true, 'Expected 429 once 15 turns/hour per session exceeded');
+    assert.equal(saw429, true, 'Expected 429 once 60 demo turns/hour exceeded');
+    const callsBeforeGreeting=llmCallCount;
+    const hello=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question:'hello',edition_id:'ED-2026-DEMO',as_of:'2026-10-20'})});
+    assert.equal(hello.status,200);assert.match(String((await hello.json()).answer),/^Hi!/);assert.equal(llmCallCount,callsBeforeGreeting);
   } finally {
     openrouter.stop();
     await srv.close();
   }
 });
 
+
+test('[MOCKED] answer-only provider tool-protocol failures fall back without executing generated calls', async () => {
+  const requests: Record<string, unknown>[]=[];
+  const mockFetch:typeof fetch=async(input,init)=>{
+    const url=String(input);
+    if(url.endsWith('/key'))return new Response(JSON.stringify({data:{limit:50,free_model_daily_requests: { limit: 50, remaining: 40 }}}),{status:200});
+    if(url.endsWith('/chat/completions')){
+      const payload=JSON.parse(String(init?.body));requests.push(payload);
+      assert.equal('tools' in payload,false);
+      assert.match(payload.messages.find((m:any)=>m.role==='system').content,/ANSWER-ONLY STEP/);
+      if(requests.length===1)return new Response(JSON.stringify({error:{message:'Tool choice is none, but model called a tool',code:'tool_use_failed'}}),{status:400});
+      return new Response(JSON.stringify({model:DEFAULT_OPENROUTER_MODEL_FALLBACK,choices:[{message:{role:'assistant',content:'Verified answer.'}}]}),{status:200});
+    }
+    return new Response(JSON.stringify({data:[]}),{status:200});
+  };
+  const client=createOpenRouterClient(createBaseConfig(),{fetchFn:mockFetch,startBackgroundRefresh:false});
+  try{
+    const result=await client.createChatCompletion({messages:[{role:'user',content:'Summarise the supplied results.'}]});
+    assert.equal(requests.length,2);assert.equal(result.usedFallback,true);assert.equal(result.message.content,'Verified answer.');
+  }finally{client.stop();}
+});
+
+test('[MOCKED] OpenRouter-first uses both configured free models before Groq and honors free counters with zero credits',async()=>{
+  const calls:string[]=[];
+  const client=createOpenRouterClient(createBaseConfig({aiProviderOrder:'openrouter_first',groqApiKey:'gsk-mock'}),{startBackgroundRefresh:false,fetchFn:async(input,init)=>{
+    const url=String(input);
+    if(url.endsWith('/key'))return new Response(JSON.stringify({data:{limit:0,limit_remaining:0,free_model_daily_requests:{limit:50,used:0,remaining:50}}}),{status:200});
+    if(url.endsWith('/chat/completions')){const req=JSON.parse(String(init?.body));calls.push(url+' '+req.model);
+      if(calls.length===1)return new Response('rate limited',{status:429});
+      return new Response(JSON.stringify({model:req.model,choices:[{message:{role:'assistant',content:'OK'}}]}),{status:200});}
+    return new Response(JSON.stringify({data:[]}),{status:200});
+  }});
+  try{const result=await client.createChatCompletion({messages:[{role:'user',content:'Summarise'}]});assert.equal(result.provider,'openrouter');assert.equal(calls.length,2);assert.ok(calls.every(c=>c.startsWith('https://openrouter.ai/')));assert.ok(calls[0].endsWith(DEFAULT_OPENROUTER_MODEL_PRIMARY));assert.ok(calls[1].endsWith(DEFAULT_OPENROUTER_MODEL_FALLBACK));}finally{client.stop();}
+});

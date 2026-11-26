@@ -70,6 +70,7 @@ export const UNRESOLVED_DECISIONS: ReadonlyArray<OpenDecisionItem> = [
 ];
 
 export interface ServerConfig {
+  aiProviderOrder?: 'openrouter_first' | 'groq_first';
   port: number;
   nodeEnv: string;
   appEnv: string;
@@ -263,6 +264,7 @@ export function loadServerConfig(
   const demoLoginPassword = normalizeEnvValue(env.DEMO_LOGIN_PASSWORD);
   const demoLoginEnabled = Boolean(demoLoginEmail && demoLoginPassword);
 
+  const aiProviderOrder = env.AI_PROVIDER_ORDER === 'groq_first' ? 'groq_first' : 'openrouter_first';
   const groqApiKey = normalizeEnvValue(env.GROQ_API_KEY);
   const groqModel =
     normalizeEnvValue(env.GROQ_MODEL) ?? DEFAULT_GROQ_MODEL_PRIMARY;
@@ -313,6 +315,7 @@ export function loadServerConfig(
     openrouterApiKey,
     openrouterModel,
     openrouterModelFallback,
+    aiProviderOrder,
     groqApiKey,
     groqModel,
     groqModelFallback,
@@ -348,3 +351,4 @@ export function getPublicConfig(config: ServerConfig): PublicAppConfig {
     ),
   };
 }
+

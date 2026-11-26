@@ -1219,7 +1219,7 @@ test('[MOCKED] FIX 1: view_context campaign filter does not leak into season-wid
     const url = String(input);
     if (url.endsWith('/api/v1/key')) {
       return new Response(
-        JSON.stringify({ data: { limit: 50, limit_remaining: 48, is_free_tier: true } }),
+        JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 48 }, is_free_tier: true } }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -1576,7 +1576,7 @@ test('[MOCKED] Refusal guard blocks receipt, invoice, target, rule, and delete p
     const url = String(input);
     if (url.endsWith('/api/v1/key')) {
       return new Response(
-        JSON.stringify({ data: { limit: 50, limit_remaining: 48, is_free_tier: true } }),
+        JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 48 }, is_free_tier: true } }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -1796,7 +1796,7 @@ test('[MOCKED] End-to-end /api/ai/ask propose_changes + set_view + viewer financ
     const url = String(input);
     if (url.endsWith('/api/v1/key')) {
       return new Response(
-        JSON.stringify({ data: { limit_remaining: 48, limit: 50, usage: 2, is_free_tier: true } }),
+        JSON.stringify({ data: { free_model_daily_requests: { limit: 50, remaining: 48 }, limit: 50, usage: 2, is_free_tier: true } }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
@@ -2326,7 +2326,7 @@ test('[MOCKED] 3-model-call cap fallback produces Markdown table & notice; sanit
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), {
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), {
       status: 200,
     });
   };
@@ -2403,7 +2403,7 @@ test('[MOCKED] §B: "Which signed partnerships still have outstanding cash?" is 
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), { status: 200 });
   };
   const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
   assert.equal(status, 200, JSON.stringify(body));
@@ -2428,7 +2428,7 @@ test('[MOCKED] §B: every provider failing still returns the found data as a tab
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), { status: 200 });
   };
   const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
   assert.equal(status, 200, JSON.stringify(body));
@@ -2483,7 +2483,7 @@ test('[MOCKED] §C: system prompt stays within ~600 tokens and every model call 
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), { status: 200 });
   };
   await askOnce(store, mockFetch, 'What is the colour of the sponsor lounge carpet?');
   assert.ok(temps.length >= 1);
@@ -2518,7 +2518,7 @@ test('[MOCKED] §D6: a deal for an entity that does not exist gets "no record of
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), { status: 200 });
   };
   const { status, body } = await askOnce(store, mockFetch, "What's the status of Coca-Cola's deal?");
   assert.equal(status, 200, JSON.stringify(body));
@@ -2539,7 +2539,7 @@ test('[MOCKED] 4D blocks: receivables question returns a server-built table bloc
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), { status: 200 });
   };
   const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
   assert.equal(status, 200, JSON.stringify(body));
@@ -2617,7 +2617,7 @@ test('[MOCKED] 4D progress: real tool steps are readable while /api/ai/ask is in
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), { status: 200 });
   };
   const srv = await startTestApp(store, mockFetch);
   baseUrl = srv.baseUrl;
@@ -2700,7 +2700,7 @@ test('[MOCKED] Prompt injection in tool result creates 0 ai_action rows', async 
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
-    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), {
+    return new Response(JSON.stringify({ data: { limit: 50, free_model_daily_requests: { limit: 50, remaining: 45 } } }), {
       status: 200,
     });
   };
@@ -3353,3 +3353,14 @@ for (const actionType of ALLOWED_AI_ACTION_TYPES) {
     assert.deepEqual(r.ai, r.ui);
   });
 }
+
+
+test('[MOCKED] raw model tool-call text becomes an uncached degraded fallback with no executable action', async () => {
+  const store=createMock4bStore();
+  const mockFetch:typeof fetch=async(input)=>String(input).includes('/chat/completions')
+    ?new Response(JSON.stringify({model:DEFAULT_GROQ_MODEL_PRIMARY,choices:[{message:{role:'assistant',content:'<tool_call><function=search_knowledge><parameter=query>presenting ratio</parameter></tool_call>'}}]}),{status:200})
+    :new Response(JSON.stringify({data:{limit:50,free_model_daily_requests: { limit: 50, remaining: 45 }}}),{status:200});
+  const response=await askOnce(store,mockFetch,'Which signed partnerships still have outstanding cash?');
+  assert.equal(response.status,200);assert.doesNotMatch(String(response.body.answer),/<tool_call>|<function=/);
+  assert.equal(response.body.generation_fallback_reason,'unavailable');assert.deepEqual(response.body.actions,[]);
+});

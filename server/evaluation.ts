@@ -3,7 +3,7 @@ export type EvalSet = 'gate' | 'full' | 'retrieval';
 export type EvalCase = Record<string, string>;
 export interface CaseResult {
   test_id: string; category: string; status: 'PASS' | 'FAIL' | 'NEEDS_HUMAN'; reasons: string[];
-  answer: string; attempts: number; conversation_id?: string; model_requests: number;
+  answer: string; attempts: number; conversation_id?: string; model_requests: number; response_status?: number; error_detail?: unknown;
 }
 export interface EvaluationRun {
   label: 'LIVE'; set: EvalSet; state: 'running' | 'paused' | 'completed' | 'error';
@@ -25,7 +25,13 @@ export function selectCases(cases: EvalCase[], set: 'gate' | 'full'): EvalCase[]
 function normal(text: string): string {return text.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
 export function scoreAnswer(c: EvalCase, body: Record<string, any>, safe: boolean, attempts: number): CaseResult {
   const fail:string[]=[]; const human:string[]=[]; const answer=String(body.answer??'');
-  if(body.route!==c.route)fail.push('Route: expected '+c.route+', got '+String(body.route));
+  if(c.route==='action' && !(body.actions??[]).length && safe && body.answer_check_passed===true && /clarify|no matching|no record of/i.test(answer)) {
+    return {test_id:c.test_id,category:c.category,status:'NEEDS_HUMAN',reasons:['The action fixture entity is absent or ambiguous. Clarification with no write is safe, but cannot validate this action case.'],answer,attempts,model_requests:Number(body.token_usage?.model_requests??0)};
+  }
+  if(body.route!==c.route) {
+    if(body.route==='lookup' && ['sql','hybrid','rag'].includes(c.route)) human.push('Legacy route taxonomy needs review: '+c.route+' vs lookup');
+    else fail.push('Route: expected '+c.route+', got '+String(body.route));
+  }
   if(body.answer_check_passed!==true)fail.push('Numeric answer check did not pass');
   const tools=new Set((body.tool_calls??[]).filter((t:any)=>t.status==='ok').map((t:any)=>t.tool_name));
   const expected=[...new Set(c.expected_tool_or_query.match(/\b(?:get_metric|get_series|get_scenario|get_register|search_knowledge|list_records|propose_changes|set_view|get_dataset|list_datasets)\b/g)??[])];
@@ -44,7 +50,10 @@ export function scoreAnswer(c: EvalCase, body: Record<string, any>, safe: boolea
     const groups=c.required_caveat.split(';').map(normal).filter(Boolean);
     for(const group of groups){const words=group.split(' ').filter(w=>w.length>=4);if(words.length&&!words.some(w=>normal(answer).includes(w)))fail.push('Missing caveat: '+group);}
   }
-  if(c.route==='action'&&!(body.actions??[]).length)fail.push('No stored action proposal');
+  if(c.route==='action'&&!(body.actions??[]).length){
+    if(/clarify|no matching|no record of|which .+\?/i.test(answer)) human.push('Action fixture entity is absent or ambiguous; verify fixture. No proposal was created.');
+    else fail.push('No stored action proposal');
+  }
   if(c.test_id==='X-05'&&!(body.blocks??[]).some((b:any)=>b.type==='bar'))fail.push('Missing server-built bar block');
   if(c.test_id==='X-06'&&!body.view_spec)fail.push('Missing resolved view');
   if(!safe)fail.push('Operational data changed or proposal cleanup failed');
@@ -57,16 +66,16 @@ export function evaluationSummary(run: EvaluationRun) {
   for(const r of run.results){const c=categories[r.category]??={total:0,passed:0,failed:0,needs_human:0,pass_rate:0};c.total++;if(r.status==='PASS')c.passed++;else if(r.status==='FAIL')c.failed++;else c.needs_human++;c.pass_rate=c.passed/c.total;}
   const total=run.results.length+run.remaining.length; const passed=run.results.filter(r=>r.status==='PASS').length;
   const complete=run.state==='completed'&&run.remaining.length===0;
-  return {total,passed,pass_rate:total?passed/total:0,categories,requests_used:run.requests_used,
+  return {total,evaluated:run.results.length,pending:run.remaining.length,passed,pass_rate:total?passed/total:0,categories,requests_used:run.requests_used,
     release_gates_met:complete&&run.set==='full'&&total>0&&passed/total>=0.9&&[...critical].every(name=>categories[name]?.total>0&&categories[name].passed===categories[name].total),
     gate_set_only:run.set!=='full', remaining:run.remaining, failing:run.results.filter(r=>r.status!=='PASS')};
 }
 export function reportMarkdown(run: EvaluationRun): string {
   const s=evaluationSummary(run);return ['# Analyst evaluation ('+run.label+')','', 'State: '+run.state+' · Set: '+run.set+' · Requests used: '+s.requests_used,
-    'Overall: '+s.passed+' / '+s.total+' ('+(s.pass_rate*100).toFixed(1)+'%) · Release gates: '+(s.release_gates_met?'MET':'NOT MET'),'',
+    'Completed cases: '+s.evaluated+' / '+s.total+' · Strict automated passes: '+s.passed+' · Release gates: '+(s.release_gates_met?'MET':'NOT MET'),'',
     '| Category | Pass | Total | Pass rate |','|---|---:|---:|---:|',...Object.entries(s.categories).map(([name,c])=>'| '+name+' | '+c.passed+' | '+c.total+' | '+(c.pass_rate*100).toFixed(1)+'% |'),'',
-    ...run.results.filter(r=>r.status!=='PASS').flatMap(r=>['## '+r.test_id+' — '+r.status,r.reasons.join('; '),'',r.answer,'']),
-    'Not yet run: '+(run.remaining.join(', ')||'none'),run.error??'','', 'Automatic numeric/citation checks do not replace qualitative review. Test fixtures and expected answers were not modified.'].join('\n');
+    ...run.results.filter(r=>r.status!=='PASS').flatMap(r=>['## '+r.test_id+' — '+r.status,r.reasons.join('; '),'',r.answer,r.error_detail ? 'HTTP diagnostic: '+JSON.stringify(r.error_detail) : '','']),
+    'Not yet run: '+(run.remaining.join(', ')||'none'),run.error??'','', 'This partial strict-check report is not an accuracy estimate. Automatic numeric/citation checks do not replace qualitative review. Test fixtures and expected answers were not modified.'].join('\n');
 }
 export interface EvaluationDependencies {
   ask(c: EvalCase, conversation?: string): Promise<{status:number;body:Record<string,any>;retryAfter?:number}>;
@@ -106,9 +115,11 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
       if(res.status===429||res.body.route==='quota_exhausted'||String(res.body.answer??'').includes("Today's free AI quota is used up")){
         run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';save();break;
       }
-      if(res.status>=500) {run.state='paused';run.error='Server unavailable; resume later';save();break;}
+      if(res.status>=500 || ['quota','unavailable'].includes(String(res.body.generation_fallback_reason ?? ''))) {
+        run.state='paused';run.error='AI provider could not complete this case; saved progress. Review provider errors before resuming.';save();break;
+      }
       const scored=scoreAnswer(c,res.body,safe,run.attempts[c.test_id]);
-      if(res.status!==200){scored.status='FAIL';scored.reasons.push('HTTP '+res.status);}
+      if(res.status!==200){scored.status='FAIL';scored.reasons.push('HTTP '+res.status);scored.response_status=res.status;scored.error_detail=res.body.error??res.body;}
       run.results.push(scored);if(scored.conversation_id)run.conversations[c.test_id]=scored.conversation_id;
       run.remaining=run.remaining.filter(id=>id!==c.test_id);save();
     }
@@ -119,5 +130,7 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
 
 export function caseEdition(c: EvalCase): 'ED-2025' | 'ED-2026-DEMO' {
   if (/\b2025\b/.test(c.user_query)) return 'ED-2025';
-  return c.test_id.startsWith('X-') || c.category === 'Action execution' ? 'ED-2026-DEMO' : 'ED-2025';
+  if (c.test_id.startsWith('X-') || c.category === 'Action execution') return 'ED-2026-DEMO';
+  if (c.category === 'Basic analytics' || /(?:core\.|stg\.|eda\.)/.test(c.required_data_sources ?? '')) return 'ED-2025';
+  return 'ED-2026-DEMO';
 }

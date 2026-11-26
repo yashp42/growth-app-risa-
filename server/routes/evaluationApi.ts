@@ -14,7 +14,7 @@ const ROOT=fileURLToPath(new URL('../../',import.meta.url));
 const DIR=path.join(ROOT,'eval/results');
 const Body=z.object({set:z.enum(['gate','full','retrieval']),resume:z.boolean().optional().default(false)}).strict();
 
-export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePoolState,auth:AuthDependencies){
+export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePoolState,auth:AuthDependencies,evaluationToken?:string){
   const router=Router(); let active:EvaluationRun|null=null;let retrievalReport:unknown=null;
   const filename=(set:EvalSet)=>path.join(DIR,'latest-'+set+'.json');
   function persist(run:EvaluationRun){mkdirSync(DIR,{recursive:true});const file=filename(run.set);writeFileSync(file+'.tmp',JSON.stringify(run,null,2));renameSync(file+'.tmp',file);writeFileSync(file.replace(/\.json$/,'.md'),reportMarkdown(run));}
@@ -55,7 +55,7 @@ export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePo
       if(!login.ok||!session.access_token)throw new Error('Demo authentication failed');
       const token=session.access_token;
       const request=async(url:string,body:unknown)=>{
-        const response=await fetch(origin+url,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(600000)});
+        const response=await fetch(origin+url,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(evaluationToken?{'x-internal-evaluation':evaluationToken}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(600000)});
         return {status:response.status,body:await response.json() as Record<string,any>,retryAfter:Number(response.headers.get('retry-after')??0)};
       };
       const snapshot=async()=>{

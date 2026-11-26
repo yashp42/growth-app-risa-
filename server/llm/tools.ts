@@ -890,6 +890,7 @@ export async function executeReadTool(
 
     const payload = {
       source: 'scenario_reference',
+      cash_unit: 'INR_lakh',
       record_class: 'model_output',
       edition_id: ctx.userSeason.editionId,
       as_of: ctx.userSeason.asOf,

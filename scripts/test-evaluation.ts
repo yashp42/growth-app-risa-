@@ -46,3 +46,17 @@ test('[MOCKED] partial/gate-only runs never satisfy overall release gates',()=>{
   const state=run(['NOT_RUN']);state.results=[{test_id:'TEST',category:'Permissions',status:'PASS',reasons:[],answer:'',attempts:1,model_requests:0}];
   assert.equal(evaluationSummary(state).pass_rate,0.5);assert.equal(evaluationSummary(state).release_gates_met,false);
 });
+import { caseEdition } from '../server/evaluation.ts';
+test('[MOCKED] reference and future-scenario questions use demo context; historical analytics stay in 2025',()=>{
+  assert.equal(caseEdition({...simple,category:'Financial interpretation',user_query:'What are the chances of collecting 30 lakh?'}),'ED-2026-DEMO');
+  assert.equal(caseEdition({...simple,category:'Basic analytics',user_query:'How many partnerships were confirmed?'}),'ED-2025');
+  assert.equal(caseEdition({...simple,user_query:'How much was signed in 2025?'}),'ED-2025');
+});
+test('[MOCKED] provider-degraded HTTP 200 pauses the case instead of recording a false answer failure',async()=>{
+  const state=run(['TEST']);await runEvaluationCases([simple],state,{ask:async()=>({status:200,body:{generation_fallback_reason:'unavailable',token_usage:{model_requests:1}}}),snapshot:async()=>'same',cleanup:async()=>true,persist:()=>{}});
+  assert.equal(state.state,'paused');assert.equal(state.results.length,0);assert.deepEqual(state.remaining,['TEST']);
+});
+test('[MOCKED] unknown action fixture is flagged for human review; it is never counted as a pass',()=>{
+  const result=scoreAnswer({...simple,route:'action'},{route:'action',answer:'Please clarify: no matching sponsor found.',answer_check_passed:true,actions:[]},true,1);
+  assert.equal(result.status,'NEEDS_HUMAN');
+});
