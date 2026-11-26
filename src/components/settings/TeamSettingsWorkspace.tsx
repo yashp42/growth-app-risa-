@@ -1,3 +1,4 @@
+import { EvaluationPanel } from './EvaluationPanel';
 import { useQueryClient } from '@tanstack/react-query';
 import { AuditLogPanel } from './AuditLogPanel';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
@@ -775,6 +776,7 @@ export function TeamSettingsWorkspace() {
         )}
       </section>
 
+      {canManageTeam ? <EvaluationPanel /> : null}
       <AuditLogPanel />
 
       {/* System check panel */}
@@ -987,3 +989,4 @@ export function TeamSettingsWorkspace() {
     </div>
   );
 }
+

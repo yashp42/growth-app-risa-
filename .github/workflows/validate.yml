@@ -1,0 +1,28 @@
+name: Validate growth analyst
+on:
+  pull_request:
+  push:
+    branches: [codex/analyst-grounding-reference-evaluation]
+permissions:
+  contents: read
+jobs:
+  native-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+      - run: node --test scripts/test-stage4-next.ts scripts/test-evaluation.ts
+  typecheck-build-and-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npx tsx --test scripts/test*.ts

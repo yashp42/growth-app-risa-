@@ -6,3 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+
+
+# Evaluation checkpoints may include answers; keep them server-side.
+eval/results/
