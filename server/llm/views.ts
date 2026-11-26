@@ -14,6 +14,11 @@ import {
   VIEWER_RESTRICTED_METRICS,
   type CoercedMetricResult,
 } from '../routes/readApi.ts';
+import {
+  resolveCampaign,
+  resolveTeamMember,
+  type EntityAmbiguityItem,
+} from './actions.ts';
 import type { OpenRouterToolDefinition } from './openrouter.ts';
 import type { QueryablePool } from './tools.ts';
 
@@ -53,6 +58,9 @@ const SetViewFilterSchema = z
     bet_id: z.string().trim().min(1).optional(),
     scenario_id: z.string().trim().min(1).optional(),
     owner_member_id: z.string().trim().min(1).optional(),
+    // Names are accepted and resolved on the server ("Kavya" -> SIM-PART).
+    owner_name: z.string().trim().min(1).optional(),
+    campaign_name: z.string().trim().min(1).optional(),
     stage: z.string().trim().min(1).optional(),
   })
   .strict()
@@ -157,7 +165,9 @@ export const SET_VIEW_TOOL_DEFINITION: OpenRouterToolDefinition = {
             },
             bet_id: { type: 'string' },
             scenario_id: { type: 'string' },
-            owner_member_id: { type: 'string' },
+            owner_member_id: { type: 'string', description: 'member id or name' },
+            owner_name: { type: 'string', description: 'team member name, e.g. Kavya' },
+            campaign_name: { type: 'string' },
             stage: { type: 'string' },
           },
           additionalProperties: false,
@@ -261,7 +271,8 @@ export async function executeSetView(
     pool: QueryablePool;
   }
 ): Promise<{
-  viewSpec: Record<string, unknown>;
+  /** Absent when an id/name could not be resolved; the answer then asks which. */
+  viewSpec?: Record<string, unknown>;
   answer: string;
   toolPayload: Record<string, unknown>;
   metricResults: CoercedMetricResult[];
@@ -308,6 +319,76 @@ export async function executeSetView(
         cleanFilters[k] = v;
       }
     }
+  }
+
+  // Validate every id against the database, resolving names the same way
+  // propose_changes does. Nothing is rendered if any id is unknown or ambiguous.
+  if (!edRow) {
+    throw new Error(`Unknown edition_id "${targetEditionId}".`);
+  }
+  const unresolved: EntityAmbiguityItem[] = [];
+  const ownerQuery = cleanFilters.owner_name ?? cleanFilters.owner_member_id;
+  delete cleanFilters.owner_name;
+  delete cleanFilters.owner_member_id;
+  if (ownerQuery) {
+    const m = await resolveTeamMember(ctx.pool, ownerQuery, 'owner_member_id');
+    if (m.ok) cleanFilters.owner_member_id = m.id;
+    else unresolved.push(m.ambiguity);
+  }
+  const campaignQuery = cleanFilters.campaign_name ?? cleanFilters.campaign_id;
+  delete cleanFilters.campaign_name;
+  delete cleanFilters.campaign_id;
+  if (campaignQuery) {
+    const c = await resolveCampaign(ctx.pool, campaignQuery, editionId, recordClass);
+    if (c.ok) cleanFilters.campaign_id = c.id;
+    else unresolved.push(c.ambiguity);
+  }
+  if (cleanFilters.bet_id) {
+    const q = cleanFilters.bet_id;
+    const b = await ctx.pool.query<{ bet_id: string; name: string }>(
+      `SELECT bet_id, name FROM public.bet
+        WHERE NOT is_deleted AND (bet_id = $1 OR LOWER(name) LIKE LOWER($2))
+        ORDER BY bet_id LIMIT 10`,
+      [q, `%${q}%`]
+    );
+    const exact = b.rows.find((r) => r.bet_id === q);
+    if (exact || b.rows.length === 1) cleanFilters.bet_id = (exact ?? b.rows[0]).bet_id;
+    else
+      unresolved.push({
+        field: 'bet_id',
+        query: q,
+        not_found: b.rows.length === 0 ? true : undefined,
+        candidates: b.rows.map((r) => ({ id: r.bet_id, label: `${r.name} (${r.bet_id})` })),
+      });
+  }
+  if (cleanFilters.scenario_id) {
+    const s = await ctx.pool.query<{ scenario_id: string }>(
+      `SELECT scenario_id FROM public.scenario_reference
+        WHERE scenario_id = $1 AND status = 'APPROVED' AND NOT is_deleted LIMIT 1`,
+      [cleanFilters.scenario_id]
+    );
+    if (!s.rows[0])
+      unresolved.push({
+        field: 'scenario_id',
+        query: cleanFilters.scenario_id,
+        not_found: true,
+        candidates: [],
+      });
+  }
+  if (unresolved.length > 0) {
+    const lines = unresolved.map((u) =>
+      u.not_found
+        ? `- No ${u.field.replace(/_id$/, '')} matches "${u.query}"${u.field === 'scenario_id' ? ' among approved scenarios' : ''}.`
+        : `- "${u.query}" matches several: ${u.candidates.map((c) => c.label).join(', ')}. Which one did you mean?`
+    );
+    return {
+      answer: `I didn't change the view. Please clarify:\n${lines.join('\n')}`,
+      toolPayload: {
+        status: unresolved.every((u) => u.not_found) ? 'not_found' : 'ambiguous',
+        unresolved,
+      },
+      metricResults: [],
+    };
   }
 
   const metricFilterOnly = (

@@ -1940,11 +1940,11 @@ test('[MOCKED] End-to-end /api/ai/ask propose_changes + set_view + viewer financ
         asOf: '2026-11-26',
       }
     );
-    const pinned = viewerView.viewSpec.pinned_metrics as Array<{
+    const pinned = viewerView.viewSpec!.pinned_metrics as Array<{
       metric_id: string;
       result: { computable: boolean };
     }>;
-    const widgets = viewerView.viewSpec.widgets as Array<{ restricted?: boolean }>;
+    const widgets = viewerView.viewSpec!.widgets as Array<{ restricted?: boolean }>;
     const m01Pinned = pinned.find((p) => p.metric_id === 'M-01');
     assert.equal(m01Pinned?.result.computable, false);
     assert.equal(widgets[0].restricted, true);
@@ -2412,6 +2412,77 @@ test('[MOCKED] Prompt injection in tool result creates 0 ai_action rows', async 
   } finally {
     await srv.close();
   }
+});
+
+function sqlSpyDb(store: Mock4bStore): { db: DatabasePoolState; calls: Array<{ sql: string; params: unknown[] }> } {
+  const db = createTransactionalMockDb(store);
+  const calls: Array<{ sql: string; params: unknown[] }> = [];
+  const inner = db.pool! as unknown as { query: (a: string, b?: unknown[]) => unknown };
+  const pool = {
+    query: (sql: string, params?: unknown[]) => {
+      calls.push({ sql: String(sql).replace(/\s+/g, ' '), params: params ?? [] });
+      return inner.query(sql, params);
+    },
+    connect: db.pool!.connect,
+  } as unknown as Pool;
+  return { db: { ...db, pool }, calls };
+}
+
+const VIEW_CTX = {
+  actorMemberId: 'SIM-LEAD',
+  roles: ['coordination_lead'] as CanonicalRole[],
+  editionId: 'ED-2026-DEMO',
+  recordClass: 'simulated' as const,
+  asOf: '2026-11-26',
+};
+
+test('[MOCKED] 3.2: "Show Kavya\'s open deals" resolves Kavya -> SIM-PART on the server and filters by that id', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [
+    { member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: 'kavya@campusfest.in' },
+    { member_id: 'SIM-NET', full_name: 'Neha Verma', email: 'neha@campusfest.in' },
+  ];
+  const { db, calls } = sqlSpyDb(store);
+  const res = await executeSetView(
+    {
+      screen: 'pipeline',
+      title: "Kavya's open deals",
+      filters: { owner_name: 'Kavya' },
+      widgets: [{ type: 'table', list_kind: 'opportunities', title: 'Open deals' }],
+    },
+    { ...VIEW_CTX, pool: db.pool! }
+  );
+  assert.ok(res.viewSpec, res.answer);
+  const tableCall = calls.find((c) => c.sql.includes('sv.owner_member_id = $'));
+  assert.ok(tableCall, 'opportunities table query should filter by owner');
+  assert.ok(tableCall!.params.includes('SIM-PART'));
+  assert.ok(!tableCall!.params.includes('Kavya'));
+});
+
+test('[MOCKED] 3.2: ambiguous owner, unknown campaign and unapproved scenario render no view and say why', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [
+    { member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: null },
+    { member_id: 'SIM-PART-2', full_name: 'Kavya Sharma', email: null },
+  ];
+  const { db } = sqlSpyDb(store);
+  const amb = await executeSetView(
+    { screen: 'pipeline', filters: { owner_member_id: 'Kavya' } },
+    { ...VIEW_CTX, pool: db.pool! }
+  );
+  assert.equal(amb.viewSpec, undefined);
+  assert.equal(amb.toolPayload.status, 'ambiguous');
+  assert.match(amb.answer, /Kavya Reddy/);
+  assert.match(amb.answer, /Kavya Sharma/);
+
+  const unknown = await executeSetView(
+    { screen: 'campaigns', filters: { campaign_id: 'C26-NOPE', scenario_id: 'SC-09' } },
+    { ...VIEW_CTX, pool: db.pool! }
+  );
+  assert.equal(unknown.viewSpec, undefined);
+  assert.equal(unknown.toolPayload.status, 'not_found');
+  assert.match(unknown.answer, /C26-NOPE/);
+  assert.match(unknown.answer, /approved scenarios/);
 });
 
 // ---------------------------------------------------------------------------

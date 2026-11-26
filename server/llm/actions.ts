@@ -1357,7 +1357,7 @@ interface TargetGuard {
   history_id?: string | null;
 }
 
-interface EntityAmbiguityItem {
+export interface EntityAmbiguityItem {
   field: string;
   query: string;
   not_found?: boolean;
@@ -1366,6 +1366,108 @@ interface EntityAmbiguityItem {
 
 function isCanonicalIdLike(val: string): boolean {
   return /^[A-Z0-9]{1,8}-[A-Z0-9_-]+$/.test(val.trim());
+}
+
+/**
+ * Shared name -> ID resolvers. Used by propose_changes (resolveEntitiesForAction)
+ * and by set_view, so "Kavya" resolves the same way everywhere.
+ * An exact canonical ID is verified to exist; anything else is a name search.
+ */
+export type ResolveOutcome =
+  | { ok: true; id: string; label: string }
+  | { ok: false; ambiguity: EntityAmbiguityItem };
+
+export async function resolveTeamMember(
+  pool: QueryablePool,
+  query: string,
+  field = 'owner_member_id'
+): Promise<ResolveOutcome> {
+  const q = query.trim();
+  if (isCanonicalIdLike(q)) {
+    const byId = await pool.query<{ member_id: string; full_name: string }>(
+      `SELECT member_id, full_name FROM public.team_member
+        WHERE member_id = $1 AND NOT is_deleted LIMIT 1`,
+      [q]
+    );
+    const row = byId.rows[0];
+    return row
+      ? { ok: true, id: row.member_id, label: row.full_name }
+      : { ok: false, ambiguity: { field, query: q, not_found: true, candidates: [] } };
+  }
+  const res = await pool.query<{ member_id: string; full_name: string; email: string | null }>(
+    `SELECT member_id, full_name, email
+       FROM public.team_member
+      WHERE is_active = true
+        AND NOT is_deleted
+        AND (LOWER(full_name) LIKE LOWER($1) OR LOWER(COALESCE(email, '')) LIKE LOWER($1))
+      ORDER BY full_name ASC
+      LIMIT 10`,
+    [`%${q}%`]
+  );
+  if (res.rows.length === 1) {
+    return { ok: true, id: res.rows[0].member_id, label: res.rows[0].full_name };
+  }
+  return {
+    ok: false,
+    ambiguity: {
+      field,
+      query: q,
+      not_found: res.rows.length === 0 ? true : undefined,
+      candidates: res.rows.map((r) => ({
+        id: r.member_id,
+        label: r.email
+          ? `${r.full_name} (${r.member_id}, ${r.email})`
+          : `${r.full_name} (${r.member_id})`,
+      })),
+    },
+  };
+}
+
+export async function resolveCampaign(
+  pool: QueryablePool,
+  query: string,
+  editionId: string,
+  recordClass: string,
+  field = 'campaign_id'
+): Promise<ResolveOutcome> {
+  const q = query.trim();
+  if (isCanonicalIdLike(q)) {
+    const byId = await pool.query<{ campaign_id: string; name: string }>(
+      `SELECT campaign_id, name FROM public.campaign
+        WHERE campaign_id = $1 AND edition_id = $2 AND NOT is_deleted LIMIT 1`,
+      [q, editionId]
+    );
+    const row = byId.rows[0];
+    return row
+      ? { ok: true, id: row.campaign_id, label: row.name }
+      : { ok: false, ambiguity: { field, query: q, not_found: true, candidates: [] } };
+  }
+  const res = await pool.query<{ campaign_id: string; name: string }>(
+    `SELECT campaign_id, name
+       FROM public.campaign
+      WHERE edition_id = $1
+        AND record_class = $2
+        AND NOT is_deleted
+        AND LOWER(name) LIKE LOWER($3)
+      ORDER BY name ASC
+      LIMIT 10`,
+    [editionId, recordClass, `%${q}%`]
+  );
+  if (res.rows.length === 1) {
+    return { ok: true, id: res.rows[0].campaign_id, label: res.rows[0].name };
+  }
+  return {
+    ok: false,
+    ambiguity: {
+      field,
+      query: q,
+      not_found: res.rows.length === 0 ? true : undefined,
+      candidates: res.rows.map((r) => ({
+        id: r.campaign_id,
+        label: `${r.name} (${r.campaign_id})`,
+      })),
+    },
+  };
 }
 
 async function resolveEntitiesForAction(
@@ -1416,38 +1518,11 @@ async function resolveEntitiesForAction(
       : null);
 
   if (memberQuery) {
-    const res = await pool.query<{
-      member_id: string;
-      full_name: string;
-      email: string | null;
-    }>(
-      `SELECT member_id, full_name, email
-         FROM public.team_member
-        WHERE is_active = true
-          AND NOT is_deleted
-          AND (LOWER(full_name) LIKE LOWER($1) OR LOWER(COALESCE(email, '')) LIKE LOWER($1))
-        ORDER BY full_name ASC
-        LIMIT 10`,
-      [`%${memberQuery}%`]
-    );
-    if (res.rows.length > 1) {
-      ambiguities.push({
-        field: targetMemberField,
-        query: memberQuery,
-        candidates: res.rows.map((r) => ({
-          id: r.member_id,
-          label: r.email ? `${r.full_name} (${r.member_id}, ${r.email})` : `${r.full_name} (${r.member_id})`,
-        })),
-      });
-    } else if (res.rows.length === 0) {
-      ambiguities.push({
-        field: targetMemberField,
-        query: memberQuery,
-        not_found: true,
-        candidates: [],
-      });
+    const member = await resolveTeamMember(pool, memberQuery, targetMemberField);
+    if (member.ok) {
+      payload[targetMemberField] = member.id;
     } else {
-      payload[targetMemberField] = res.rows[0].member_id;
+      ambiguities.push(member.ambiguity);
     }
     delete payload.owner_name;
     delete payload.ownerName;
@@ -1606,35 +1681,16 @@ async function resolveEntitiesForAction(
       : null);
 
   if (campaignQuery) {
-    const res = await pool.query<{ campaign_id: string; name: string }>(
-      `SELECT campaign_id, name
-         FROM public.campaign
-        WHERE edition_id = $1
-          AND record_class = $2
-          AND NOT is_deleted
-          AND LOWER(name) LIKE LOWER($3)
-        ORDER BY name ASC
-        LIMIT 10`,
-      [editionId, recordClass, `%${campaignQuery}%`]
+    const campaign = await resolveCampaign(
+      pool,
+      campaignQuery,
+      editionId,
+      recordClass
     );
-    if (res.rows.length > 1) {
-      ambiguities.push({
-        field: 'campaign_id',
-        query: campaignQuery,
-        candidates: res.rows.map((r) => ({
-          id: r.campaign_id,
-          label: `${r.name} (${r.campaign_id})`,
-        })),
-      });
-    } else if (res.rows.length === 0) {
-      ambiguities.push({
-        field: 'campaign_id',
-        query: campaignQuery,
-        not_found: true,
-        candidates: [],
-      });
+    if (campaign.ok) {
+      payload.campaign_id = campaign.id;
     } else {
-      payload.campaign_id = res.rows[0].campaign_id;
+      ambiguities.push(campaign.ambiguity);
     }
     delete payload.campaign_name;
     delete payload.campaignName;
