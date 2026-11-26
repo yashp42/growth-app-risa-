@@ -1,3 +1,4 @@
+import { basicAnalyticsIntent, answerBasicAnalytics } from '../llm/basicAnalytics.ts';
 import { isGreeting, requestBudget } from '../llm/requestBudget.ts';
 import { formatScenarioCash, hasRawToolCall } from '../llm/responsePolicy.ts';
 import crypto from 'node:crypto';
@@ -1269,10 +1270,30 @@ export function createAiApiRouter(
       }
     };
 
+    const basicIntent = basicAnalyticsIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
     if (greeting) {
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
+    } else if (basicIntent) {
+      routeOverride = 'sql';
+      usedMetrics = true;
+      usedKnowledge = true;
+      finalAnswer = await answerBasicAnalytics(basicIntent, async (name, args) => {
+        reportStep(describeToolStep(name, args));
+        const result = await executeReadTool(name, args, {
+          pool, actorMemberId: actor.memberId, roles, defaultEditionId: config.editionIdDefault,
+          userSeason: { editionId, recordClass, asOf },
+        }, acc);
+        toolTrace.push({ tool_call_id: 'basic-' + (toolTrace.length + 1), tool_name: name, status: 'ok', summary: String(args.metric_id ?? name), record_class: result.record_class, data_version: dataVersion });
+        return result;
+      }, acc);
+      const check = verifyAnswerNumbers(finalAnswer, { toolResults: acc.toolResults, knowledgeTexts: acc.knowledgeTexts, userQuestion: question });
+      answerCheckPassed = check.passed;
+      if (!check.passed) {
+        answerCheckStatus = 'unverified';
+        finalAnswer = 'The source figures could not be verified. Review the metric cards below.';
+      }
     } else {
       const quotaBefore = await openrouter.fetchQuota(false);
       const hasExplicitFilters = Boolean(

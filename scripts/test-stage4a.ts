@@ -232,12 +232,14 @@ function createMockDbState(store: MockAiStore): DatabasePoolState {
       };
     }
 
+    if (sql.includes('FROM public.campaign c')) return {rows:[{campaign_id:'C-MOCK',name:'Mock campaign'}],rowCount:1};
     if (sql.includes('metrics.get_metric(')) {
       const metricId = String(params[0] ?? '');
       const recordClass = String(params[1] ?? 'simulated');
       const editionId = String(params[2] ?? 'ED-2026-DEMO');
       const asOf = String(params[3] ?? '2026-10-20');
 
+      if (metricId === 'M-13') return {rows:[{metric_id:metricId,value:0.4,unit:'ratio',numerator:2,denominator:5,computable:true,reason:null,applied_filters:JSON.parse(String(params[4]??'{}')),record_class:recordClass,edition_id:editionId,as_of:asOf,data_version:store.dataVersion,definition_version:'1.0',series_key:null}],rowCount:1};
       if (editionId === 'ED-2025' && metricId === 'M-02') {
         return {
           rows: [
@@ -1102,4 +1104,22 @@ test('[MOCKED] OpenRouter-first uses both configured free models before Groq and
     return new Response(JSON.stringify({data:[]}),{status:200});
   }});
   try{const result=await client.createChatCompletion({messages:[{role:'user',content:'Summarise'}]});assert.equal(result.provider,'openrouter');assert.equal(calls.length,2);assert.ok(calls.every(c=>c.startsWith('https://openrouter.ai/')));assert.ok(calls[0].endsWith(DEFAULT_OPENROUTER_MODEL_PRIMARY));assert.ok(calls[1].endsWith(DEFAULT_OPENROUTER_MODEL_FALLBACK));}finally{client.stop();}
+});
+
+test('[MOCKED] signed analytics bypass model quota and retain permission-checked metric traces',async()=>{
+ const store=createMockStore();const dbState=createMockDbState(store);let modelCalls=0;
+ const client=createOpenRouterClient(createBaseConfig(),{startBackgroundRefresh:false,fetchFn:async(input)=>{
+  if(String(input).endsWith('/chat/completions')){modelCalls++;throw Error('No model may be called');}
+  return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,used:50,remaining:0}}}),{status:200});
+ }});
+ const app=express();app.use(express.json());app.use('/api',createAiApiRouter(createBaseConfig(),dbState,createAuthDeps(store,dbState),{openrouter:client}).router);app.use(apiErrorHandler);
+ const srv=await startServer(app);
+ try{
+  const response=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question:'How much sponsorship value did we sign in 2025?',edition_id:'ED-2025',as_of:'2025-04-20'})});
+  const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.token_usage.model_requests,0);assert.equal(modelCalls,0);assert.equal(body.generation_status,'complete');assert.equal(body.route,'sql');assert.equal(body.answer_check_passed,true);
+  for(const id of ['M-02','M-03','M-04','M-09'])assert.ok(body.tool_calls.some((t:any)=>t.status==='ok'&&t.summary===id));
+  assert.match(body.answer,/Cash-type signed value/);assert.match(body.answer,/Confirmed partnerships/);
+  const campaignResponse=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question:'What is the proposal-to-win conversion for each campaign?',edition_id:'ED-2025',as_of:'2025-04-20'})});
+  const campaignBody=await campaignResponse.json();assert.equal(campaignResponse.status,200,JSON.stringify(campaignBody));assert.equal(campaignBody.answer_check_passed,true);assert.equal(campaignBody.token_usage.model_requests,0);assert.equal(modelCalls,0);assert.match(campaignBody.answer,/Mock campaign \| 2 \| 5 \| 0.4 ratio/);
+ }finally{client.stop();await srv.close();}
 });
