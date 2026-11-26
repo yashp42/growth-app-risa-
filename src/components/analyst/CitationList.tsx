@@ -1,3 +1,4 @@
+import { businessText } from '../../lib/businessCopy';
 import { ChevronRight, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { formatRecordClassLabel } from '../../services/analystApi';
@@ -67,14 +68,10 @@ export function CitationList({
                 className="h-3 w-3 shrink-0 text-[var(--color-accent)]"
                 aria-hidden="true"
               />
-              <span className="font-mono text-[12px] font-medium text-[var(--color-accent)]">
-                {citation.chunk_id || citation.id}
-              </span>
-              {citation.title || citation.section ? (
+
                 <span className="truncate max-w-[180px] text-[var(--color-ink)]">
-                  {citation.title || citation.section}
+                  {businessText(citation.title || citation.section) || `Source ${idx + 1}`}
                 </span>
-              ) : null}
               {statusLabel && isCaution ? (
                 <span className="font-mono text-[12px] font-medium text-[#9B3B32]">
                   · {statusLabel}
@@ -217,3 +214,4 @@ export function CitationList({
     </div>
   );
 }
+

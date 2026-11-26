@@ -125,7 +125,7 @@ export function NeedsAttentionQueueSection({
                               {item.categoryLabel === 'Threshold rule' ? 'Performance alert' : item.categoryLabel}
                             </span>
                             <span aria-hidden="true">·</span>
-                            <span>{item.responsibleOwner}</span>
+                            {!/^B\d[a-z]?$/i.test(item.responsibleOwner) ? <span>{item.responsibleOwner}</span> : null}
                             <span aria-hidden="true">·</span>
                             <span className="font-mono text-[12px] tabular-nums">
                               {item.timestampLabel}

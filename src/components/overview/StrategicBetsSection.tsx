@@ -80,9 +80,7 @@ export function StrategicBetsSection({
                   className="grid grid-cols-1 items-center gap-3 px-5 py-3.5 sm:grid-cols-12"
                 >
                   <div className="flex items-baseline gap-3 sm:col-span-5">
-                    <span className="font-mono text-[12px] font-medium text-[var(--color-ink-subtle)] shrink-0">
-                      {bet.indexLabel}
-                    </span>
+
                     <div className="min-w-0">
                       <p className="truncate text-[14px] font-medium text-[var(--color-ink)]">
                         {bet.title}

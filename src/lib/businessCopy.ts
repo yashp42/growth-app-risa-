@@ -5,6 +5,8 @@ export function businessText(text: string | null | undefined): string {
     .replace(/\s*\((?:M-\d{2}|SC-\d{2}|K-G-\d{2})(?:,\s*separate)?\)/g, '')
     .replace(/T[−–-]7 cash collection gate/g, 'Pre-event collection target')
     .replace(/\bT[−–-]7 gate\s*:?/g, 'Pre-event collection target:')
+    .replace(/below base gate/gi, 'Behind base target')
+    .replace(/below plan gate/gi, 'Behind plan target')
     .replace(/\bK-G-\d{2}\b/g, '')
     .replace(/\bSC-0[123]\b/g, '')
     .replace(/\bM-\d{2}\b/g, '')
