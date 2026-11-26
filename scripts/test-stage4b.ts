@@ -18,6 +18,7 @@ import {
   computePayloadSha256,
   createAiActionsRouter,
   executeAiActionInTransaction,
+  getActionPermissionSpec,
   prepareProposeChanges,
   type AllowedAiActionType,
 } from '../server/llm/actions.ts';
@@ -1990,6 +1991,13 @@ test('[MOCKED] Ambiguous name "Kavya" returns candidates and inserts 0 ai_action
   assert.ok(Array.isArray(prep.toolPayload.ambiguities));
   assert.match(prep.answer, /Kavya Nair/);
   assert.match(prep.answer, /Kavya Sharma/);
+});
+
+test('[MOCKED] 2.6: every one of the 21 action types is stored as permission_level L5', () => {
+  assert.equal(ALLOWED_AI_ACTION_TYPES.length, 21);
+  for (const type of ALLOWED_AI_ACTION_TYPES) {
+    assert.equal(getActionPermissionSpec(type).permissionLevel, 'L5', type);
+  }
 });
 
 test('[MOCKED] 2.2: human-only finance writes are refused and name the Collections screen; reads and operational writes are not', () => {

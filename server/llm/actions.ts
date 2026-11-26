@@ -1028,7 +1028,7 @@ function parseActionPayload(
 }
 
 export function getActionPermissionSpec(actionType: AllowedAiActionType): {
-  permissionLevel: 'L4' | 'L5';
+  permissionLevel: 'L5';
   allowed: (roles: ReadonlyArray<CanonicalRole>) => {
     allowed: boolean;
     scope: 'all' | 'own' | 'none';
@@ -1083,7 +1083,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
     case 'create_task':
     case 'update_task':
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const op = actionType === 'create_task' ? 'create' : 'update';
           const dec = evaluatePermission(roles, 'tasks', op);
@@ -1099,7 +1099,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
 
     case 'log_time':
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const dec = evaluatePermission(roles, 'hours_staffing', 'create');
           return dec.allowed
@@ -1118,7 +1118,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
     case 'update_contact':
     case 'upsert_sponsor_contact':
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const op =
             actionType === 'create_sponsor' || actionType === 'create_contact'
@@ -1183,7 +1183,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
 
     default:
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const dec = evaluatePermission(
             roles,
@@ -1335,7 +1335,7 @@ const ProposeChangesArgsSchema = z.preprocess(
 export interface PendingAiActionInsert {
   ai_action_id: string;
   action_type: AllowedAiActionType;
-  permission_level: 'L4' | 'L5';
+  permission_level: 'L5';
   payload: Record<string, unknown>;
   payload_sha256: string;
   record_class: 'live' | 'simulated';
