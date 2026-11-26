@@ -126,6 +126,36 @@ export function createFoundationApiRouter(
   });
 
   // ---------------------------------------------------------------------------
+  // 1a. GET /api/health: public liveness probe for the host (Render health check).
+  // Always 200 while the process is serving; reports database reachability
+  // without failing the probe, so a DB blip does not restart the service.
+  // Detailed diagnostics stay on GET /api/admin/health.
+  // ---------------------------------------------------------------------------
+  router.get('/health', async (_req: Request, res: Response) => {
+    let database: 'connected' | 'unreachable' | 'not_configured' = 'not_configured';
+    if (dbState.pool) {
+      try {
+        await Promise.race([
+          dbState.pool.query('SELECT 1'),
+          new Promise((_resolve, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 2000)
+          ),
+        ]);
+        database = 'connected';
+      } catch {
+        database = 'unreachable';
+      }
+    }
+    res.status(200).json({
+      status: database === 'connected' ? 'ok' : 'degraded',
+      server: 'ok',
+      database,
+      app_env: config.appEnv,
+      uptime_seconds: Math.round(process.uptime()),
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // 1b. Auth session endpoints (server-side Supabase Auth; never exposes credentials)
   // ---------------------------------------------------------------------------
   router.post(
