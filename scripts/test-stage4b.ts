@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import http from 'node:http';
 import test from 'node:test';
 import express from 'express';
@@ -2847,6 +2848,78 @@ test('[MOCKED] Dates: "follow up by Friday" is stored as 2026-11-27 18:00 IST an
   assert.equal(vague.pendingInserts.length, 0);
   assert.equal(vague.toolPayload.status, 'unresolved_date');
   assert.match(vague.answer, /couldn't work out the date "soonish"/);
+});
+
+test('[MOCKED] No-op: "Move Voltyatra to negotiating" when it is already Negotiating creates no ai_action', async () => {
+  const store = createMock4bStore();
+  store.stageVersions.push({
+    history_id: 'H26-012-NEG',
+    opportunity_id: 'O26-012',
+    stage: 'negotiating',
+    owner_member_id: 'SIM-NET',
+    proposed_value: 120000,
+  });
+  store.teamMembers = [{ member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: null }];
+  const db = createTransactionalMockDb(store);
+  const ctx = {
+    actorMemberId: 'SIM-LEAD',
+    roles: ['coordination_lead'] as CanonicalRole[],
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated' as const,
+    asOf: '2026-11-26',
+    queryId: 'AIQ-NOOP',
+    pool: db.pool!,
+  };
+
+  const only = await prepareProposeChanges(
+    { actions: [{ type: 'change_stage', payload: { opportunity_id: 'O26-012', stage: 'negotiating' } }] },
+    ctx
+  );
+  assert.equal(only.batchId, '');
+  assert.equal(only.pendingInserts.length, 0);
+  assert.equal(only.toolPayload.status, 'no_change');
+  assert.match(only.answer, /^Voltyatra is already in Negotiating/);
+  assert.equal(store.aiActions.size, 0);
+
+  // Mixed batch: the no-op move is dropped, the real task is still proposed.
+  const mixed = await prepareProposeChanges(
+    {
+      actions: [
+        { type: 'change_stage', payload: { opportunity_id: 'O26-012', stage: 'negotiating' } },
+        { type: 'create_task', payload: { title: 'Follow up Voltyatra', task_type: 'follow_up', owner_name: 'Kavya', due_at: '2026-11-27' } },
+      ],
+    },
+    ctx
+  );
+  assert.equal(mixed.pendingInserts.length, 1);
+  assert.equal(mixed.pendingInserts[0].action_type, 'create_task');
+  assert.match(mixed.answer, /Voltyatra is already in Negotiating/);
+  assert.match(mixed.answer, /Prepared 1 proposed change/);
+
+  // A real change is still proposed with its before -> after.
+  const real = await prepareProposeChanges(
+    { actions: [{ type: 'change_stage', payload: { opportunity_id: 'O26-012', stage: 'proposal_sent' } }] },
+    ctx
+  );
+  assert.equal(real.pendingInserts.length, 1, real.answer);
+  const diffs = real.actions[0].field_diffs as Array<{ field: string; before: unknown; after: unknown }>;
+  assert.deepEqual(diffs, [{ field: 'stage', before: 'negotiating', after: 'proposal_sent' }]);
+});
+
+test('[MOCKED] Stage versions are timestamped with clock_timestamp() so two writes in one batch never tie', () => {
+  const sources = [
+    readFileSync(new URL('../server/routes/writeApi.ts', import.meta.url), 'utf8'),
+    readFileSync(new URL('../server/llm/actions.ts', import.meta.url), 'utf8'),
+  ];
+  let inserts = 0;
+  for (const src of sources) {
+    for (const m of src.matchAll(/INSERT INTO public\.opportunity_stage_version \(([\s\S]*?)\) VALUES \(\s*([^\n]*)/g)) {
+      inserts++;
+      assert.match(m[1], /history_id, valid_from,/);
+      assert.match(m[2], /^\$1, clock_timestamp\(\),/);
+    }
+  }
+  assert.equal(inserts, 6);
 });
 
 // ---------------------------------------------------------------------------

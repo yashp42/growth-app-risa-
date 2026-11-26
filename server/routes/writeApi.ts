@@ -2282,11 +2282,11 @@ export function createWriteApiRouter(
         const historyId = generatePrefixedId('HV-');
         const stgRes = await client.query<Record<string, unknown>>(
           `INSERT INTO public.opportunity_stage_version (
-             history_id, opportunity_id, stage, owner_member_id,
+             history_id, valid_from, opportunity_id, stage, owner_member_id,
              proposed_value, confirmed_value, version_no,
              record_class, import_batch_id, source_ref, evidence_class, created_by
            ) VALUES (
-             $1, $2, 'prospecting', $3,
+             $1, clock_timestamp(), $2, 'prospecting', $3,
              $4, 0, 1,
              $5, $6, 'ui:opportunities', 'T', $7
            )
@@ -2601,11 +2601,11 @@ export function createWriteApiRouter(
 
         const stgRes = await client.query<Record<string, unknown>>(
           `INSERT INTO public.opportunity_stage_version (
-             history_id, opportunity_id, stage, owner_member_id,
+             history_id, valid_from, opportunity_id, stage, owner_member_id,
              proposed_value, confirmed_value, drop_reason, loss_reason, version_no,
              record_class, import_batch_id, source_ref, evidence_class, created_by
            ) VALUES (
-             $1, $2, $3, $4,
+             $1, clock_timestamp(), $2, $3, $4,
              $5, 0, $6, $7, $8,
              $9, $10, 'ui:opportunity_stage', 'T', $11
            )
@@ -2840,11 +2840,11 @@ export function createWriteApiRouter(
         const nextVersion = Number(latest?.version_no ?? 0) + 1;
         const stgRes = await client.query<Record<string, unknown>>(
           `INSERT INTO public.opportunity_stage_version (
-             history_id, opportunity_id, stage, owner_member_id,
+             history_id, valid_from, opportunity_id, stage, owner_member_id,
              proposed_value, confirmed_value, version_no,
              record_class, import_batch_id, source_ref, evidence_class, created_by
            ) VALUES (
-             $1, $2, 'partner_confirmed', $3,
+             $1, clock_timestamp(), $2, 'partner_confirmed', $3,
              $4, $5, $6,
              $7, $8, 'ui:opportunity_confirm', 'T', $9
            )
