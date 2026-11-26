@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { AuditLogPanel } from './AuditLogPanel';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   AlertCircle,
@@ -773,6 +774,8 @@ export function TeamSettingsWorkspace() {
           </div>
         )}
       </section>
+
+      <AuditLogPanel />
 
       {/* System check panel */}
       <section

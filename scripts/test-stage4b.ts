@@ -27,6 +27,7 @@ import { executeSetView } from '../server/llm/views.ts';
 import type { CanonicalRole } from '../server/permissions.ts';
 import { createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
 import { createWriteApiRouter } from '../server/routes/writeApi.ts';
+import { createReadApiRouter } from '../server/routes/readApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
 
 function createBaseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
@@ -2483,6 +2484,57 @@ test('[MOCKED] 3.2: ambiguous owner, unknown campaign and unapproved scenario re
   assert.equal(unknown.toolPayload.status, 'not_found');
   assert.match(unknown.answer, /C26-NOPE/);
   assert.match(unknown.answer, /approved scenarios/);
+});
+
+async function callAudit(
+  roles: CanonicalRole[],
+  qs: string
+): Promise<{ status: number; body: Record<string, unknown>; auditSql: Array<{ sql: string; params: unknown[] }> }> {
+  const store = createMock4bStore();
+  store.roles = roles;
+  const { db, calls } = sqlSpyDb(store);
+  const app = express();
+  app.use(express.json());
+  app.use('/api', createReadApiRouter(createBaseConfig(), db, createAuthDeps(store, db)));
+  app.use(apiErrorHandler);
+  const server = await new Promise<http.Server>((resolve) => {
+    const s2 = app.listen(0, '127.0.0.1', () => resolve(s2));
+  });
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 0;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/audit${qs}`, {
+      headers: { authorization: 'Bearer mock-token' },
+    });
+    return {
+      status: res.status,
+      body: (await res.json()) as Record<string, unknown>,
+      auditSql: calls.filter((c) => c.sql.includes('FROM public.audit_event ae')),
+    };
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+}
+
+test('[MOCKED] 2.12: GET /api/audit honours limit (capped at 200) and channel, and stays lead/admin only', async () => {
+  const fifty = await callAudit(['coordination_lead'], '?limit=50');
+  assert.equal(fifty.status, 200, JSON.stringify(fifty.body));
+  assert.equal(fifty.auditSql.length, 1);
+  assert.match(fifty.auditSql[0].sql, /ORDER BY ae\.at DESC LIMIT \$\d+/);
+  assert.equal(fifty.auditSql[0].params.at(-1), 50);
+
+  const huge = await callAudit(['admin'], '?limit=100000&channel=ai_action');
+  assert.equal(huge.status, 200, JSON.stringify(huge.body));
+  assert.equal(huge.auditSql[0].params.at(-1), 200);
+  assert.ok(huge.auditSql[0].params.includes('ai_action'));
+  assert.match(huge.auditSql[0].sql, /ae\.channel = \$\d+/);
+
+  const bad = await callAudit(['admin'], '?channel=email');
+  assert.equal(bad.status, 400);
+
+  const viewer = await callAudit(['viewer'], '?limit=50');
+  assert.equal(viewer.status, 403);
+  assert.equal(viewer.auditSql.length, 0);
 });
 
 // ---------------------------------------------------------------------------
