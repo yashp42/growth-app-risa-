@@ -24,7 +24,7 @@ import {
 import { createOpenRouterClient } from '../server/llm/openrouter.ts';
 import { executeSetView } from '../server/llm/views.ts';
 import type { CanonicalRole } from '../server/permissions.ts';
-import { createAiApiRouter } from '../server/routes/aiApi.ts';
+import { createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
 
 function createBaseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
@@ -1990,6 +1990,41 @@ test('[MOCKED] Ambiguous name "Kavya" returns candidates and inserts 0 ai_action
   assert.ok(Array.isArray(prep.toolPayload.ambiguities));
   assert.match(prep.answer, /Kavya Nair/);
   assert.match(prep.answer, /Kavya Sharma/);
+});
+
+test('[MOCKED] 2.2: human-only finance writes are refused and name the Collections screen; reads and operational writes are not', () => {
+  const refused: Array<[string, RegExp]> = [
+    ["Mark Bramble's invoice as paid", /Collections → Invoices/],
+    ['Record a receipt of ₹50,000 from Bramble', /Collections → Receipts/],
+    ['Allocate receipt RC-1 to Bramble', /Collections → Receipts/],
+    ['Reconcile the Bramble payment', /Collections → Receipts/],
+    ['Change the payment schedule for Bramble', /Collections → Payment schedules/],
+    ['Update payment terms to net 30', /Collections → Payment schedules/],
+    ['Add an instalment for Voltyatra', /Collections → Payment schedules/],
+    ['Edit the Minutekart contract', /Collections → Receivables/],
+    ['Change the contract value to ₹2L', /Collections → Receivables/],
+    ['Update the signed value of Bramble to ₹1.5L', /Pipeline and Collections/],
+    ['Raise an invoice for Voltyatra', /Collections → Invoices/],
+  ];
+  for (const [q, screen] of refused) {
+    const r = isHumanOnlyWriteRequest(q);
+    assert.equal(r.refuse, true, `should refuse: ${q}`);
+    assert.match(r.reason ?? '', screen, `should name the screen: ${q}`);
+  }
+  const allowed = [
+    'Which signed partnerships still have outstanding cash?',
+    'Confirm the Minutekart deal at ₹1,00,000',
+    'Move Voltyatra to negotiating and create a task for Kavya to follow up by Friday',
+    'Show cash collected by campaign',
+    'Which receipts were logged this week?',
+    'Which invoices are overdue?',
+    'What payments did we receive post-fest last year?',
+    'Show contracts with outstanding cash',
+    'Create a task to chase the Bramble invoice',
+  ];
+  for (const q of allowed) {
+    assert.equal(isHumanOnlyWriteRequest(q).refuse, false, `should not refuse: ${q}`);
+  }
 });
 
 test('[MOCKED] 2.4: change the role cannot make is rejected at propose time and never stored', async () => {
