@@ -29,6 +29,7 @@ import { createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiA
 import { createWriteApiRouter } from '../server/routes/writeApi.ts';
 import { createReadApiRouter } from '../server/routes/readApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
+import { answerTextForSpeech, speakAnswer } from '../src/lib/speech.ts';
 
 function createBaseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
   return {
@@ -2535,6 +2536,60 @@ test('[MOCKED] 2.12: GET /api/audit honours limit (capped at 200) and channel, a
   const viewer = await callAudit(['viewer'], '?limit=50');
   assert.equal(viewer.status, 403);
   assert.equal(viewer.auditSql.length, 0);
+});
+
+test('[MOCKED] 1.4: read-aloud speaks answer text only, in en-IN (browser speechSynthesis stub)', () => {
+  const answer = [
+    'Bramble Active has **₹60,000** outstanding [M-07].',
+    '',
+    '| Sponsor | Outstanding |',
+    '|---|---|',
+    '| Bramble Active | ₹60,000 |',
+    '',
+    '```json',
+    '{"raw": true}',
+    '```',
+    'Figures are from Collections → Receivables.',
+  ].join('\n');
+  const text = answerTextForSpeech(answer);
+  assert.equal(
+    text,
+    'Bramble Active has ₹60,000 outstanding [M-07]. Figures are from Collections → Receivables.'
+  );
+  assert.ok(!text.includes('|'));
+  assert.ok(!text.includes('raw'));
+
+  const spoken: Array<{ text: string; lang: string }> = [];
+  let cancels = 0;
+  const g = globalThis as unknown as Record<string, unknown>;
+  const prevWindow = g.window;
+  const prevUtterance = g.SpeechSynthesisUtterance;
+  class FakeUtterance {
+    lang = '';
+    onend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    constructor(public text: string) {}
+  }
+  g.SpeechSynthesisUtterance = FakeUtterance;
+  g.window = {
+    speechSynthesis: {
+      cancel: () => {
+        cancels++;
+      },
+      speak: (u: FakeUtterance) => spoken.push({ text: u.text, lang: u.lang }),
+    },
+  };
+  try {
+    assert.equal(speakAnswer(answer), true);
+    assert.equal(spoken.length, 1);
+    assert.equal(spoken[0].lang, 'en-IN');
+    assert.equal(spoken[0].text, text);
+    assert.equal(cancels, 1, 'previous speech is cancelled first');
+    assert.equal(speakAnswer('| a | b |\n|---|---|'), false, 'a table-only answer reads nothing');
+  } finally {
+    g.window = prevWindow;
+    g.SpeechSynthesisUtterance = prevUtterance;
+  }
 });
 
 // ---------------------------------------------------------------------------

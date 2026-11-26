@@ -8,6 +8,7 @@ import type { NavSectionId } from '../../types/overview';
 import { ActionConfirmationDialog } from './ActionConfirmationDialog';
 import { ChatComposer } from './ChatComposer';
 import { ChatMessage } from './ChatMessage';
+import { ReadAloudToggle } from './ReadAloudToggle';
 
 const PANEL_STARTERS: ReadonlyArray<string> = [
   'Which campaign is leaking the most qualified leads?',
@@ -114,6 +115,12 @@ export function GrowthAnalystPanel({
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
+            <ReadAloudToggle
+              compact
+              on={session.autoReadAloud}
+              supported={session.readAloudSupported}
+              onChange={session.setAutoReadAloud}
+            />
             <button
               type="button"
               onClick={() => {

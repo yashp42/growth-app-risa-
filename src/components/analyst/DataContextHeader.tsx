@@ -7,6 +7,7 @@ import {
 import type { GrowthAnalystSessionFilterState } from '../../hooks/useGrowthAnalystSession';
 import type { AiQuotaInfo, AiRecordClass } from '../../types/analyst';
 import { SelectControl } from '../ui/SelectControl';
+import { ReadAloudToggle } from './ReadAloudToggle';
 
 interface DataContextHeaderProps {
   filters: GrowthAnalystSessionFilterState;
@@ -20,6 +21,9 @@ interface DataContextHeaderProps {
   pendingActionCount: number;
   mobilePanel: 'chat' | 'evidence' | 'actions';
   onChangeMobilePanel: (panel: 'chat' | 'evidence' | 'actions') => void;
+  autoReadAloud?: boolean;
+  readAloudSupported?: boolean;
+  onChangeAutoReadAloud?: (on: boolean) => void;
 }
 
 export function DataContextHeader({
@@ -34,6 +38,9 @@ export function DataContextHeader({
   pendingActionCount,
   mobilePanel,
   onChangeMobilePanel,
+  autoReadAloud = false,
+  readAloudSupported = false,
+  onChangeAutoReadAloud,
 }: DataContextHeaderProps) {
   const editionOptions = ANALYST_EDITION_BY_CLASS[filters.record_class];
   const remainingLabel =
@@ -118,6 +125,14 @@ export function DataContextHeader({
               className="h-9 rounded-md border border-[#D9D7D0] bg-white px-3 text-[13px] font-medium text-[#202824] transition-colors hover:border-[#788C83] focus:border-[#315F52] focus:outline-none"
             />
           </div>
+
+          {onChangeAutoReadAloud ? (
+            <ReadAloudToggle
+              on={autoReadAloud}
+              supported={readAloudSupported}
+              onChange={onChangeAutoReadAloud}
+            />
+          ) : null}
 
           <button
             type="button"

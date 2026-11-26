@@ -9,6 +9,11 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
+import {
+  isSpeechSynthesisSupported,
+  speakAnswer,
+  stopSpeaking,
+} from '../../lib/speech';
 import { useEffect, useState } from 'react';
 import {
   formatAiRouteLabel,
@@ -24,27 +29,6 @@ import type {
 import { CitationList } from './CitationList';
 import { MetricEvidenceCard } from './MetricEvidenceCard';
 import { ProposedBatchCard } from './ProposedActionCard';
-
-function stripMarkdownTablesForSpeech(raw: string): string {
-  const lines = raw.split(/\r?\n/);
-  const kept: string[] = [];
-  let inCode = false;
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('```')) {
-      inCode = !inCode;
-      continue;
-    }
-    if (inCode) continue;
-    if (/^\|.*\|$/.test(trimmed) || /^\|?[\s:-]+\|[\s|:-]*$/.test(trimmed)) {
-      continue;
-    }
-    if (trimmed) {
-      kept.push(trimmed.replace(/[*_`#]+/g, ''));
-    }
-  }
-  return kept.join('. ').replace(/\s+/g, ' ').trim();
-}
 
 interface ChatMessageProps {
   message: AiChatMessage;
@@ -92,33 +76,24 @@ export function ChatMessage({
   const [toolsExpanded, setToolsExpanded] = useState(false);
   const [speaking, setSpeaking] = useState(false);
 
-  const ttsSupported =
-    typeof window !== 'undefined' && 'speechSynthesis' in window;
+  const ttsSupported = isSpeechSynthesisSupported();
 
   useEffect(() => {
     return () => {
-      if (speaking && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      if (speaking) stopSpeaking();
     };
   }, [speaking]);
 
   const toggleSpeak = () => {
     if (!ttsSupported) return;
     if (speaking) {
-      window.speechSynthesis.cancel();
+      stopSpeaking();
       setSpeaking(false);
       return;
     }
-    const spokenText = stripMarkdownTablesForSpeech(message.content);
-    if (!spokenText) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(spokenText);
-    utterance.lang = 'en-IN';
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    setSpeaking(true);
-    window.speechSynthesis.speak(utterance);
+    if (speakAnswer(message.content, { onEnd: () => setSpeaking(false) })) {
+      setSpeaking(true);
+    }
   };
 
   if (message.role === 'user') {

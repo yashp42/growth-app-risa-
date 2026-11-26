@@ -92,6 +92,9 @@ export function GrowthAnalystWorkspace({
         pendingActionCount={pendingCount}
         mobilePanel={mobilePanel}
         onChangeMobilePanel={setMobilePanel}
+        autoReadAloud={session.autoReadAloud}
+        readAloudSupported={session.readAloudSupported}
+        onChangeAutoReadAloud={session.setAutoReadAloud}
       />
 
       {session.permissionProfile.verifiedByServer &&
