@@ -24,7 +24,7 @@ function formatCell(value: string | number | null | undefined, format: AnswerCol
       return typeof value === 'number' ? value.toLocaleString('en-IN') : String(value);
     case 'percent': {
       const n = Number(value);
-      return Number.isFinite(n) ? `${(n <= 1 ? n * 100 : n).toFixed(1)}%` : String(value);
+      return Number.isFinite(n) ? `${n.toFixed(1)}%` : String(value);
     }
     case 'date':
       return typeof value === 'string' ? formatIstDateTime(value.length > 10 ? value : value.slice(0, 10)) : String(value);
@@ -36,7 +36,8 @@ function formatCell(value: string | number | null | undefined, format: AnswerCol
 function formatMetricValue(value: number | null, unit: string | null): string {
   if (value === null) return '—';
   if (unit === 'INR' || unit === '₹') return formatInr(value);
-  if (unit === 'ratio' || unit === '%') return `${(value <= 1 ? value * 100 : value).toFixed(1)}%`;
+  if (unit === 'ratio') return `${(value * 100).toFixed(1)}%`;
+  if (unit === '%') return `${value.toFixed(1)}%`;
   return `${value.toLocaleString('en-IN')}${unit ? ` ${unit}` : ''}`;
 }
 
@@ -98,6 +99,8 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
 
   return (
     <BlockFrame title={block.title} source={block.source} dataVersion={block.data_version}>
+      {block.status ? <p className="mb-2 text-[11px] text-[#525E58]">{block.status}</p> : null}
+      {block.source_path ? <p className="mb-2 break-all text-[10px] text-[#788C83]">{block.source_path}{block.source_sha256 ? ' · SHA-256 ' + block.source_sha256 : ''}</p> : null}
       <div className="overflow-x-auto rounded border border-[#E8E6E0]">
         <table className="min-w-full divide-y divide-[#E8E6E0] text-left text-[12px]">
           <thead className="bg-[#FAF9F6] text-[11px] text-[#788C83]">
@@ -143,7 +146,7 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
                       key={c.key}
                       className={`px-3 py-1.5 text-[#202824] ${numeric ? 'text-right font-mono tabular-nums' : ''}`}
                     >
-                      {formatCell(row[c.key], c.format)}
+                      {c.key === 'stage' ? ({ negotiating: 'Negotiating', proposal_sent: 'Proposal sent', prospecting: 'Prospecting', contacted: 'Contacted', partner_confirmed: 'Partner confirmed' }[String(row[c.key])] ?? formatCell(row[c.key], c.format)) : formatCell(row[c.key], c.format)}
                     </td>
                   );
                 })}
@@ -153,7 +156,7 @@ export function TableBlockView({ block }: { block: AnswerTableBlock }) {
         </table>
       </div>
       <p className="mt-1.5 text-[11px] text-[#788C83]">
-        {block.rows.length} {block.rows.length === 1 ? 'row' : 'rows'}
+        {block.rows.length} {block.rows.length === 1 ? 'row' : 'rows'}{block.truncated ? ' shown; more rows available — narrow the filter' : ''}
         {block.edition_id ? ` · ${block.edition_id}` : ''} · click a column to sort
       </p>
     </BlockFrame>
@@ -202,17 +205,20 @@ export function LineBlockView({ block }: { block: AnswerLineBlock }) {
   const minY = 0;
   const x = (i: number) => PAD.l + (points.length <= 1 ? 0 : (i / (points.length - 1)) * (W - PAD.l - PAD.r));
   const y = (v: number) => PAD.t + (maxY === minY ? 0.5 : 1 - (v - minY) / (maxY - minY)) * (H - PAD.t - PAD.b);
-  const path = points
-    .map((p, i) => (p.y === null ? null : `${x(i).toFixed(1)},${y(p.y).toFixed(1)}`))
-    .filter(Boolean)
-    .join(' ');
+  const paths: string[] = [];
+  let segment: string[] = [];
+  for (const [i, point] of points.entries()) {
+    if (point.y === null) { if (segment.length) paths.push(segment.join(' ')); segment = []; }
+    else segment.push(x(i).toFixed(1) + ',' + y(point.y).toFixed(1));
+  }
+  if (segment.length) paths.push(segment.join(' '));
   const last = [...points].reverse().find((p) => p.y !== null);
 
   return (
     <BlockFrame title={block.title} source={block.source} dataVersion={block.data_version}>
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label={`${block.title} line chart`}>
         <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} stroke="#E8E6E0" />
-        <polyline points={path} fill="none" stroke="#315F52" strokeWidth={2} strokeLinejoin="round" />
+        {paths.map((points, i) => <polyline key={i} points={points} fill="none" stroke="#315F52" strokeWidth={2} strokeLinejoin="round" />)}
         {points.map((p, i) =>
           p.y === null ? null : (
             <circle key={p.x} cx={x(i)} cy={y(p.y)} r={3} fill="#315F52">
@@ -282,3 +288,4 @@ export function AnswerBlocks({ blocks }: { blocks: AnswerBlock[] }) {
     </div>
   );
 }
+

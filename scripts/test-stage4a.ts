@@ -1004,7 +1004,8 @@ test('[MOCKED] /api/ai/ask end-to-end: 2025 signed vs non-computable M-01, T-55 
     const dFab = (await rFab.json()) as Record<string, unknown>;
     assert.equal(dFab.answer_check_passed, false);
     assert.equal(dFab.answer_check_status, 'unverified');
-    assert.match(String(dFab.answer), /Warning:/);
+    assert.match(String(dFab.answer), /withheld/);
+    assert.doesNotMatch(String(dFab.answer), /99L/);
 
     // 6. Feedback submission (append-only ai_message)
     const fbRes = await fetch(`${srv.baseUrl}/api/ai/feedback`, {
@@ -1064,3 +1065,4 @@ test('[MOCKED] /api/ai/ask end-to-end: 2025 signed vs non-computable M-01, T-55 
     await srv.close();
   }
 });
+
