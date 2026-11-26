@@ -128,10 +128,12 @@ export async function runRetrievalEvaluation(adopt = false): Promise<{ report: s
   const b = trgmEnabled ? await runVariant(pool, cases, 'fts_trgm') : null;
 
   const c = await runVariant(pool, cases, 'fts_enriched');
+  const d = await runVariant(pool, cases, 'fts_morph');
+  const recallD = mean(d.map(r=>r.recall));
   const recallC = mean(c.map(r=>r.recall));
   const recallA = mean(a.map((r) => r.recall));
   const recallB = b ? mean(b.map((r) => r.recall)) : null;
-  const winner = recallC > Math.max(recallA,recallB ?? -1) ? 'C (expanded lexical search)' : recallB !== null && recallB > recallA ? 'B (FTS + pg_trgm)' : 'A (current FTS + OR fallback)';
+  const winner = recallD > Math.max(recallA,recallB??-1,recallC) ? 'D (normalised lexical ranking)' : recallC > Math.max(recallA,recallB ?? -1) ? 'C (expanded lexical search)' : recallB !== null && recallB > recallA ? 'B (FTS + pg_trgm)' : 'A (current FTS + OR fallback)';
 
   const report = [
     `# Retrieval quality (LIVE, ${new Date().toISOString()})`,
@@ -143,15 +145,16 @@ export async function runRetrievalEvaluation(adopt = false): Promise<{ report: s
       ? summarise('Variant B: A + pg_trgm similarity on title and section', b)
       : '### Variant B\n\npg_trgm is **not enabled** in this database, so variant B was not run. Enable it (Supabase: Database → Extensions → pg_trgm) to compare.\n',
     summarise('Variant C: meaningful terms, domain synonyms and chunk-text ranking', c),
+    summarise('Variant D: morphological terms, length normalisation and result diversity', d),
     `## Verdict`,
     '',
-    `Mean recall@${K}: A = ${recallA.toFixed(3)}${recallB !== null ? `, B = ${recallB.toFixed(3)}` : ', B = not run'}, C = ${recallC.toFixed(3)}. Keep: **${winner}**.`,
+    `Mean recall@${K}: A = ${recallA.toFixed(3)}${recallB !== null ? `, B = ${recallB.toFixed(3)}` : ', B = not run'}, C = ${recallC.toFixed(3)}, D = ${recallD.toFixed(3)}. Keep: **${winner}**.`,
     adopt ? 'The winning variant has been adopted on this server (ties keep FTS).' : 'Run with --adopt to use the winning variant on this server.',
     '',
   ].join('\n');
 
-  if (adopt) adoptKnowledgeRanking(recallA, recallB, recallC);
-  const results = { k: K, trgm_enabled: trgmEnabled, variant_a: a, variant_b: b, variant_c: c, winner };
+  if (adopt) adoptKnowledgeRanking(recallA, recallB, recallC, recallD);
+  const results = { k: K, trgm_enabled: trgmEnabled, variant_a: a, variant_b: b, variant_c: c, variant_d: d, winner };
   console.log(report);
   if (process.argv.includes('--write')) {
     const dir = path.join(ROOT, 'eval/results');
@@ -160,7 +163,7 @@ export async function runRetrievalEvaluation(adopt = false): Promise<{ report: s
     writeFileSync(path.join(dir, `retrieval-${stamp}.md`), report);
     writeFileSync(
       path.join(dir, `retrieval-${stamp}.json`),
-      JSON.stringify({ k: K, trgm_enabled: trgmEnabled, variant_a: a, variant_b: b, variant_c: c, winner }, null, 2)
+      JSON.stringify({ k: K, trgm_enabled: trgmEnabled, variant_a: a, variant_b: b, variant_c: c, variant_d: d, winner }, null, 2)
     );
     console.log(`Wrote eval/results/retrieval-${stamp}.md and .json`);
   }

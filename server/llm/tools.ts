@@ -1,3 +1,5 @@
+import { morphologicalRank, expandedCandidateTerms } from './lexicalSearchCandidate.ts';
+import { querySponsorMetrics, SPONSOR_METRICS } from './sponsorMetrics.ts';
 import { getInventory } from './financialAnswers.ts';
 import { expandedTerms, lexicalRank } from './lexicalSearch.ts';
 import { getProspects } from './prospects.ts';
@@ -246,7 +248,10 @@ export const GetDatasetArgsSchema = z.object({
 }).strict();
 export const ListDatasetsArgsSchema = z.object({ query: z.string().trim().max(240).optional() }).strict();
 
+export const SponsorMetricsArgsSchema = z.object({metric_id:z.enum(SPONSOR_METRICS),filters:MetricFiltersSchema,limit:z.number().int().min(1).max(25).default(10),edition_id:z.string().trim().optional(),as_of:z.string().refine(isValidIsoDate).optional()}).strict();
+
 export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
+ {type:'function',function:{name:'get_sponsor_metrics',description:'Rank sponsors by database-computed cash collected (M-01), signed total (M-02), signed cash (M-03), in-kind (M-04), or unpaid cash (M-07). Full permitted cohort ranked before limiting. Do not use channel totals to answer sponsor questions.',parameters:{type:'object',properties:{metric_id:{type:'string',enum:[...SPONSOR_METRICS]},limit:{type:'integer',minimum:1,maximum:25},edition_id:{type:'string'},as_of:{type:'string'},filters:{type:'object',properties:{campaign_id:{type:'string'},channel_group:{type:'string',enum:['warm','inbound','cold','renewal','premium']},bet_id:{type:'string'}},additionalProperties:false}},required:['metric_id'],additionalProperties:false}}},
   { type: 'function', function: {
     name: 'list_datasets',
     description: 'Find AI-visible reference datasets: market_research.prospect_register; financial_modelling.inventory.b_pricing_summary; data_foundation.curated_data.commercial_inventory and external_benchmarks; strategy.resource_allocation.staffing, bets and scenario_capacity; strategy.risk_register; financial_modelling.scenario_catalogue; strategy.d010_approved.out.s7_ranking. Research is not pipeline; analysis is not an approved target.',
@@ -380,7 +385,7 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
     function: {
       name: 'list_records',
       description:
-        'List RBAC-scoped records (opportunities with state=open|confirmed|lost, tasks, receivables per active contract, sponsors, campaigns, contacts, team_members).',
+        'List at most 25 RBAC-scoped records; limit must be 1..25. Use get_sponsor_metrics for financial rankings, not a partial record listing. Records: (opportunities with state=open|confirmed|lost, tasks, receivables per active contract, sponsors, campaigns, contacts, team_members).',
       parameters: {
         type: 'object',
         properties: {
@@ -501,7 +506,7 @@ function scoreTitleMatch(title: string | null | undefined, queryWords: string[])
  * chunk's document title and section (needs the pg_trgm extension). Chosen by
  * scripts/eval-retrieval.ts; never by the model.
  */
-export type KnowledgeRankMode = 'fts' | 'fts_trgm' | 'fts_enriched';
+export type KnowledgeRankMode = 'fts' | 'fts_trgm' | 'fts_enriched' | 'fts_morph';
 
 export async function executeSearchKnowledge(
   pool: QueryablePool,
@@ -513,7 +518,8 @@ export async function executeSearchKnowledge(
   const args = SearchKnowledgeArgsSchema.parse(rawArgs);
   const rankMode = opts.rankMode ?? getKnowledgeRankMode();
   const trgm = rankMode === 'fts_trgm';
-  const enriched = rankMode === 'fts_enriched';
+  const candidate = rankMode === 'fts_morph';
+  const enriched = rankMode === 'fts_enriched' || candidate;
   const historyClause = args.include_history
     ? ''
     : `AND retrieval_rule <> 'contradiction_and_history_only'
@@ -552,7 +558,7 @@ export async function executeSearchKnowledge(
        AND (tsv @@ websearch_to_tsquery('english', $${tsQueryParamIndex})
             ${trgm ? `OR similarity(COALESCE(document_title, ''), $${trgmParamIndex}) > 0.12 OR similarity(COALESCE(section, ''), $${trgmParamIndex}) > 0.12` : ''})
      ORDER BY base_rank ${trgm ? '+ GREATEST(similarity(COALESCE(document_title, \'\'), $' + trgmParamIndex + '), similarity(COALESCE(section, \'\'), $' + trgmParamIndex + '))' : ''} DESC, chunk_id ASC
-     LIMIT ${enriched ? 96 : 12}`;
+     LIMIT ${candidate ? 256 : enriched ? 96 : 12}`;
 
   const strictRes = await pool.query<Record<string, unknown>>(
     querySql(1),
@@ -564,7 +570,7 @@ export async function executeSearchKnowledge(
   // Special prompt rule: if strict search returns < 2 chunks, retry once with same words joined by OR,
   // and rank chunks whose doc title matches higher.
   if (enriched || rows.length < 2) {
-    const orQuery = enriched ? expandedTerms(args.query).join(' OR ') : buildOrQueryFromStrict(args.query);
+    const orQuery = candidate ? expandedCandidateTerms(args.query).join(' OR ') : enriched ? expandedTerms(args.query).join(' OR ') : buildOrQueryFromStrict(args.query);
     if (orQuery) {
       usedOrFallback = true;
       const orParams = [orQuery, ...baseParams.slice(1)];
@@ -603,7 +609,8 @@ export async function executeSearchKnowledge(
     return bScore - aScore;
   });
 
-  if (enriched) rows = lexicalRank(args.query, rows);
+  if (candidate) rows = morphologicalRank(args.query, rows);
+  else if (enriched) rows = lexicalRank(args.query, rows);
   const topChunks = rows.slice(0, 6).map((r) => {
     const decisionStatus = String(r.decision_status ?? '');
     const retrievalRule = String(r.retrieval_rule ?? 'default');
@@ -694,6 +701,17 @@ export async function executeReadTool(
       decision_status: String(payload.status_label ?? payload.status ?? 'reference'),
       record_class: String(payload.record_class), data_version: dataVersion,
     });
+    return payload;
+  }
+
+  if (toolName === 'get_sponsor_metrics') {
+    const args=SponsorMetricsArgsSchema.parse(rawArgs);
+    if(args.filters?.scenario_id)throw new Error('Sponsor actuals cannot be filtered by forecast scenario.');
+    const ed=await resolveEditionFromPool(ctx.pool,args.edition_id??ctx.userSeason.editionId);
+    const asOf=args.as_of??(ed.edition_id==='ED-2025'?'2025-04-20':ctx.userSeason.asOf);
+    const result=await querySponsorMetrics({...ctx,userSeason:{editionId:ed.edition_id,recordClass:ed.record_class,asOf}},args.metric_id,args.filters??{},args.limit);
+    const payload={...result,source:'list_sponsor_metrics',kind:'sponsor_metrics',metric_id:args.metric_id,unit:'INR',title:'Sponsors by '+({'M-01':'cash collected','M-02':'signed value','M-03':'signed cash','M-04':'in-kind value','M-07':'outstanding cash'}[args.metric_id]),scope:profile.opportunitiesScope==='own'||profile.sponsorsScope==='own'||profile.contractsScope==='own'?'own':'all',edition_id:ed.edition_id,record_class:ed.record_class,as_of:asOf,data_version:dataVersion};
+    acc.toolResults.push(payload);acc.citations.push({type:'record',id:'sponsor_metrics:'+args.metric_id,title:payload.title,record_class:ed.record_class,data_version:dataVersion});
     return payload;
   }
 

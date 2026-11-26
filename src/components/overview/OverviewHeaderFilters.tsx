@@ -68,7 +68,7 @@ export function OverviewHeaderFilters({
   return (
     <section
       aria-labelledby="overview-heading"
-      className="border-b border-[var(--color-border)] pb-6"
+      className="overview-welcome"
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
@@ -77,7 +77,7 @@ export function OverviewHeaderFilters({
               id="overview-heading"
               className="page-heading text-[var(--color-ink)]"
             >
-              Growth overview
+              Sponsorship overview
             </h1>
             {isReadOnlyHistorical ? (
               <span className="inline-flex items-center gap-1 rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-2 py-0.5 font-mono text-[12px] font-medium text-[var(--color-ink-muted)]">
@@ -87,10 +87,7 @@ export function OverviewHeaderFilters({
             ) : null}
           </div>
           <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
-            Sponsorship performance, pacing gates, and rule status.{' '}
-            <span className="font-mono text-[13px] text-[var(--color-ink-subtle)]">
-              {editionId} · {recordClass} · As of {asOfTimestamp || asOf}
-            </span>
+            A clear view of this season’s progress and the next steps that matter.
           </p>
         </div>
 
@@ -130,7 +127,7 @@ export function OverviewHeaderFilters({
           ) : null}
 
           <span className="font-mono text-[12px] text-[var(--color-ink-subtle)] tabular-nums whitespace-nowrap">
-            As of {asOfTimestamp || asOf} · {recordClass}
+            {recordClass==='historical_synthetic'?'Historical data':recordClass==='simulated'?'Demo season':'Live season'} · {asOf}
           </span>
 
           {onSelectSavedView ? (

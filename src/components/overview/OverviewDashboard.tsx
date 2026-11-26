@@ -29,9 +29,10 @@ import {
   OverviewHeaderFilters,
   type PreviewStateMode,
 } from './OverviewHeaderFilters';
-import { SponsorshipFunnelSection } from './SponsorshipFunnelSection';
 import { StrategicBetsSection } from './StrategicBetsSection';
 import { TargetPacingSection } from './TargetPacingSection';
+import { OverviewFunnel } from './OverviewFunnel';
+import { OverviewCampaignHighlights } from './OverviewCampaignHighlights';
 import { TeamExecutionSection } from './TeamExecutionSection';
 
 interface OverviewDashboardProps {
@@ -279,81 +280,21 @@ export function OverviewDashboard({
         recordClass={recordClass}
         asOfDate={asOf}
       />
-      <div className="grid min-w-0 grid-cols-1 items-start gap-7 xl:grid-cols-[1.4fr_1fr]">
-      {/* D. Target pacing */}
-      <TargetPacingSection
-        pacing={payload.targetPacing}
-        selectedScenario={scenario}
-        onSelectScenario={setScenario}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-        recordClass={recordClass}
-        asOfDate={asOf}
-      />
-      {/* F. Adaptive needs-attention queue */}
-      <NeedsAttentionQueueSection
-        items={payload.attentionItems}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-        onInspectItem={handleInspectAttentionItem}
-      />
+      <div className="overview-main-grid">
+        <TargetPacingSection pacing={payload.targetPacing} selectedScenario={scenario} onSelectScenario={setScenario} status={status} error={error} onRetry={handleRetry} recordClass={recordClass} asOfDate={asOf}/>
+        <OverviewFunnel status={status} error={error} onRetry={handleRetry} stages={payload.funnelStages} cashOutcome={payload.cashOutcome} onSelectStage={setInspectedStage} onInspectCashOutcome={()=>setCashOutcomeDrawerOpen(true)}/>
       </div>
-
-      {/* C. Sponsorship growth funnel */}
-      <SponsorshipFunnelSection
-        stages={payload.funnelStages}
-        cashOutcome={payload.cashOutcome}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-        selectedStageKey={inspectedStage?.key ?? null}
-        onSelectStage={(stage) => setInspectedStage(stage)}
-        onInspectCashOutcome={() => setCashOutcomeDrawerOpen(true)}
-      />
-
-
-
-      {/* E. Campaign performance */}
-      <CampaignPerformanceSection
-        campaigns={payload.campaigns}
-        sortConfig={sortConfig}
-        onChangeSort={handleSortChange}
-        onOpenCampaignProfile={(campaign) => {
-          if (campaign?.id && onOpenCampaignDetail) {
-            onOpenCampaignDetail(campaign.id);
-            return;
-          }
-          setInspectedCampaign(campaign);
-          setCampaignDrawerOpen(true);
-        }}
-        onNavigateCampaigns={() => onNavigateSection('campaigns')}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-      />
-
-
-
-      {/* G. Strategic bets */}
-      <StrategicBetsSection
-        bets={payload.strategicBets}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-        recordClass={recordClass}
-        asOfDate={asOf}
-      />
-
-      {/* H. Team execution */}
-      <TeamExecutionSection
-        execution={payload.teamExecution}
-        status={status}
-        error={error}
-        onRetry={handleRetry}
-        onNavigateSection={onNavigateSection}
-      />
+      <div className="overview-main-grid overview-lower-grid">
+        <NeedsAttentionQueueSection items={payload.attentionItems} status={status} error={error} onRetry={handleRetry} onInspectItem={handleInspectAttentionItem}/>
+        <OverviewCampaignHighlights status={status} error={error} onRetry={handleRetry} campaigns={payload.campaigns} onViewAll={()=>onNavigateSection('campaigns')} onOpen={campaign=>{if(campaign.id&&onOpenCampaignDetail){onOpenCampaignDetail(campaign.id);return;}setInspectedCampaign(campaign);setCampaignDrawerOpen(true);}}/>
+      </div>
+      <details className="overview-more"><summary>Growth initiatives &amp; team execution</summary><div className="mt-5 space-y-7">
+        <StrategicBetsSection bets={payload.strategicBets} status={status} error={error} onRetry={handleRetry} recordClass={recordClass} asOfDate={asOf}/>
+        <TeamExecutionSection execution={payload.teamExecution} status={status} error={error} onRetry={handleRetry} onNavigateSection={onNavigateSection}/>
+      </div></details>
+      <details className="overview-more"><summary>Full campaign comparison</summary><div className="mt-5">
+        <CampaignPerformanceSection campaigns={payload.campaigns} sortConfig={sortConfig} onChangeSort={handleSortChange} onOpenCampaignProfile={campaign=>{if(campaign?.id&&onOpenCampaignDetail){onOpenCampaignDetail(campaign.id);return;}setInspectedCampaign(campaign);setCampaignDrawerOpen(true);}} onNavigateCampaigns={()=>onNavigateSection('campaigns')} status={status} error={error} onRetry={handleRetry}/>
+      </div></details>
 
       {/* Funnel stage inspection drawer */}
       <SlideOverDrawer

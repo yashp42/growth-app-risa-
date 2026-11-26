@@ -146,7 +146,7 @@ const METRIC_LABELS: Record<string, string> = {
   'M-04': 'Signed in-kind',
   'M-06': 'Collected ÷ signed cash',
   'M-07': 'Outstanding cash',
-  'M-08': 'Cumulative collected (pacing)',
+  'M-08': 'Cumulative signed value',
   'M-21': 'Open pipeline',
   'M-30': 'Approved target',
 };
@@ -175,7 +175,7 @@ function tableFromList(r: Record<string, unknown>): TableBlock | null {
   const rows = Array.isArray(r.rows) ? (r.rows as Array<Record<string, unknown>>) : [];
   if (rows.length === 0) return null;
   const kind = String(r.kind ?? String(r.source ?? '').replace(/^list_/, ''));
-  let columns = (COLUMNS_BY_KIND[kind] ?? []).filter((c) => rows.some((row) => c.key in row));
+  let columns = (kind === 'sponsor_metrics' ? [{key:'position',label:'Rank',format:'number' as const},{key:'sponsor_name',label:'Sponsor',format:'text' as const},{key:'value',label:'Amount',format:'inr' as const}] : COLUMNS_BY_KIND[kind] ?? []).filter((c) => rows.some((row) => c.key in row));
   if (r.source === 'ref.dataset_row' && Array.isArray(r.columns)) {
     columns = (r.columns as string[]).map((key) => ({ key, label: key.replace(/_/g, ' '), format: 'text' as const }));
   }

@@ -777,7 +777,8 @@ export function createOpenRouterClient(
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
       const toolProtocolFailure = !tools?.length && res.status === 400 && /tool choice is none|tool_use_failed/i.test(errText);
-      const retryable = toolProtocolFailure || res.status === 429 || res.status >= 500;
+      const toolArgumentFailure = Boolean(tools?.length) && res.status === 400 && /tool call validation failed|parameters[\s\S]*did not match schema/i.test(errText);
+      const retryable = toolArgumentFailure || toolProtocolFailure || res.status === 429 || res.status >= 500;
       const retryAfterMs = retryable
         ? parseRetryAfterMs(res.headers.get('retry-after'))
         : 0;
@@ -787,7 +788,7 @@ export function createOpenRouterClient(
       throw new OpenRouterError(
         `${entry.provider} returned HTTP ${res.status}${errText ? `: ${errText.slice(0, 220)}` : ''}`,
         res.status,
-        toolProtocolFailure ? 'AI_TOOL_PROTOCOL' : res.status === 429 ? 'OPENROUTER_RATE_LIMIT' : 'OPENROUTER_UPSTREAM_ERROR',
+        toolArgumentFailure ? 'AI_TOOL_ARGUMENTS' : toolProtocolFailure ? 'AI_TOOL_PROTOCOL' : res.status === 429 ? 'OPENROUTER_RATE_LIMIT' : 'OPENROUTER_UPSTREAM_ERROR',
         retryable
       );
     }
@@ -897,7 +898,7 @@ export function createOpenRouterClient(
         lastErr = err;
         const canContinue =
           err instanceof OpenRouterError &&
-          (err.code === 'AI_TOOL_PROTOCOL' || err.status === 429 || err.status >= 500) &&
+          (err.code === 'AI_TOOL_ARGUMENTS' || err.code === 'AI_TOOL_PROTOCOL' || err.status === 429 || err.status >= 500) &&
           err.status !== 504 &&
           i + 1 < chain.length;
         if (!canContinue) {

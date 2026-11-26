@@ -83,7 +83,7 @@ export function Sidebar({
             className="flex items-center gap-2.5 text-left focus-visible:outline-none"
           >
             <span
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--color-accent)] text-[12px] font-semibold tracking-tight text-white"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#DDE6CD] text-[12px] font-semibold tracking-tight text-[#173F34]"
               aria-hidden="true"
             >
               S
@@ -98,7 +98,7 @@ export function Sidebar({
             onClick={() => handleNavigate('overview')}
             title="Sponsorship Ops"
             aria-label="Sponsorship Ops — Overview"
-            className="flex h-7 w-7 items-center justify-center rounded bg-[var(--color-accent)] text-[13px] font-semibold text-white"
+            className="flex h-7 w-7 items-center justify-center rounded bg-[#DDE6CD] text-[13px] font-semibold text-[#173F34]"
           >
             S
           </button>
@@ -138,7 +138,7 @@ export function Sidebar({
         className="flex-1 overflow-y-auto px-3 py-4"
       >
         <div className="space-y-6">
-          {SIDEBAR_NAV_GROUPS.map((group) => (
+          {SIDEBAR_NAV_GROUPS.filter(g=>g.id!=='intelligence').map(g=>g.id==='workspace'?{...g,items:[...g.items,...(SIDEBAR_NAV_GROUPS.find(x=>x.id==='intelligence')?.items??[])]}:g).map((group) => (
             <div key={group.id}>
               {!isCompact ? (
                 <p className="mb-1.5 px-2.5 text-[12px] font-medium tracking-[0.02em] text-[var(--color-ink-subtle)]">
@@ -241,7 +241,7 @@ export function Sidebar({
     <>
       {/* Desktop fixed-width collapsible rail */}
       <aside
-        className={`hidden lg:block shrink-0 border-r border-[var(--color-border)] bg-[#EDF2ED] ${
+        className={`product-navigation hidden lg:block shrink-0 ${
           collapsed ? 'w-[68px]' : 'w-[236px]'
         }`}
       >
@@ -256,7 +256,7 @@ export function Sidebar({
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-          <aside ref={mobileRef} role="dialog" aria-modal="true" aria-label="Workspace navigation" className="relative z-10 h-full w-[280px] border-r border-[var(--color-border)] bg-white shadow-lg">
+          <aside ref={mobileRef} role="dialog" aria-modal="true" aria-label="Workspace navigation" className="product-navigation relative z-10 h-full w-[280px] shadow-lg">
             {renderNavContent(false)}
           </aside>
         </div>
