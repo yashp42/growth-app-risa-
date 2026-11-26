@@ -13,6 +13,7 @@
  *   npx tsx scripts/eval-retrieval.ts            # prints a report
  *   npx tsx scripts/eval-retrieval.ts --write    # also writes eval/results/retrieval-<date>.{md,json}
  */
+import { adoptKnowledgeRanking } from '../server/llm/retrievalRanking.ts';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,7 +102,7 @@ function summarise(label: string, results: CaseResult[]): string {
   return lines.join('\n');
 }
 
-async function main(): Promise<void> {
+export async function runRetrievalEvaluation(adopt = false): Promise<{ report: string; results: Record<string, unknown> }> {
   const config = loadServerConfig();
   if (!config.databaseUrl) {
     console.error('DATABASE_URL is not set: eval-retrieval is a LIVE check and needs the database.');
@@ -112,6 +113,7 @@ async function main(): Promise<void> {
     console.error('Database pool could not be created.');
     process.exit(2);
   }
+  try {
   const pool = dbState.pool as unknown as QueryablePool;
 
   const bank = parseCsv(readFileSync(path.join(ROOT, 'eval/chatbot_test_bank.csv'), 'utf8')) as unknown as CaseRow[];
@@ -141,12 +143,12 @@ async function main(): Promise<void> {
     `## Verdict`,
     '',
     `Mean recall@${K}: A = ${recallA.toFixed(3)}${recallB !== null ? `, B = ${recallB.toFixed(3)}` : ', B = not run'}. Keep: **${winner}**.`,
-    recallB !== null && recallB > recallA
-      ? 'To adopt B, pass { rankMode: "fts_trgm" } where executeReadTool calls executeSearchKnowledge (server/llm/tools.ts).'
-      : 'No change needed: the server keeps the current search.',
+    adopt ? 'The winning variant has been adopted on this server (ties keep FTS).' : 'Run with --adopt to use the winning variant on this server.',
     '',
   ].join('\n');
 
+  if (adopt) adoptKnowledgeRanking(recallA, recallB);
+  const results = { k: K, trgm_enabled: trgmEnabled, variant_a: a, variant_b: b, winner };
   console.log(report);
   if (process.argv.includes('--write')) {
     const dir = path.join(ROOT, 'eval/results');
@@ -159,10 +161,12 @@ async function main(): Promise<void> {
     );
     console.log(`Wrote eval/results/retrieval-${stamp}.md and .json`);
   }
-  await closeDatabasePool(dbState);
+  return { report, results };
+  } finally { await closeDatabasePool(dbState); }
 }
 
-main().catch((err) => {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) runRetrievalEvaluation(process.argv.includes('--adopt')).catch((err) => {
   console.error(`[eval-retrieval] ${err instanceof Error ? err.message : String(err)}`);
   process.exit(1);
 });
+

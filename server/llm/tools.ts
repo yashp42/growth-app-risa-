@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { getDataset, listDatasets } from './referenceData.ts';
+import { getKnowledgeRankMode } from './retrievalRanking.ts';
 import {
   addDaysIso,
   computeCashGateStatus,
@@ -182,6 +184,8 @@ export const GetRegisterArgsSchema = z
       'decision',
       'bet',
       'gate',
+      'source',
+      'benchmark',
     ]),
     id: z.string().trim().min(1).optional(),
     edition_id: z.string().trim().min(1).optional(),
@@ -228,7 +232,28 @@ export const ListRecordsArgsSchema = z
   })
   .strict();
 
+export const GetDatasetArgsSchema = z.object({
+  dataset_id: z.string().trim().min(1).max(240),
+  filter: z.record(z.string().min(1).max(160), z.union([z.string().max(2000), z.number().finite(), z.boolean(), z.null()])).optional(),
+  columns: z.array(z.string().min(1).max(160)).min(1).max(100).optional(),
+  limit: z.number().int().min(1).max(50).optional(),
+}).strict();
+export const ListDatasetsArgsSchema = z.object({ query: z.string().trim().max(240).optional() }).strict();
+
 export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
+  { type: 'function', function: {
+    name: 'list_datasets',
+    description: 'Find AI-visible reference datasets: market_research.prospect_register; financial_modelling.inventory.b_pricing_summary; data_foundation.curated_data.commercial_inventory and external_benchmarks; strategy.resource_allocation.staffing, bets and scenario_capacity; strategy.risk_register; financial_modelling.scenario_catalogue; strategy.d010_approved.out.s7_ranking. Research is not pipeline; analysis is not an approved target.',
+    parameters: { type: 'object', properties: { query: { type: 'string' } }, additionalProperties: false },
+  } },
+  { type: 'function', function: {
+    name: 'get_dataset', description: 'Read an AI-visible reference dataset verbatim. State status_label and cite dataset_id. No aggregation or forecasts. Use filter for exact column:value matches; limit up to 50.',
+    parameters: { type: 'object', properties: {
+      dataset_id: { type: 'string' }, filter: { type: 'object', additionalProperties: { type: ['string', 'number', 'boolean', 'null'] } },
+      columns: { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 100 },
+      limit: { type: 'integer', minimum: 1, maximum: 50 },
+    }, required: ['dataset_id'], additionalProperties: false },
+  } },
   {
     type: 'function',
     function: {
@@ -308,13 +333,13 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
     type: 'function',
     function: {
       name: 'get_register',
-      description: 'Read kpi, rule, experiment, assumption, decision, bet, or gate status.',
+      description: 'Read kpi, rule, experiment, assumption, decision, bet, gate, source or benchmark. Benchmarks are external research: preserve ASK vs ACTUAL vs COST.',
       parameters: {
         type: 'object',
         properties: {
           kind: {
             type: 'string',
-            enum: ['kpi', 'rule', 'experiment', 'assumption', 'decision', 'bet', 'gate'],
+            enum: ['kpi', 'rule', 'experiment', 'assumption', 'decision', 'bet', 'gate', 'source', 'benchmark'],
           },
           id: { type: 'string' },
           edition_id: { type: 'string' },
@@ -479,7 +504,7 @@ export async function executeSearchKnowledge(
   opts: { rankMode?: KnowledgeRankMode } = {}
 ): Promise<Record<string, unknown>> {
   const args = SearchKnowledgeArgsSchema.parse(rawArgs);
-  const trgm = opts.rankMode === 'fts_trgm';
+  const trgm = (opts.rankMode ?? getKnowledgeRankMode()) === 'fts_trgm';
   const historyClause = args.include_history
     ? ''
     : `AND retrieval_rule <> 'contradiction_and_history_only'
@@ -645,6 +670,22 @@ export async function executeReadTool(
 ): Promise<Record<string, unknown>> {
   const dataVersion = await getCurrentDataVersion(ctx.pool);
   const profile = evaluateScopeAndRedaction(ctx.roles);
+
+  if (toolName === 'get_dataset' || toolName === 'list_datasets') {
+    const context = { asOf: ctx.userSeason.asOf, dataVersion };
+    const payload = toolName === 'get_dataset'
+      ? await getDataset(ctx.pool, GetDatasetArgsSchema.parse(rawArgs), context)
+      : await listDatasets(ctx.pool, ListDatasetsArgsSchema.parse(rawArgs).query ?? '', context);
+    acc.toolResults.push(payload);
+    if (payload.available !== false) acc.citations.push({
+      type: 'reference', id: String(payload.dataset_id ?? 'ref.dataset'),
+      title: String(payload.title ?? 'Reference dataset catalogue'),
+      citation_location: String(payload.source_path ?? 'ref.dataset'),
+      decision_status: String(payload.status_label ?? payload.status ?? 'reference'),
+      record_class: String(payload.record_class), data_version: dataVersion,
+    });
+    return payload;
+  }
 
   if (toolName === 'get_metric') {
     const args = GetMetricArgsSchema.parse(rawArgs);
@@ -861,6 +902,22 @@ export async function executeReadTool(
 
   if (toolName === 'get_register') {
     const args = GetRegisterArgsSchema.parse(rawArgs);
+    if (args.kind === 'source' || args.kind === 'benchmark') {
+      const source = args.kind === 'source';
+      const table = source ? 'source_register' : 'benchmark';
+      const pk = source ? 'source_id' : 'benchmark_id';
+      const fields = source
+        ? 'source_id, url, publisher, source_date, accessed_at, record_class, source_ref, evidence_class'
+        : 'benchmark_id, source_id, festival, city, edition_year, asset_type, price_low, price_high, value_kind, stated_footfall, excluded_from_central, record_class, source_ref, evidence_class';
+      const result = await ctx.pool.query<Record<string, unknown>>(
+        'SELECT ' + fields + ' FROM public.' + table + ' WHERE NOT is_deleted' + (args.id ? ' AND ' + pk + ' = $1' : '') + ' ORDER BY ' + pk + ' LIMIT 40', args.id ? [args.id] : []);
+      const payload = { source: table, kind: args.kind, status: 'External research, not pipeline or forecast; preserve ASK / ACTUAL / COST', record_class: 'external_research',
+        edition_id: 'REFERENCE', as_of: ctx.userSeason.asOf, data_version: dataVersion, rows: result.rows };
+      acc.toolResults.push(payload);
+      for (const row of result.rows) acc.citations.push({ type: 'reference', id: String(row[pk]), title: String(row.festival ?? row.publisher ?? row[pk]), record_class: 'external_research', data_version: dataVersion });
+      return payload;
+    }
+
     const editionId = args.edition_id ?? ctx.userSeason.editionId;
     const ed = await resolveEditionFromPool(ctx.pool, editionId);
     const asOf =
@@ -1567,3 +1624,4 @@ export async function executeReadTool(
 
   throw new Error(`Unknown read tool "${toolName}".`);
 }
+
