@@ -19,6 +19,7 @@ const Body=z.object({set:z.enum(['gate','full','retrieval']),resume:z.boolean().
 
 export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePoolState,auth:AuthDependencies,evaluationToken?:string){
   const router=Router(); let active:EvaluationRun|null=null;let retrievalReport:unknown=null; const checkpointActors=new WeakMap<EvaluationRun,VerifiedActor>();
+  const hasRunningEvaluation=()=>active?.state==='running';
   const filename=(set:EvalSet)=>path.join(DIR,'latest-'+set+'.json');
   async function persist(run:EvaluationRun){mkdirSync(DIR,{recursive:true});const file=filename(run.set);writeFileSync(file+'.tmp',JSON.stringify(run,null,2));renameSync(file+'.tmp',file);writeFileSync(file.replace(/\.json$/,'.md'),reportMarkdown(run));const checkpointActor=checkpointActors.get(run);if(checkpointActor)await saveRuntimeCheckpoint(dbState,checkpointActor,'analyst-evaluation:'+run.set,{run,retrieval:run.set==='retrieval'?retrievalReport:null});}
   function load(set:EvalSet):EvaluationRun|null{try{return JSON.parse(readFileSync(filename(set),'utf8'));}catch{return null;}}
@@ -30,7 +31,7 @@ export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePo
   });
   router.post('/admin/eval/run',asyncHandler(async(req,res)=>{
     const parsed=Body.safeParse(req.body);if(!parsed.success)throw new AppApiError(400,'INVALID_ARGUMENT','Expected set: gate, full or retrieval; resume: boolean');
-    if(active?.state==='running')throw new AppApiError(409,'EVALUATION_RUNNING','An evaluation is already running');
+    if(hasRunningEvaluation())throw new AppApiError(409,'EVALUATION_RUNNING','An evaluation is already running');
     const {set,resume}=parsed.data;
     // Full runs exercise action proposals: shared live/production data is excluded.
     if(set!=='retrieval'&&config.appEnv!=='demo')throw new AppApiError(409,'DEMO_REQUIRED','Run analyst evaluation only on the simulated demo service');
@@ -42,7 +43,7 @@ export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePo
     const checkpointActor=getVerifiedActor(req);
     const stored=resume?await loadRuntimeCheckpoint(dbState,checkpointActor,'analyst-evaluation:'+set) as {run?:EvaluationRun;retrieval?:unknown}|null:null;
     const previous=resume?(stored?.run??load(set)):null;
-    if(active?.state==='running')throw new AppApiError(409,'EVALUATION_RUNNING','An evaluation is already running');
+    if(hasRunningEvaluation())throw new AppApiError(409,'EVALUATION_RUNNING','An evaluation is already running');
     if(stored?.retrieval)retrievalReport=stored.retrieval;
     if(resume&&!previous)throw new AppApiError(404,'NO_CHECKPOINT','No checkpoint to resume for this set');
     if(previous?.state==='completed')throw new AppApiError(409,'EVALUATION_COMPLETE','This run is complete; start a new run');
