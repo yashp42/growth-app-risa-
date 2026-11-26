@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { restoreRuntimeRanking } from './server/runtimeCheckpoints.ts';
 import express from 'express';
 import fs from 'node:fs';
 import http, { type Server } from 'node:http';
@@ -23,6 +24,8 @@ const __dirname = path.dirname(__filename);
 async function startServer(): Promise<void> {
   const config = loadServerConfig();
   const dbState = createDatabasePool(config);
+  // A failed administrative checkpoint must not prevent the product starting.
+  await restoreRuntimeRanking(dbState).catch(()=>console.warn('[retrieval] Using the versioned baseline; saved comparison could not be restored.'));
   const authDeps = createAuthDependencies(config, dbState);
 
   for (const errMsg of config.validationErrors) {

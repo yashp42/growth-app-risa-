@@ -176,12 +176,12 @@ function parseRetryAfterMs(headerVal: string | null): number {
   const trimmed = headerVal.trim();
   const sec = Number(trimmed);
   if (Number.isFinite(sec) && sec > 0) {
-    return Math.min(Math.round(sec * 1000), 5000);
+    return Math.min(Math.round(sec * 1000), 86400000);
   }
   const dateMs = Date.parse(trimmed);
   if (Number.isFinite(dateMs)) {
     const delta = dateMs - Date.now();
-    return delta > 0 ? Math.min(delta, 5000) : 0;
+    return delta > 0 ? Math.min(delta, 86400000) : 0;
   }
   return 0;
 }
@@ -311,6 +311,7 @@ export function createOpenRouterClient(
     validationError = err instanceof Error ? err.message : 'Invalid model config.';
   }
 
+  const cooldowns = new Map<string,number>();
   const buildChain = (): ChainEntry[] => {
     const entries: ChainEntry[]=[];
     if(groqKey)for(const model of new Set([groqPrimary,groqFallback].filter((model): model is string => Boolean(model))))entries.push({provider:'groq',model,baseUrl:GROQ_BASE_URL,apiKey:groqKey});
@@ -701,6 +702,7 @@ export function createOpenRouterClient(
       model: entry.model,
       messages: tools?.length ? messages : answerOnlyMessages(messages),
       temperature,
+      max_tokens: 1600,
     };
 
     if (tools && tools.length > 0) {
@@ -782,9 +784,8 @@ export function createOpenRouterClient(
       const retryAfterMs = retryable
         ? parseRetryAfterMs(res.headers.get('retry-after'))
         : 0;
-      if (retryAfterMs > 0) {
-        await sleepFn(retryAfterMs);
-      }
+      if(retryable)cooldowns.set(entry.provider+':'+entry.model,Date.now()+Math.max(retryAfterMs,res.status===429?60_000:toolArgumentFailure?60_000:10_000));
+      // Do not block the user's request or immediately retry a cooling provider.
       throw new OpenRouterError(
         `${entry.provider} returned HTTP ${res.status}${errText ? `: ${errText.slice(0, 220)}` : ''}`,
         res.status,
@@ -873,8 +874,11 @@ export function createOpenRouterClient(
     const temperature = params.temperature ?? 0;
 
     let lastErr: unknown = null;
+    let attempts=0;
     for (let i = 0; i < chain.length; i += 1) {
       const entry = chain[i];
+      if((cooldowns.get(entry.provider+':'+entry.model)??0)>Date.now())continue;
+      if(attempts>=3)break;
       if(entry.provider==='openrouter' && openrouterQuota.exhausted)continue;
       const reasoningSupported =
         entry.provider === 'openrouter'
@@ -883,6 +887,7 @@ export function createOpenRouterClient(
             : (fallbackCheck?.reasoningSupported ?? true)
           : false;
       try {
+        attempts++;
         const result = await callSingleEntry(
           entry,
           params.messages,

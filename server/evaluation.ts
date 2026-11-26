@@ -84,31 +84,31 @@ export interface EvaluationDependencies {
   ask(c: EvalCase, conversation?: string): Promise<{status:number;body:Record<string,any>;retryAfter?:number}>;
   snapshot(): Promise<string>;
   cleanup(body:Record<string,any>): Promise<boolean>;
-  persist(run:EvaluationRun): void;
+  persist(run:EvaluationRun): void | Promise<void>;
 }
 /** Never confirms actions. Requests, results and follow-up conversations survive a pause. */
 export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps:EvaluationDependencies,maxRequests=40):Promise<void>{
   run.state='running';run.error=undefined;const budgetStart=run.requests_used;
-  const save=()=>{run.updated_at=new Date().toISOString();deps.persist(run);};
+  const save=async()=>{run.updated_at=new Date().toISOString();await deps.persist(run);};
   try {
     for(const c of cases){
       const existing=run.results.find(r=>r.test_id===c.test_id);if(existing)continue;
       if(run.requests_used-budgetStart>=maxRequests){run.state='paused';run.error='Request budget reached';break;}
-      run.current_case=c.test_id;save();
+      run.current_case=c.test_id;await save();
       if(c.test_setup?.trim()){
         run.results.push({test_id:c.test_id,category:c.category,status:'NEEDS_HUMAN',reasons:['Requires isolated fixture: '+c.test_setup],answer:'Not run against the shared database.',attempts:0,model_requests:0});
-        run.remaining=run.remaining.filter(id=>id!==c.test_id);save();continue;
+        run.remaining=run.remaining.filter(id=>id!==c.test_id);await save();continue;
       }
       if(c.follow_up_of&&!run.conversations[c.follow_up_of]){
         run.results.push({test_id:c.test_id,category:c.category,status:'NEEDS_HUMAN',reasons:['Parent conversation unavailable'],answer:'',attempts:0,model_requests:0});
-        run.remaining=run.remaining.filter(id=>id!==c.test_id);save();continue;
+        run.remaining=run.remaining.filter(id=>id!==c.test_id);await save();continue;
       }
       run.attempts ??= {};
       if((run.attempts[c.test_id] ?? 0)>=2){
-        run.state='paused';run.error='Provider retry limit reached for '+c.test_id+'. No further requests were sent. Resolve the provider issue and start a new evaluation; this case remains unscored.';save();break;
+        run.state='paused';run.error='Provider retry limit reached for '+c.test_id+'. No further requests were sent. Resolve the provider issue and start a new evaluation; this case remains unscored.';await save();break;
       }
       const before=await deps.snapshot();
-      run.attempts[c.test_id]=(run.attempts[c.test_id]??0)+1;save();
+      run.attempts[c.test_id]=(run.attempts[c.test_id]??0)+1;await save();
       const res=await deps.ask(c,c.follow_up_of?run.conversations[c.follow_up_of]:undefined);
       run.requests_used+=Number(res.body.token_usage?.model_requests??0);
       const cleaned=await deps.cleanup(res.body);
@@ -120,20 +120,20 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
         code: typeof err.code === 'string' ? err.code.slice(0,120) : undefined,
         message: typeof err.message === 'string' ? err.message.slice(0,500) : undefined };
       if(res.status===429||res.body.route==='quota_exhausted'||String(res.body.answer??'').includes("Today's free AI quota is used up")){
-        run.paused_case=pauseDetail;run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';save();break;
+        run.paused_case=pauseDetail;run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';await save();break;
       }
       if(res.status>=500 || ['quota','unavailable'].includes(String(res.body.generation_fallback_reason ?? ''))) {
-        run.paused_case=pauseDetail;run.state='paused';run.error='AI provider could not complete this case; saved progress. Review provider errors before resuming.';save();break;
+        run.paused_case=pauseDetail;run.state='paused';run.error='AI provider could not complete this case; saved progress. Review provider errors before resuming.';await save();break;
       }
       run.paused_case=undefined;
       const scored=scoreAnswer(c,res.body,safe,run.attempts[c.test_id]);
       if(res.status!==200){scored.status='FAIL';scored.reasons.push('HTTP '+res.status);scored.response_status=res.status;scored.error_detail=res.body.error??res.body;}
       run.results.push(scored);if(scored.conversation_id)run.conversations[c.test_id]=scored.conversation_id;
-      run.remaining=run.remaining.filter(id=>id!==c.test_id);save();
+      run.remaining=run.remaining.filter(id=>id!==c.test_id);await save();
     }
     if(!run.remaining.length)run.state='completed';
   }catch(err){run.state='error';run.error=err instanceof Error?err.message:'Evaluation failed';}
-  finally{run.current_case=null;save();}
+  finally{run.current_case=null;await save();}
 }
 
 export function caseEdition(c: EvalCase): 'ED-2025' | 'ED-2026-DEMO' {
@@ -142,3 +142,4 @@ export function caseEdition(c: EvalCase): 'ED-2025' | 'ED-2026-DEMO' {
   if (c.category === 'Basic analytics' || /(?:core\.|stg\.|eda\.)/.test(c.required_data_sources ?? '')) return 'ED-2025';
   return 'ED-2026-DEMO';
 }
+
