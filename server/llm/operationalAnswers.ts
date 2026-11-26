@@ -3,6 +3,8 @@ import type { SponsorMetricId } from './sponsorMetrics.ts';
 export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}|{kind:'clarify_money'}|{kind:'cash_total'};
 /** Recognises business concepts and paraphrases, not test IDs or fixed expected answers. */
 export function operationalIntent(question:string, hasFilters=false, previousQuestion=''):OperationalIntent|null {
+ if(/\b(?:19\d{2}|20\d{2})\b|\b(?:as of|last year|last month|yesterday|between)\b/i.test(question))return null;
+ if(/\b(single|individual receipt|individual payment|invoice)\b/i.test(question))return null;
  if(hasFilters||/\b(create|update|delete|move|log|record|confirm|assign|schedule|compare|why|likely|probability|potential|prioritise|prioritize|2025|2024|2023)\b/i.test(question))return null;
  const q=question.toLowerCase();
  const rank=/\b(highest|largest|biggest|maximum|most|top|leading|best[- ]paying)\b|\b(?:by|per) sponsor\b/.test(q);
@@ -15,7 +17,7 @@ export function operationalIntent(question:string, hasFilters=false, previousQue
    if(/\b(collected|received|paid|paying|got|given|contributed|brought)\b/.test(q))return {kind:'sponsor_ranking',metric:'M-01'};
    return {kind:'clarify_money'};
  }
- if(!rank&&!otherGrain&&!sponsor&&/\b(how much|total|amount)\b/.test(q)&&/\b(collected|received|got|brought in)\b/.test(q)&&/\b(cash|money|collection|collect|received)\b/.test(q))return {kind:'cash_total'};
+ if(!rank&&!otherGrain&&!sponsor&&!/\b(from|for|by|with|among)\b/.test(q)&&/\b(we|us|our|total|overall|altogether)\b/.test(q)&&/\b(how much|total|amount)\b/.test(q)&&/\b(collected|received|got|brought in)\b/.test(q)&&/\b(cash|money|collection|collect|received)\b/.test(q))return {kind:'cash_total'};
  return null;
 }
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;

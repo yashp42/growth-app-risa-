@@ -133,3 +133,6 @@
 .overview-actions li>button>span:last-child {font-family:var(--font-sans);font-size:11px;}
 @media(max-width:1100px) {.overview-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}.overview-main-grid {grid-template-columns:minmax(0,1fr);}}
 @media(max-width:639px) {.overview-panel {padding:1.1rem;border-radius:13px;}.overview-metric {padding:1rem;}.overview-metric>strong {font-size:1.6rem;}.overview-metric>p {font-size:11px;}.overview-metric-icon {width:25px;height:25px;}.overview-metric>div {font-size:12px;}.overview-forecast {flex-wrap:wrap;}.overview-welcome {padding-top:.5rem;}}
+
+.product-navigation .app-sidebar {background:transparent;}
+.product-navigation .app-sidebar nav [aria-current=page] {box-shadow:0 3px 10px #00000010;}

@@ -300,7 +300,7 @@ export function buildSystemPrompt(params: {
     'Sponsor ranks: get_sponsor_metrics; clarify cash vs signed. list_records limit<=25. CRM sponsors: list_records, not get_register.',
     'RULES:',
     '1. Grounding: Use ONLY exact tool values. Never invent, estimate or scale numbers.',
-    '2. Missing data: If evidence is absent or computable=false, state what is missing; never guess. Zero CRM rows mean no CRM record, not no research target.',
+    '2. Missing: If evidence is absent/computable=false, say "I don\'t have that in the data"; name the gap. Empty named CRM: "I have no record of <name>"; research may differ. Never guess.',
     '3. Scope: Default to active edition_id & as_of unless user asks another season. Apply campaign_id/channel_group/bet_id filters ONLY when named in the question (never silently inherit ui_filters); state any applied filter explicitly.',
     '4. Definitions: Keep signed total (M-02), cash-signed (M-03), in-kind (M-04), and cash collected (M-01) strictly separate. No future speculation beyond approved scenarios (SC-01..SC-03) and gate/rule outputs.',
     '5. History: For superseded baselines, search_knowledge(include_history=true) + get_scenario; report current approved D-009 values first.',

@@ -83,7 +83,7 @@ export function Sidebar({
             className="flex items-center gap-2.5 text-left focus-visible:outline-none"
           >
             <span
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[var(--color-accent)] text-[12px] font-semibold tracking-tight text-white"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-[#DDE6CD] text-[12px] font-semibold tracking-tight text-[#173F34]"
               aria-hidden="true"
             >
               S
@@ -98,7 +98,7 @@ export function Sidebar({
             onClick={() => handleNavigate('overview')}
             title="Sponsorship Ops"
             aria-label="Sponsorship Ops — Overview"
-            className="flex h-7 w-7 items-center justify-center rounded bg-[var(--color-accent)] text-[13px] font-semibold text-white"
+            className="flex h-7 w-7 items-center justify-center rounded bg-[#DDE6CD] text-[13px] font-semibold text-[#173F34]"
           >
             S
           </button>
