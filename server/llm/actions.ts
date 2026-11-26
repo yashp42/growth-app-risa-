@@ -32,6 +32,7 @@ import {
   runWriteTransaction,
 } from '../writeUtils.ts';
 import type { OpenRouterToolDefinition } from './openrouter.ts';
+import { formatIstDisplay, resolvePayloadDates, type DateResolution } from './relativeDates.ts';
 import type { QueryablePool } from './tools.ts';
 
 export const ALLOWED_AI_ACTION_TYPES = [
@@ -1880,7 +1881,13 @@ async function fetchBeforeSnapshot(
         {
           field: 'contract_lines',
           before: [],
-          after: lines.map((l) => `${String(l.consideration_type)}: ₹${Number(l.value ?? 0).toLocaleString('en-IN')}`),
+          after: lines.map((l) => ({
+            consideration_type: String(l.consideration_type ?? 'cash'),
+            value: Number(l.value ?? 0),
+            ...(typeof l.description === 'string' && l.description.trim()
+              ? { description: l.description.trim() }
+              : {}),
+          })),
         }
       );
       impactedNote =
@@ -1895,7 +1902,7 @@ async function fetchBeforeSnapshot(
 
     const summary =
       actionType === 'change_stage'
-        ? `Move ${label} from ${String(opp?.stage ?? 'current stage')} to ${String(payload.stage)}`
+        ? `Move ${label} from ${humanizeEnum(opp?.stage ?? 'current stage')} to ${humanizeEnum(payload.stage)}`
         : actionType === 'confirm_deal'
           ? `Confirm deal ${label} at ₹${Number(payload.signed_value_total ?? 0).toLocaleString('en-IN')} (${String(payload.payment_terms)})`
           : `Update opportunity ${label}`;
@@ -1956,7 +1963,7 @@ async function fetchBeforeSnapshot(
         payload.linked_type === 'opportunity'
           ? String(payload.linked_id ?? '')
           : linkedOpportunityId,
-      defaultSummary: `Create ${String(payload.task_type)} task "${String(payload.title)}" for ${owner} due ${String(payload.due_at).slice(0, 10)}`,
+      defaultSummary: `Create ${humanizeEnum(payload.task_type).toLowerCase()} task "${String(payload.title)}" for ${owner}, due ${formatIstDisplay(String(payload.due_at))}`,
     };
   }
 
@@ -2052,6 +2059,62 @@ async function fetchBeforeSnapshot(
   };
 }
 
+// ---------------------------------------------------------------------------
+// No-op detection: an update whose every field already has the requested value
+// creates no ai_action and gets a plain answer instead.
+// ---------------------------------------------------------------------------
+const UPDATE_LIKE_ACTIONS: ReadonlySet<AllowedAiActionType> = new Set([
+  'change_stage',
+  'change_owner',
+  'update_sponsor',
+  'update_contact',
+  'update_campaign',
+  'update_opportunity',
+  'update_task',
+]);
+
+function normalizeForCompare(v: unknown): unknown {
+  if (v === undefined || v === null || v === '') return null;
+  if (v instanceof Date) return v.getTime();
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+    if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(s)) {
+      const ms = Date.parse(s.replace(' ', 'T'));
+      if (Number.isFinite(ms)) return ms;
+    }
+    return s;
+  }
+  return JSON.stringify(v);
+}
+
+export function isNoOpDiff(d: ActionFieldDiff): boolean {
+  return normalizeForCompare(d.before) === normalizeForCompare(d.after);
+}
+
+function humanizeEnum(v: unknown): string {
+  const s = String(v ?? '').replace(/_/g, ' ').trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '—';
+}
+
+export function noOpMessage(
+  actionType: AllowedAiActionType,
+  before: Record<string, unknown> | null,
+  diffs: ActionFieldDiff[],
+  fallbackLabel: string
+): string {
+  const label = String(
+    before?.sponsor_name ?? before?.display_name ?? before?.name ?? before?.full_name ?? before?.title ?? fallbackLabel
+  );
+  if (actionType === 'change_stage') {
+    const stage = diffs.find((d) => d.field === 'stage');
+    return `${label} is already in ${humanizeEnum(stage?.after)}; nothing to change.`;
+  }
+  const fields = diffs.map((d) => d.field.replace(/_id$/, '').replace(/_/g, ' ')).join(', ');
+  return `${label} already has the requested ${fields}; nothing to change.`;
+}
+
 export async function prepareProposeChanges(
   rawArgs: unknown,
   ctx: {
@@ -2063,6 +2126,8 @@ export async function prepareProposeChanges(
     queryId: string;
     pool: QueryablePool;
     persistNow?: boolean;
+    /** The user's question: relative dates in it are resolved on the server. */
+    question?: string;
   }
 ): Promise<{
   batchId: string;
@@ -2088,14 +2153,20 @@ export async function prepareProposeChanges(
     type: AllowedAiActionType;
     payload: Record<string, unknown>;
     summary?: string;
+    dateResolutions: DateResolution[];
   }> = [];
   const allAmbiguities: EntityAmbiguityItem[] = [];
+  const unresolvedDates: Array<{ field: string; input: string }> = [];
 
   for (const item of parsedArgs.actions) {
+    // Relative dates ("by Friday") are resolved here, in IST from the as-of
+    // date, before hashing: the stored payload is always absolute.
+    const dated = resolvePayloadDates(item.payload, ctx.asOf, ctx.question);
+    unresolvedDates.push(...dated.unresolved);
     const resolved = await resolveEntitiesForAction(
       ctx.pool,
       item.type,
-      item.payload,
+      dated.payload,
       ctx.editionId,
       writableClass
     );
@@ -2106,8 +2177,22 @@ export async function prepareProposeChanges(
         type: item.type,
         payload: resolved.payload,
         summary: item.summary,
+        dateResolutions: dated.resolutions,
       });
     }
+  }
+
+  if (unresolvedDates.length > 0) {
+    const lines = unresolvedDates.map(
+      (u) => `- I couldn't work out the date "${u.input}" (${u.field}). Please give a day or date, e.g. "by Friday" or "2 Dec".`
+    );
+    return {
+      batchId: '',
+      actions: [],
+      pendingInserts: [],
+      answer: `Please clarify before I propose any changes:\n${lines.join('\n')}`,
+      toolPayload: { status: 'unresolved_date', unresolved_dates: unresolvedDates },
+    };
   }
 
   if (allAmbiguities.length > 0) {
@@ -2171,6 +2256,7 @@ export async function prepareProposeChanges(
 
   const actions: Array<Record<string, unknown>> = [];
   const pendingInserts: PendingAiActionInsert[] = [];
+  const noOps: Array<{ type: AllowedAiActionType; message: string }> = [];
 
   for (const item of permittedItems) {
     const cleanPayload = parseActionPayload(item.type, item.payload);
@@ -2180,6 +2266,23 @@ export async function prepareProposeChanges(
     const actionId = generatePrefixedId('AIA-');
 
     const snapshot = await fetchBeforeSnapshot(ctx.pool, item.type, cleanPayload);
+    if (UPDATE_LIKE_ACTIONS.has(item.type) && snapshot.fieldDiffs.length > 0) {
+      const changed = snapshot.fieldDiffs.filter((d) => !isNoOpDiff(d));
+      if (changed.length === 0) {
+        noOps.push({
+          type: item.type,
+          message: noOpMessage(
+            item.type,
+            snapshot.beforeSnapshot,
+            snapshot.fieldDiffs,
+            String(snapshot.targetGuard?.id ?? 'This record')
+          ),
+        });
+        continue;
+      }
+      // Partial update: show only the fields that actually change.
+      snapshot.fieldDiffs = changed;
+    }
     const affectedSummary = item.summary || snapshot.defaultSummary;
     const storedPayload: Record<string, unknown> = {
       ...cleanPayload,
@@ -2188,6 +2291,7 @@ export async function prepareProposeChanges(
         field_diffs: snapshot.fieldDiffs,
         impacted_note: snapshot.impactedNote,
         before_snapshot: snapshot.beforeSnapshot,
+        date_resolutions: item.dateResolutions,
       },
       _target_guard: snapshot.targetGuard,
     };
@@ -2208,6 +2312,7 @@ export async function prepareProposeChanges(
       field_diffs: snapshot.fieldDiffs,
       impacted_note: snapshot.impactedNote,
       before_snapshot: snapshot.beforeSnapshot,
+      date_resolutions: item.dateResolutions,
       linked_sponsor_id: snapshot.linkedSponsorId,
       linked_contact_id: snapshot.linkedContactId,
       linked_campaign_id: snapshot.linkedCampaignId,
@@ -2226,12 +2331,25 @@ export async function prepareProposeChanges(
     });
   }
 
+  if (actions.length === 0 && noOps.length > 0) {
+    return {
+      batchId: '',
+      actions: [],
+      pendingInserts: [],
+      answer:
+        noOps.map((n) => n.message).join('\n') +
+        (forbiddenLines.length > 0 ? `\n\nNot proposed for your role:\n${forbiddenLines.join('\n')}` : ''),
+      toolPayload: { status: 'no_change', no_change: noOps },
+    };
+  }
+
   const summaryLines = actions.map(
     (a, idx) =>
       `${idx + 1}. ${String(a.affected_summary)} [${String(a.action_type)} · ${String(a.ai_action_id)}]`
   );
 
   const answer =
+    (noOps.length > 0 ? `${noOps.map((n) => n.message).join('\n')}\n\n` : '') +
     `Prepared ${actions.length} proposed ${actions.length === 1 ? 'change' : 'changes'} for your review (${ctx.editionId}, ${writableClass}, data v${dataVersion}). No database records have been modified yet — confirm below to apply:\n` +
     summaryLines.join('\n') +
     (forbiddenLines.length > 0
@@ -2248,6 +2366,7 @@ export async function prepareProposeChanges(
       count: actions.length,
       status: 'proposed',
       ...(forbidden.length > 0 ? { rejected: forbidden } : {}),
+      ...(noOps.length > 0 ? { no_change: noOps } : {}),
       actions: actions.map((a) => ({
         ai_action_id: a.ai_action_id,
         action_type: a.action_type,
@@ -3471,12 +3590,12 @@ export async function executeAiActionInTransaction(
       const historyId = generatePrefixedId('HV-');
       const stgRes = await client.query<Record<string, unknown>>(
         `INSERT INTO public.opportunity_stage_version (
-           history_id, opportunity_id, stage, owner_member_id,
+           history_id, valid_from, opportunity_id, stage, owner_member_id,
            proposed_value, confirmed_value, version_no,
            record_class, import_batch_id, source_ref, evidence_class,
            created_by, ai_action_id
          ) VALUES (
-           $1, $2, 'prospecting', $3,
+           $1, clock_timestamp(), $2, 'prospecting', $3,
            $4, 0, 1,
            $5, $6, $7, 'T',
            $8, $9
@@ -3582,12 +3701,12 @@ export async function executeAiActionInTransaction(
 
       const stgRes = await client.query<Record<string, unknown>>(
         `INSERT INTO public.opportunity_stage_version (
-           history_id, opportunity_id, stage, owner_member_id,
+           history_id, valid_from, opportunity_id, stage, owner_member_id,
            proposed_value, confirmed_value, drop_reason, loss_reason, version_no,
            record_class, import_batch_id, source_ref, evidence_class,
            created_by, ai_action_id
          ) VALUES (
-           $1, $2, $3, $4,
+           $1, clock_timestamp(), $2, $3, $4,
            $5, 0, $6, $7, $8,
            $9, $10, $11, 'T',
            $12, $13
@@ -3736,12 +3855,12 @@ export async function executeAiActionInTransaction(
       const nextVersion = Number(latest?.version_no ?? 0) + 1;
       const stgRes = await client.query<Record<string, unknown>>(
         `INSERT INTO public.opportunity_stage_version (
-           history_id, opportunity_id, stage, owner_member_id,
+           history_id, valid_from, opportunity_id, stage, owner_member_id,
            proposed_value, confirmed_value, version_no,
            record_class, import_batch_id, source_ref, evidence_class,
            created_by, ai_action_id
          ) VALUES (
-           $1, $2, 'partner_confirmed', $3,
+           $1, clock_timestamp(), $2, 'partner_confirmed', $3,
            $4, $5, $6,
            $7, $8, $9, 'T',
            $10, $11

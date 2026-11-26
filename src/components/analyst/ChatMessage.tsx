@@ -14,6 +14,9 @@ import {
   speakAnswer,
   stopSpeaking,
 } from '../../lib/speech';
+import { AnswerBlocks } from './AnswerBlocks';
+import { MarkdownAnswer } from './MarkdownAnswer';
+import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import {
   formatAiRouteLabel,
@@ -74,6 +77,7 @@ export function ChatMessage({
   compact = false,
 }: ChatMessageProps) {
   const [toolsExpanded, setToolsExpanded] = useState(false);
+  const reduceMotion = useReducedMotion() ?? false;
   const [speaking, setSpeaking] = useState(false);
 
   const ttsSupported = isSpeechSynthesisSupported();
@@ -148,8 +152,18 @@ export function ChatMessage({
 
   const toolCalls = structured?.tool_calls ?? [];
 
+  // A freshly arrived answer fades in from blur with a slight upward slide
+  // (~450 ms); history and reduced-motion users get no animation.
+  const isFresh =
+    !reduceMotion && Date.now() - Date.parse(message.created_at) < 5000;
+
   return (
-    <article className="rounded-md border border-[#D9D7D0] bg-white p-4 sm:p-5">
+    <motion.article
+      initial={isFresh ? { opacity: 0, y: 8, filter: 'blur(12px)' } : false}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+      className="rounded-md border border-[#D9D7D0] bg-white p-4 sm:p-5"
+    >
       {/* Header metadata line (unboxed typography, zero pill badges) */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8E6E0] pb-2.5 text-[11px] text-[#788C83]">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -214,8 +228,13 @@ export function ChatMessage({
 
       {/* Main answer prose */}
       <div className="mt-3 text-[13px] leading-relaxed text-[#202824]">
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        <MarkdownAnswer>{message.content}</MarkdownAnswer>
       </div>
+
+      {/* Server-built tables / charts / KPIs (numbers from tool results only) */}
+      {structured?.blocks && structured.blocks.length > 0 ? (
+        <AnswerBlocks blocks={structured.blocks} />
+      ) : null}
 
       {/* Collapsed tool steps accordion */}
       {toolCalls.length > 0 ? (
@@ -435,6 +454,6 @@ export function ChatMessage({
           </div>
         </div>
       ) : null}
-    </article>
+    </motion.article>
   );
 }

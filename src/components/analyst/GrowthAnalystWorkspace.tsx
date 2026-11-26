@@ -8,6 +8,7 @@ import { AiViewRenderer } from './AiViewRenderer';
 import { DataContextHeader } from './DataContextHeader';
 import { EvidencePanel } from './EvidencePanel';
 import { GrowthAnalystChat } from './GrowthAnalystChat';
+import { OrbStage } from './OrbStage';
 import { ProposedBatchCard } from './ProposedActionCard';
 
 interface GrowthAnalystWorkspaceProps {
@@ -37,6 +38,7 @@ export function GrowthAnalystWorkspace({
   onOpenRecord,
   onOpenAiViewScreen,
 }: GrowthAnalystWorkspaceProps) {
+  const [toggleVoiceNonce, setToggleVoiceNonce] = useState(0);
   const [evidenceOpen, setEvidenceOpen] = useState(true);
   const [mobilePanel, setMobilePanel] = useState<'chat' | 'evidence' | 'actions'>(
     'chat'
@@ -139,6 +141,22 @@ export function GrowthAnalystWorkspace({
               </div>
             ) : null}
 
+            <OrbStage
+              state={session.orbState}
+              micOn={session.voiceListening}
+              steps={session.progressSteps}
+              transcript={session.interimTranscript}
+              errorText={session.error?.message ?? null}
+              onToggleMic={() => setToggleVoiceNonce((n) => n + 1)}
+              onActivate={() => {
+                const el = document.querySelector<HTMLTextAreaElement>(
+                  'textarea[aria-label="Growth Analyst question"]'
+                );
+                el?.focus();
+              }}
+              compact={session.messages.length > 0}
+            />
+
             {session.activeViewSpec ? (
               <div className="mb-4">
                 <AiViewRenderer
@@ -166,6 +184,9 @@ export function GrowthAnalystWorkspace({
               batchErrorById={session.batchErrorById}
               initialDraft={initialDraft}
               autoStartVoiceNonce={autoStartVoiceNonce}
+              toggleVoiceNonce={toggleVoiceNonce}
+              onListeningChange={session.setVoiceListening}
+              onInterimTranscript={session.setInterimTranscript}
               onSend={session.sendMessage}
               onDismissError={session.dismissError}
               onClearDataVersionChanged={session.clearDataVersionChanged}

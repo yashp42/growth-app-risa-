@@ -1,3 +1,4 @@
+import { isAnswerBlock } from '../types/answerBlocks';
 import { apiFetch } from './authSession';
 import {
   ALLOWED_AI_ACTION_TYPES,
@@ -20,6 +21,7 @@ import {
   type AiViewSpec,
   type AllowedAiActionType,
   type ActionFieldDiff,
+  AiDateResolution,
   type SavedAnalystView,
 } from '../types/analyst';
 import type { MetricQueryResult } from '../types/campaigns';
@@ -82,6 +84,12 @@ export function isAllowedAiActionType(
     typeof value === 'string' &&
     (ALLOWED_AI_ACTION_TYPES as ReadonlyArray<string>).includes(value)
   );
+}
+
+/** "Confirm deal" (not "Confirm confirm deal"); "Confirm: Create task" otherwise. */
+export function confirmDialogTitle(actionType: AllowedAiActionType | string): string {
+  const label = formatAiActionType(actionType);
+  return /^confirm\b/i.test(label) ? label : `Confirm: ${label}`;
 }
 
 export function formatAiActionType(actionType: AllowedAiActionType | string): string {
@@ -500,6 +508,9 @@ function normalizeActionRecord(raw: Record<string, unknown>): AiActionRecord | n
     field_diffs: Array.isArray(raw.field_diffs)
       ? (raw.field_diffs as ActionFieldDiff[])
       : undefined,
+    date_resolutions: Array.isArray(raw.date_resolutions)
+      ? (raw.date_resolutions as AiDateResolution[])
+      : undefined,
     impacted_note:
       (raw.impacted_note as string | null | undefined) ??
       (rawPayload.impacted_note as string | null | undefined) ??
@@ -667,6 +678,7 @@ function normalizeStructuredResponse(
     shortcut: Boolean(raw.shortcut),
     quota: (raw.quota as AiQuotaInfo | null | undefined) ?? null,
     view_spec: (raw.view_spec as AiViewSpec | null | undefined) ?? null,
+    blocks: Array.isArray(raw.blocks) ? (raw.blocks as unknown[]).filter(isAnswerBlock) : [],
     model_id: (raw.model_id as string | null | undefined) ?? null,
     latency_ms:
       typeof raw.latency_ms === 'number' ? raw.latency_ms : null,
@@ -741,6 +753,7 @@ export async function sendAnalystChatMessage(
     as_of: request.as_of,
     filters: request.filters,
     view_context: request.view_context,
+    client_request_id: request.client_request_id,
   };
 
   const raw = await requestJson<Record<string, unknown>>(
@@ -753,6 +766,33 @@ export async function sendAnalystChatMessage(
   );
 
   return normalizeStructuredResponse(raw);
+}
+
+/** Real tool steps of an in-flight /api/ai/ask turn (empty when unknown). */
+export async function fetchAiProgress(
+  requestId: string,
+  signal?: AbortSignal
+): Promise<{ steps: string[]; done: boolean }> {
+  try {
+    const res = await requestJson<{ steps?: unknown; done?: unknown }>(
+      `/api/ai/progress/${encodeURIComponent(requestId)}`,
+      { signal }
+    );
+    return {
+      steps: Array.isArray(res.steps) ? res.steps.map(String) : [],
+      done: Boolean(res.done),
+    };
+  } catch {
+    return { steps: [], done: false };
+  }
+}
+
+export function newClientRequestId(): string {
+  const rand =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID().replace(/-/g, '')
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+  return `req-${rand.slice(0, 24)}`;
 }
 
 export async function fetchAiQuota(

@@ -1,6 +1,8 @@
 import { ShieldCheck, X } from 'lucide-react';
 import { useEffect } from 'react';
-import { formatAiActionType } from '../../services/analystApi';
+import { formatFieldLabel } from '../../lib/displayFormat';
+import { confirmDialogTitle } from '../../services/analystApi';
+import { FieldValue } from './FieldValue';
 import type { AiActionRecord } from '../../types/analyst';
 
 interface ActionConfirmationDialogProps {
@@ -53,7 +55,7 @@ export function ActionConfirmationDialog({
                 id="confirm-ai-action-title"
                 className="text-[16px] font-semibold text-[#202824]"
               >
-                Confirm {formatAiActionType(action.action_type).toLowerCase()}
+                {confirmDialogTitle(action.action_type)}
               </h2>
             </div>
           </div>
@@ -89,13 +91,9 @@ export function ActionConfirmationDialog({
                     key={key}
                     className="grid grid-cols-1 gap-1 py-1.5 sm:grid-cols-3"
                   >
-                    <dt className="font-mono text-[#525E58]">{key}</dt>
+                    <dt className="text-[#525E58]">{formatFieldLabel(key)}</dt>
                     <dd className="break-words font-medium text-[#202824] sm:col-span-2">
-                      {val === null || val === undefined || val === ''
-                        ? '—'
-                        : typeof val === 'object'
-                          ? JSON.stringify(val)
-                          : String(val)}
+                      <FieldValue field={key} value={val} />
                     </dd>
                   </div>
                 ))}

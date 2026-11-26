@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import http from 'node:http';
 import test from 'node:test';
 import express from 'express';
@@ -31,6 +32,8 @@ import { createWriteApiRouter } from '../server/routes/writeApi.ts';
 import { createReadApiRouter } from '../server/routes/readApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
 import { answerTextForSpeech, speakAnswer } from '../src/lib/speech.ts';
+import { formatIstDisplay, resolveRelativeDate } from '../server/llm/relativeDates.ts';
+import { buildAnswerBlocks, extractBlockChoice } from '../server/llm/answerBlocks.ts';
 
 function createBaseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
   return {
@@ -363,6 +366,20 @@ function createTransactionalMockDb(store: Mock4bStore): DatabasePoolState {
     params: unknown[] = []
   ): Promise<{ rows: Record<string, unknown>[]; rowCount: number }> => {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
+
+    // Shared Collections -> Receivables query (readApi.queryReceivablesContracts).
+    if (sql.includes('LEFT JOIN public.balance_view bv ON bv.contract_id = c.contract_id')) {
+      const rows = [
+        {
+          contract_id: 'CT-BRAMBLE', opportunity_id: 'O26-020', opportunity_name: 'Bramble Active 2026-27',
+          edition_id: 'ED-2026-DEMO', sponsor_id: 'S26-020', sponsor_name: 'Bramble Active',
+          owner_member_id: 'SIM-NET', owner_name: 'Neha Verma', signed_at: '2026-11-20',
+          signed_value_total: 110000, payment_terms: 'standard_50_50', status: 'active', record_class: 'simulated',
+          cash_signed: 110000, cash_received: 50000, outstanding: 60000, overdue_amount: 0,
+        },
+      ];
+      return { rows, rowCount: rows.length };
+    }
 
     // Shared task link check (writeUtils.assertLinkedRecordExists).
     if (/^SELECT EXISTS \( SELECT 1 FROM public\.(sponsor|opportunity|invoice|campaign|referral) WHERE \w+ = \$1 AND NOT is_deleted \) AS ok$/.test(sql)) {
@@ -2510,6 +2527,122 @@ test('[MOCKED] §D6: a deal for an entity that does not exist gets "no record of
   assert.match(answer, /could not be verified/i, 'the invented ₹5,00,000 is flagged by the answer check');
 });
 
+test('[MOCKED] 4D blocks: receivables question returns a server-built table block; the model supplies no numbers', async () => {
+  const store = createMock4bStore();
+  const mockFetch: typeof fetch = async (input) => {
+    if (String(input).endsWith('/chat/completions')) {
+      return new Response(
+        JSON.stringify({
+          model: DEFAULT_GROQ_MODEL_PRIMARY,
+          choices: [{ message: { role: 'assistant', content: 'Here are the sponsors with outstanding cash [M-07].\n[[blocks: table]]' } }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
+  assert.equal(status, 200, JSON.stringify(body));
+  assert.ok(!String(body.answer).includes('[[blocks'), 'directive stripped from the answer');
+  const blocks = body.blocks as Array<{ type: string; columns?: Array<{ key: string; format: string }>; source?: string; rows?: unknown[] }>;
+  assert.ok(Array.isArray(blocks));
+  const table = blocks.find((b) => b.type === 'table');
+  assert.ok(table, JSON.stringify(blocks));
+  assert.equal(table!.source, 'list_receivables');
+  assert.ok(table!.columns!.some((c) => c.key === 'outstanding' && c.format === 'inr'));
+  assert.ok(!blocks.some((b) => b.type === 'kpi'), 'choice "table" shows only tables');
+});
+
+test('[MOCKED] 4D blocks: per-campaign metric results become a bar chart; view widgets become charts; choice none hides all', () => {
+  const m = (campaign: string, value: number) => ({
+    metric_id: 'M-01',
+    value,
+    unit: 'INR',
+    computable: true,
+    applied_filters: { campaign_id: campaign },
+    data_version: 61,
+  });
+  const chart = buildAnswerBlocks({
+    toolResults: [],
+    metricResults: [m('C26-WARM', 150000), m('C26-B3', 122500)],
+    choice: 'chart',
+  });
+  assert.equal(chart.length, 1);
+  assert.equal(chart[0].type, 'bar');
+  const bar = chart[0] as { series: Array<{ label: string; value: number | null }>; data_version: unknown };
+  assert.deepEqual(bar.series.map((s) => [s.label, s.value]), [['C26-WARM', 150000], ['C26-B3', 122500]]);
+  assert.equal(bar.data_version, 61);
+
+  const fromView = buildAnswerBlocks({
+    toolResults: [],
+    metricResults: [],
+    viewSpec: {
+      data_version: 61,
+      widgets: [
+        { kind: 'metric_by', metric_id: 'M-01', group_by: 'campaign', title: 'Cash collected by campaign', unit: 'INR', total_value: 272500,
+          rows: [{ key: 'C26-WARM', label: 'Warm intros (C26-WARM)', value: 150000, computable: true }] },
+      ],
+    },
+    choice: 'auto',
+  });
+  assert.equal(fromView[0].type, 'bar');
+  assert.equal((fromView[0] as { total?: number }).total, 272500);
+
+  assert.deepEqual(buildAnswerBlocks({ toolResults: [], metricResults: [m('C26-WARM', 1), m('C26-B3', 2)], choice: 'none' }), []);
+  assert.deepEqual(extractBlockChoice('Answer text.\n[[blocks: chart]]'), { answer: 'Answer text.', choice: 'chart' });
+  assert.deepEqual(extractBlockChoice('No tag here.'), { answer: 'No tag here.', choice: 'auto' });
+});
+
+test('[MOCKED] 4D progress: real tool steps are readable while /api/ai/ask is in flight, only by the asker', async () => {
+  const store = createMock4bStore();
+  let seenDuringModelCall: string[] = [];
+  let otherUserView: unknown = null;
+  let baseUrl = '';
+  const requestId = 'req-progress-1234';
+  const mockFetch: typeof fetch = async (input) => {
+    if (String(input).endsWith('/chat/completions')) {
+      const pr = await fetch(`${baseUrl}/api/ai/progress/${requestId}`, {
+        headers: { Authorization: 'Bearer test-token' },
+      });
+      seenDuringModelCall = ((await pr.json()) as { steps: string[] }).steps;
+      const prevActor = store.actorMemberId;
+      store.actorMemberId = 'SIM-OTHER';
+      const other = await fetch(`${baseUrl}/api/ai/progress/${requestId}`, {
+        headers: { Authorization: 'Bearer test-token' },
+      });
+      otherUserView = await other.json();
+      store.actorMemberId = prevActor;
+      return new Response(
+        JSON.stringify({ model: DEFAULT_GROQ_MODEL_PRIMARY, choices: [{ message: { role: 'assistant', content: 'Outstanding cash is listed below [M-07].' } }] }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const srv = await startTestApp(store, mockFetch);
+  baseUrl = srv.baseUrl;
+  try {
+    const r = await fetch(`${srv.baseUrl}/api/ai/ask`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: 'Which signed partnerships still have outstanding cash?',
+        edition_id: 'ED-2026-DEMO',
+        record_class: 'simulated',
+        as_of: '2026-11-26',
+        client_request_id: requestId,
+      }),
+    });
+    assert.equal(r.status, 200);
+    assert.deepEqual(seenDuringModelCall, ['Listing receivables…', 'Looking up M-07…', 'Writing the answer…']);
+    assert.deepEqual(otherUserView, { steps: [], done: false, known: false });
+    const after = await fetch(`${srv.baseUrl}/api/ai/progress/${requestId}`, { headers: { Authorization: 'Bearer test-token' } });
+    assert.equal(((await after.json()) as { done: boolean }).done, true);
+  } finally {
+    await srv.close();
+  }
+});
+
 test('[MOCKED] Prompt injection in tool result creates 0 ai_action rows', async () => {
   const store = createMock4bStore();
   store.sponsors.set('S26-INJ', {
@@ -2765,6 +2898,159 @@ test('[MOCKED] 1.4: read-aloud speaks answer text only, in en-IN (browser speech
     g.window = prevWindow;
     g.SpeechSynthesisUtterance = prevUtterance;
   }
+});
+
+test('[MOCKED] Dates: relative phrases resolve on the server from the IST as-of date (Thu 26 Nov 2026)', () => {
+  const asOf = '2026-11-26';
+  const cases: Array<[string, string, string | null]> = [
+    ['today', '2026-11-26', null],
+    ['tomorrow', '2026-11-27', null],
+    ['Friday', '2026-11-27', null],
+    ['by Friday', '2026-11-27', null],
+    ['by Friday 5pm', '2026-11-27', '17:00'],
+    ['this Thursday', '2026-11-26', null],
+    ['next Friday', '2026-12-04', null],
+    ['next Monday', '2026-11-30', null],
+    ['next week', '2026-11-30', null],
+    ['by end of week', '2026-11-27', null],
+    ['end of next week', '2026-12-04', null],
+    ['in 3 days', '2026-11-29', null],
+    ['27 Nov', '2026-11-27', null],
+    ['5 Jan', '2027-01-05', null],
+    ['Dec 1', '2026-12-01', null],
+  ];
+  for (const [phrase, date, time] of cases) {
+    assert.deepEqual(resolveRelativeDate(phrase, asOf), { date, time }, phrase);
+  }
+  assert.equal(resolveRelativeDate('soonish', asOf), null);
+  assert.equal(resolveRelativeDate('31 Nov', asOf), null);
+  assert.equal(formatIstDisplay('2026-11-27T18:00:00+05:30'), 'Fri 27 Nov 2026, 18:00 IST');
+
+  // The server's own clock zone must not matter.
+  const prevTz = process.env.TZ;
+  process.env.TZ = 'America/Los_Angeles';
+  try {
+    assert.deepEqual(resolveRelativeDate('by Friday', asOf), { date: '2026-11-27', time: null });
+    assert.equal(formatIstDisplay('2026-11-27T18:00:00+05:30'), 'Fri 27 Nov 2026, 18:00 IST');
+  } finally {
+    if (prevTz === undefined) delete process.env.TZ;
+    else process.env.TZ = prevTz;
+  }
+});
+
+test('[MOCKED] Dates: "follow up by Friday" is stored as 2026-11-27 18:00 IST and shown resolved in the card', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [{ member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: null }];
+  const db = createTransactionalMockDb(store);
+  const ctx = {
+    actorMemberId: 'SIM-LEAD',
+    roles: ['coordination_lead'] as CanonicalRole[],
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated' as const,
+    asOf: '2026-11-26',
+    queryId: 'AIQ-DATES',
+    pool: db.pool!,
+    question: 'Move Voltyatra to negotiating and create a task for Kavya to follow up by Friday',
+  };
+
+  // 1. The model passes the phrase verbatim.
+  const verbatim = await prepareProposeChanges(
+    { actions: [{ type: 'create_task', payload: { title: 'Follow up Voltyatra', task_type: 'follow_up', owner_name: 'Kavya', due_at: 'by Friday' } }] },
+    ctx
+  );
+  assert.equal(verbatim.pendingInserts.length, 1, verbatim.answer);
+  assert.equal(verbatim.pendingInserts[0].payload.due_at, '2026-11-27T18:00:00+05:30');
+  const res = verbatim.actions[0].date_resolutions as Array<{ display: string; input: string }>;
+  assert.equal(res[0].display, 'Fri 27 Nov 2026, 18:00 IST');
+  assert.equal(res[0].input, 'by Friday');
+
+  // 2. The model did its own (wrong) arithmetic: the server's resolution of the question wins.
+  const wrong = await prepareProposeChanges(
+    { actions: [{ type: 'create_task', payload: { title: 'Follow up Voltyatra', task_type: 'follow_up', owner_name: 'Kavya', due_at: '2026-11-28' } }] },
+    ctx
+  );
+  assert.equal(wrong.pendingInserts[0].payload.due_at, '2026-11-27T18:00:00+05:30');
+
+  // 3. An unresolvable phrase asks for a date and proposes nothing.
+  const vague = await prepareProposeChanges(
+    { actions: [{ type: 'create_task', payload: { title: 'Follow up', task_type: 'follow_up', owner_name: 'Kavya', due_at: 'soonish' } }] },
+    { ...ctx, question: 'create a task for Kavya to follow up soonish' }
+  );
+  assert.equal(vague.pendingInserts.length, 0);
+  assert.equal(vague.toolPayload.status, 'unresolved_date');
+  assert.match(vague.answer, /couldn't work out the date "soonish"/);
+});
+
+test('[MOCKED] No-op: "Move Voltyatra to negotiating" when it is already Negotiating creates no ai_action', async () => {
+  const store = createMock4bStore();
+  store.stageVersions.push({
+    history_id: 'H26-012-NEG',
+    opportunity_id: 'O26-012',
+    stage: 'negotiating',
+    owner_member_id: 'SIM-NET',
+    proposed_value: 120000,
+  });
+  store.teamMembers = [{ member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: null }];
+  const db = createTransactionalMockDb(store);
+  const ctx = {
+    actorMemberId: 'SIM-LEAD',
+    roles: ['coordination_lead'] as CanonicalRole[],
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated' as const,
+    asOf: '2026-11-26',
+    queryId: 'AIQ-NOOP',
+    pool: db.pool!,
+  };
+
+  const only = await prepareProposeChanges(
+    { actions: [{ type: 'change_stage', payload: { opportunity_id: 'O26-012', stage: 'negotiating' } }] },
+    ctx
+  );
+  assert.equal(only.batchId, '');
+  assert.equal(only.pendingInserts.length, 0);
+  assert.equal(only.toolPayload.status, 'no_change');
+  assert.match(only.answer, /^Voltyatra is already in Negotiating/);
+  assert.equal(store.aiActions.size, 0);
+
+  // Mixed batch: the no-op move is dropped, the real task is still proposed.
+  const mixed = await prepareProposeChanges(
+    {
+      actions: [
+        { type: 'change_stage', payload: { opportunity_id: 'O26-012', stage: 'negotiating' } },
+        { type: 'create_task', payload: { title: 'Follow up Voltyatra', task_type: 'follow_up', owner_name: 'Kavya', due_at: '2026-11-27' } },
+      ],
+    },
+    ctx
+  );
+  assert.equal(mixed.pendingInserts.length, 1);
+  assert.equal(mixed.pendingInserts[0].action_type, 'create_task');
+  assert.match(mixed.answer, /Voltyatra is already in Negotiating/);
+  assert.match(mixed.answer, /Prepared 1 proposed change/);
+
+  // A real change is still proposed with its before -> after.
+  const real = await prepareProposeChanges(
+    { actions: [{ type: 'change_stage', payload: { opportunity_id: 'O26-012', stage: 'proposal_sent' } }] },
+    ctx
+  );
+  assert.equal(real.pendingInserts.length, 1, real.answer);
+  const diffs = real.actions[0].field_diffs as Array<{ field: string; before: unknown; after: unknown }>;
+  assert.deepEqual(diffs, [{ field: 'stage', before: 'negotiating', after: 'proposal_sent' }]);
+});
+
+test('[MOCKED] Stage versions are timestamped with clock_timestamp() so two writes in one batch never tie', () => {
+  const sources = [
+    readFileSync(new URL('../server/routes/writeApi.ts', import.meta.url), 'utf8'),
+    readFileSync(new URL('../server/llm/actions.ts', import.meta.url), 'utf8'),
+  ];
+  let inserts = 0;
+  for (const src of sources) {
+    for (const m of src.matchAll(/INSERT INTO public\.opportunity_stage_version \(([\s\S]*?)\) VALUES \(\s*([^\n]*)/g)) {
+      inserts++;
+      assert.match(m[1], /history_id, valid_from,/);
+      assert.match(m[2], /^\$1, clock_timestamp\(\),/);
+    }
+  }
+  assert.equal(inserts, 6);
 });
 
 // ---------------------------------------------------------------------------

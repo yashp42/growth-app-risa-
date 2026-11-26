@@ -463,13 +463,23 @@ function scoreTitleMatch(title: string | null | undefined, queryWords: string[])
   return hits;
 }
 
+/**
+ * 'fts' (default): strict websearch FTS with an OR fallback, title boost.
+ * 'fts_trgm': also matches and ranks by pg_trgm similarity of the query to the
+ * chunk's document title and section (needs the pg_trgm extension). Chosen by
+ * scripts/eval-retrieval.ts; never by the model.
+ */
+export type KnowledgeRankMode = 'fts' | 'fts_trgm';
+
 export async function executeSearchKnowledge(
   pool: QueryablePool,
   rawArgs: unknown,
   dataVersion: number,
-  acc: ToolRunAccumulator
+  acc: ToolRunAccumulator,
+  opts: { rankMode?: KnowledgeRankMode } = {}
 ): Promise<Record<string, unknown>> {
   const args = SearchKnowledgeArgsSchema.parse(rawArgs);
+  const trgm = opts.rankMode === 'fts_trgm';
   const historyClause = args.include_history
     ? ''
     : `AND retrieval_rule <> 'contradiction_and_history_only'
@@ -487,19 +497,27 @@ export async function executeSearchKnowledge(
     kpiClause = `AND related_kpi ILIKE '%' || $${baseParams.length} || '%'`;
   }
 
+  let trgmParamIndex = 0;
+  if (trgm) {
+    baseParams.push(args.query);
+    trgmParamIndex = baseParams.length;
+  }
+
   const querySql = (tsQueryParamIndex: number) => `
     SELECT chunk_id, doc_id, document_title, section, citation_location,
            decision_status, retrieval_rule, evidence_class, related_bet,
            related_kpi, record_class, text,
            ts_rank_cd(tsv, websearch_to_tsquery('english', $${tsQueryParamIndex})) AS base_rank
+           ${trgm ? `, GREATEST(similarity(COALESCE(document_title, ''), $${trgmParamIndex}), similarity(COALESCE(section, ''), $${trgmParamIndex})) AS trgm_sim` : ''}
       FROM public.knowledge_chunk
      WHERE NOT is_deleted
        AND valid_to IS NULL
        ${historyClause}
        ${betClause}
        ${kpiClause}
-       AND tsv @@ websearch_to_tsquery('english', $${tsQueryParamIndex})
-     ORDER BY base_rank DESC, chunk_id ASC
+       AND (tsv @@ websearch_to_tsquery('english', $${tsQueryParamIndex})
+            ${trgm ? `OR similarity(COALESCE(document_title, ''), $${trgmParamIndex}) > 0.12 OR similarity(COALESCE(section, ''), $${trgmParamIndex}) > 0.12` : ''})
+     ORDER BY base_rank ${trgm ? '+ GREATEST(similarity(COALESCE(document_title, \'\'), $' + trgmParamIndex + '), similarity(COALESCE(section, \'\'), $' + trgmParamIndex + '))' : ''} DESC, chunk_id ASC
      LIMIT 12`;
 
   const strictRes = await pool.query<Record<string, unknown>>(
@@ -544,8 +562,10 @@ export async function executeSearchKnowledge(
       b.document_title as string | undefined,
       queryWords
     );
-    const aScore = Number(a.base_rank ?? 0) + aTitleHits * 0.5;
-    const bScore = Number(b.base_rank ?? 0) + bTitleHits * 0.5;
+    const aScore =
+      Number(a.base_rank ?? 0) + aTitleHits * 0.5 + (trgm ? Number(a.trgm_sim ?? 0) : 0);
+    const bScore =
+      Number(b.base_rank ?? 0) + bTitleHits * 0.5 + (trgm ? Number(b.trgm_sim ?? 0) : 0);
     return bScore - aScore;
   });
 
@@ -603,6 +623,7 @@ export async function executeSearchKnowledge(
 
   const payload = {
     source: 'knowledge_chunk_fts',
+    rank_mode: trgm ? 'fts_trgm' : 'fts',
     query: args.query,
     include_history: args.include_history,
     used_or_fallback: usedOrFallback,
@@ -1535,6 +1556,7 @@ export async function executeReadTool(
       // A name search that finds nothing is stated explicitly, so the answer
       // says "no record of ..." instead of inventing details (guardrail D6).
       ...(f.search ? { search: f.search } : {}),
+      ...(f.state ? { state: f.state === 'signed' || f.state === 'won' ? 'confirmed' : f.state } : {}),
       ...(f.search && rows.length === 0
         ? { no_record: `I have no record of "${f.search}" in ${args.kind} (${ed.edition_id}).` }
         : {}),
