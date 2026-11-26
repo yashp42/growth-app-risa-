@@ -2075,6 +2075,37 @@ export async function prepareProposeChanges(
     };
   }
 
+  // Reject (do not store) any change the signed-in user's role cannot make.
+  // The same check runs again at confirm time in executeAiActionInTransaction.
+  const forbidden: Array<{ type: AllowedAiActionType; reason: string }> = [];
+  const permittedItems = resolvedItems.filter((item) => {
+    const check = getActionPermissionSpec(item.type).allowed(ctx.roles);
+    if (!check.allowed) {
+      forbidden.push({
+        type: item.type,
+        reason: check.reason ?? `Your role is not permitted to ${item.type}.`,
+      });
+      return false;
+    }
+    return true;
+  });
+  const forbiddenLines = forbidden.map(
+    (f) => `- Not proposed (${f.type}): ${f.reason}`
+  );
+
+  if (permittedItems.length === 0) {
+    return {
+      batchId: '',
+      actions: [],
+      pendingInserts: [],
+      answer: `I can't propose ${forbidden.length === 1 ? 'this change' : 'these changes'} for your role:\n${forbiddenLines.join('\n')}`,
+      toolPayload: {
+        status: 'forbidden',
+        rejected: forbidden,
+      },
+    };
+  }
+
   const batchId = generatePrefixedId('AIB-');
   const verRes = await ctx.pool.query<{ data_version: string | number }>(
     `SELECT data_version FROM public.app_state WHERE id = 1`
@@ -2084,7 +2115,7 @@ export async function prepareProposeChanges(
   const actions: Array<Record<string, unknown>> = [];
   const pendingInserts: PendingAiActionInsert[] = [];
 
-  for (const item of resolvedItems) {
+  for (const item of permittedItems) {
     const cleanPayload = parseActionPayload(item.type, item.payload);
     const payloadSha256 = computePayloadSha256(cleanPayload);
     const permSpec = getActionPermissionSpec(item.type);
@@ -2145,7 +2176,10 @@ export async function prepareProposeChanges(
 
   const answer =
     `Prepared ${actions.length} proposed ${actions.length === 1 ? 'change' : 'changes'} for your review (${ctx.editionId}, ${writableClass}, data v${dataVersion}). No database records have been modified yet — confirm below to apply:\n` +
-    summaryLines.join('\n');
+    summaryLines.join('\n') +
+    (forbiddenLines.length > 0
+      ? `\n\nNot proposed for your role:\n${forbiddenLines.join('\n')}`
+      : '');
 
   return {
     batchId,
@@ -2156,6 +2190,7 @@ export async function prepareProposeChanges(
       batch_id: batchId,
       count: actions.length,
       status: 'proposed',
+      ...(forbidden.length > 0 ? { rejected: forbidden } : {}),
       actions: actions.map((a) => ({
         ai_action_id: a.ai_action_id,
         action_type: a.action_type,

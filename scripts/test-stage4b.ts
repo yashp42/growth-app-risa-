@@ -1992,6 +1992,41 @@ test('[MOCKED] Ambiguous name "Kavya" returns candidates and inserts 0 ai_action
   assert.match(prep.answer, /Kavya Sharma/);
 });
 
+test('[MOCKED] 2.4: change the role cannot make is rejected at propose time and never stored', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [
+    { member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: 'kavya@campusfest.in' },
+  ];
+  const db = createTransactionalMockDb(store);
+  const ctx = {
+    actorMemberId: 'SIM-VIEW',
+    roles: ['viewer'] as CanonicalRole[],
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated' as const,
+    asOf: '2026-11-26',
+    queryId: 'AIQ-FORBID',
+    pool: db.pool!,
+  };
+  const prep = await prepareProposeChanges(
+    {
+      changes: [
+        {
+          action_type: 'create_task',
+          fields: { title: 'Follow up', task_type: 'follow_up', owner_name: 'Kavya' },
+        },
+      ],
+      reason: 'viewer tries to create a task',
+    },
+    ctx
+  );
+  assert.equal(prep.batchId, '');
+  assert.equal(prep.actions.length, 0);
+  assert.equal(prep.pendingInserts.length, 0);
+  assert.equal(prep.toolPayload.status, 'forbidden');
+  assert.match(prep.answer, /can't propose/);
+  assert.equal(store.aiActions.size, 0);
+});
+
 test('[MOCKED] Stale target record returns 409 "This record changed since the proposal; ask again"', async () => {
   const store = createMock4bStore();
   const srv = await startTestApp(store);
