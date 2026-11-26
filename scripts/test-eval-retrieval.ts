@@ -21,12 +21,12 @@ test('[MOCKED] eval-retrieval: recall@6 and precision@6, including doc-level ref
 
   const s = scoreCase(['KB-06.7', 'KB-02.3'], ['KB-06.7', 'KB-01.1', 'KB-03.2', 'KB-04.4']);
   assert.equal(s.recall, 0.5);
-  assert.equal(s.precision, 0.25);
+  assert.equal(s.precision, 1 / 6);
   assert.deepEqual(s.missedRefs, ['KB-02.3']);
 
   const full = scoreCase(['KB-15'], ['KB-15.1', 'KB-15.3', 'KB-02.1']);
   assert.equal(full.recall, 1);
-  assert.equal(full.precision, 2 / 3);
+  assert.equal(full.precision, 2 / 6);
 
   const cutoff = scoreCase(['KB-09.9'], ['a', 'b', 'c', 'd', 'e', 'f', 'KB-09.9']);
   assert.equal(cutoff.recall, 0, 'only the top 6 count');
@@ -65,3 +65,4 @@ test('[MOCKED] eval-retrieval: variant A keeps the current SQL; variant B adds p
   assert.deepEqual(calls[0].params, ['handoff leak', 'handoff leak']);
   assert.deepEqual(b.chunks.map((c) => c.chunk_id), ['KB-06.7', 'KB-02.1'], 'trigram similarity re-ranks');
 });
+

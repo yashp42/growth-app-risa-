@@ -11,6 +11,10 @@ export interface AnswerTableBlock {
   data_version: number | string | null;
   edition_id?: string;
   record_class?: string;
+  status?: string;
+  source_path?: string;
+  source_sha256?: string;
+  truncated?: boolean;
 }
 
 export interface AnswerBarBlock {

@@ -13,6 +13,7 @@ import { createFinanceAndTeamApiRouter } from './server/routes/financeAndTeamApi
 import { createReadApiRouter } from './server/routes/readApi.ts';
 import { createWriteApiRouter } from './server/routes/writeApi.ts';
 import { createAiApiRouter } from './server/routes/aiApi.ts';
+import { createEvaluationApiRouter } from './server/routes/evaluationApi.ts';
 import { createAiActionsRouter } from './server/llm/actions.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,6 +61,7 @@ async function startServer(): Promise<void> {
   app.use('/api', createWriteApiRouter(config, dbState, authDeps));
   app.use('/api', createFinanceAndTeamApiRouter(config, dbState, authDeps));
   app.use('/api', aiRouter);
+  app.use('/api', createEvaluationApiRouter(config, dbState, authDeps));
   app.use('/api', createAiActionsRouter(config, dbState, authDeps));
   app.use(
     '/api',
@@ -154,3 +156,4 @@ startServer().catch((err: unknown) => {
   console.error(`[server] Fatal startup error (${name})`);
   process.exit(1);
 });
+

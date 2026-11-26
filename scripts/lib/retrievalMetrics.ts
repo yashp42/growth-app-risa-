@@ -66,7 +66,7 @@ export interface CaseScore {
 
 /**
  * recall@k = share of expected refs satisfied by the top-k retrieved chunks;
- * precision@k = share of retrieved chunks (up to k) that satisfy some expected ref.
+ * precision@k = relevant retrieved chunks divided by k (missing slots are not relevant).
  * With nothing retrieved, precision is 0.
  */
 export function scoreCase(expected: string[], retrieved: string[], k = 6): CaseScore {
@@ -75,7 +75,7 @@ export function scoreCase(expected: string[], retrieved: string[], k = 6): CaseS
   const relevantRetrieved = top.filter((c) => expected.some((ref) => chunkMatchesRef(c, ref))).length;
   return {
     recall: expected.length === 0 ? 1 : matchedRefs.length / expected.length,
-    precision: top.length === 0 ? 0 : relevantRetrieved / top.length,
+    precision: k <= 0 ? 0 : relevantRetrieved / k,
     matchedRefs,
     missedRefs: expected.filter((r) => !matchedRefs.includes(r)),
     relevantRetrieved,
@@ -85,3 +85,4 @@ export function scoreCase(expected: string[], retrieved: string[], k = 6): CaseS
 export function mean(values: number[]): number {
   return values.length === 0 ? 0 : values.reduce((a, b) => a + b, 0) / values.length;
 }
+

@@ -16,6 +16,10 @@ export interface TableBlock {
   data_version: number | string | null;
   edition_id?: string;
   record_class?: string;
+  status?: string;
+  source_path?: string;
+  source_sha256?: string;
+  truncated?: boolean;
 }
 
 export interface BarBlock {
@@ -58,6 +62,21 @@ const MAX_TABLE_ROWS = 25;
 
 type Col = TableBlock['columns'][number];
 const COLUMNS_BY_KIND: Record<string, Col[]> = {
+  benchmark: [
+    { key: 'benchmark_id', label: 'Benchmark', format: 'text' },
+    { key: 'festival', label: 'Festival', format: 'text' },
+    { key: 'asset_type', label: 'Asset', format: 'text' },
+    { key: 'price_low', label: 'Low (INR)', format: 'inr' },
+    { key: 'price_high', label: 'High (INR)', format: 'inr' },
+    { key: 'value_kind', label: 'ASK / ACTUAL / COST', format: 'text' },
+    { key: 'source_id', label: 'Source', format: 'text' },
+  ],
+  source: [
+    { key: 'source_id', label: 'Source', format: 'text' },
+    { key: 'publisher', label: 'Publisher', format: 'text' },
+    { key: 'url', label: 'URL', format: 'text' },
+    { key: 'source_date', label: 'Source date', format: 'text' },
+  ],
   receivables: [
     { key: 'sponsor_name', label: 'Sponsor', format: 'text' },
     { key: 'contract_id', label: 'Contract', format: 'text' },
@@ -157,6 +176,9 @@ function tableFromList(r: Record<string, unknown>): TableBlock | null {
   if (rows.length === 0) return null;
   const kind = String(r.kind ?? String(r.source ?? '').replace(/^list_/, ''));
   let columns = (COLUMNS_BY_KIND[kind] ?? []).filter((c) => rows.some((row) => c.key in row));
+  if (r.source === 'ref.dataset_row' && Array.isArray(r.columns)) {
+    columns = (r.columns as string[]).map((key) => ({ key, label: key.replace(/_/g, ' '), format: 'text' as const }));
+  }
   if (columns.length === 0) {
     columns = Object.keys(rows[0])
       .filter((k) => !/(^id$|_hash$|import_batch|evidence_class|is_deleted)/.test(k))
@@ -166,15 +188,19 @@ function tableFromList(r: Record<string, unknown>): TableBlock | null {
   const state = typeof r.state === 'string' ? r.state : undefined;
   return {
     type: 'table',
-    title: (kind === 'opportunities' && state && STATE_TITLES[state]) || KIND_TITLES[kind] || kind,
+    title: typeof r.title === 'string' ? r.title : (kind === 'opportunities' && state && STATE_TITLES[state]) || KIND_TITLES[kind] || kind,
     columns,
-    rows: rows.slice(0, MAX_TABLE_ROWS).map((row) =>
+    rows: rows.slice(0, r.source === 'ref.dataset_row' ? 50 : MAX_TABLE_ROWS).map((row) =>
       Object.fromEntries(columns.map((c) => [c.key, toCell(row[c.key])]))
     ),
     source: String(r.source ?? 'list_records'),
     data_version: (r.data_version as number | string | null | undefined) ?? null,
     edition_id: r.edition_id as string | undefined,
     record_class: r.record_class as string | undefined,
+    status: (r.status_label ?? r.status) as string | undefined,
+    source_path: r.source_path as string | undefined,
+    source_sha256: r.source_sha256 as string | undefined,
+    truncated: r.truncated === true,
   };
 }
 
@@ -281,13 +307,17 @@ function blocksFromView(viewSpec: Record<string, unknown> | undefined): AnswerBl
   return out;
 }
 
-const DIRECTIVE_RE = /\s*\[\[\s*blocks?\s*:\s*(table|chart|kpi|none|auto)\s*\]\]\s*$/i;
+const DIRECTIVE_RE = /\[\[\s*blocks?\s*:[^\]\r\n]*(?:\]\]?|$)/gi;
 
 /** Strip the model's optional trailing block choice from the answer text. */
 export function extractBlockChoice(answer: string): { answer: string; choice: BlockChoice } {
-  const m = DIRECTIVE_RE.exec(answer);
-  if (!m) return { answer, choice: 'auto' };
-  return { answer: answer.slice(0, m.index).trimEnd(), choice: m[1].toLowerCase() as BlockChoice };
+  let choice: BlockChoice = 'auto';
+  const clean = answer.replace(DIRECTIVE_RE, (tag) => {
+    const valid = /^\[\[\s*blocks?\s*:\s*(table|chart|kpi|none|auto)\s*\]\]$/i.exec(tag);
+    if (valid) choice = valid[1].toLowerCase() as BlockChoice;
+    return '';
+  });
+  return { answer: normaliseAnswerPresentation(clean.trim()), choice };
 }
 
 export function buildAnswerBlocks(params: {
@@ -304,7 +334,7 @@ export function buildAnswerBlocks(params: {
   for (const raw of params.toolResults) {
     if (!raw || typeof raw !== 'object') continue;
     const r = raw as Record<string, unknown>;
-    if (typeof r.source === 'string' && r.source.startsWith('list_')) {
+    if (typeof r.source === 'string' && (r.source.startsWith('list_') || r.source === 'ref.dataset_row' || r.source === 'benchmark' || r.source === 'source_register')) {
       const t = tableFromList(r);
       if (t) tables.push(t);
     } else if (r.source === 'metrics.get_metric_series') {
@@ -343,4 +373,19 @@ export function buildAnswerBlocks(params: {
       if (tableBlocks.length > 0 || charts.length > 0) return [...charts, ...tableBlocks];
       return kpis.length > 1 ? kpis : [];
   }
+}
+
+
+/** Formatting only; preserve units, IDs, dates and the underlying amount. */
+export function normaliseAnswerPresentation(answer: string): string {
+  return answer
+    .replace(/[【［]\s*((?:M|SC|KB)-[0-9]+(?:\.[0-9]+)?)\s*[】］]/g, '[$1]')
+    .replace(/₹\s*([0-9][0-9,]*(?:\.[0-9]+)?)(?![0-9,])/g, (whole, digits: string, offset: number, text: string) => {
+      if (/^\s*(?:L(?:akh)?s?|Cr(?:ore)?s?)\b/i.test(text.slice(offset + whole.length))) return whole;
+      const n = Number(digits.replace(/,/g, ''));
+      if (!Number.isFinite(n) || !Number.isSafeInteger(Math.trunc(n))) return whole;
+      const decimals = digits.includes('.') ? digits.split('.')[1].length : 0;
+      if (decimals > 6) return whole;
+      return '₹' + n.toLocaleString('en-IN', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    });
 }
