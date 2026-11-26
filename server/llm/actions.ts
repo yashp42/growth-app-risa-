@@ -17,6 +17,7 @@ import {
   type CanonicalRole,
 } from '../permissions.ts';
 import {
+  assertLinkedRecordExists,
   ensureUiImportBatch,
   fetchAppDataVersion,
   generatePrefixedId,
@@ -1028,7 +1029,7 @@ function parseActionPayload(
 }
 
 export function getActionPermissionSpec(actionType: AllowedAiActionType): {
-  permissionLevel: 'L4' | 'L5';
+  permissionLevel: 'L5';
   allowed: (roles: ReadonlyArray<CanonicalRole>) => {
     allowed: boolean;
     scope: 'all' | 'own' | 'none';
@@ -1083,7 +1084,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
     case 'create_task':
     case 'update_task':
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const op = actionType === 'create_task' ? 'create' : 'update';
           const dec = evaluatePermission(roles, 'tasks', op);
@@ -1099,7 +1100,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
 
     case 'log_time':
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const dec = evaluatePermission(roles, 'hours_staffing', 'create');
           return dec.allowed
@@ -1118,7 +1119,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
     case 'update_contact':
     case 'upsert_sponsor_contact':
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const op =
             actionType === 'create_sponsor' || actionType === 'create_contact'
@@ -1183,7 +1184,7 @@ export function getActionPermissionSpec(actionType: AllowedAiActionType): {
 
     default:
       return {
-        permissionLevel: 'L4',
+        permissionLevel: 'L5',
         allowed: (roles) => {
           const dec = evaluatePermission(
             roles,
@@ -1335,7 +1336,7 @@ const ProposeChangesArgsSchema = z.preprocess(
 export interface PendingAiActionInsert {
   ai_action_id: string;
   action_type: AllowedAiActionType;
-  permission_level: 'L4' | 'L5';
+  permission_level: 'L5';
   payload: Record<string, unknown>;
   payload_sha256: string;
   record_class: 'live' | 'simulated';
@@ -1356,7 +1357,7 @@ interface TargetGuard {
   history_id?: string | null;
 }
 
-interface EntityAmbiguityItem {
+export interface EntityAmbiguityItem {
   field: string;
   query: string;
   not_found?: boolean;
@@ -1365,6 +1366,108 @@ interface EntityAmbiguityItem {
 
 function isCanonicalIdLike(val: string): boolean {
   return /^[A-Z0-9]{1,8}-[A-Z0-9_-]+$/.test(val.trim());
+}
+
+/**
+ * Shared name -> ID resolvers. Used by propose_changes (resolveEntitiesForAction)
+ * and by set_view, so "Kavya" resolves the same way everywhere.
+ * An exact canonical ID is verified to exist; anything else is a name search.
+ */
+export type ResolveOutcome =
+  | { ok: true; id: string; label: string }
+  | { ok: false; ambiguity: EntityAmbiguityItem };
+
+export async function resolveTeamMember(
+  pool: QueryablePool,
+  query: string,
+  field = 'owner_member_id'
+): Promise<ResolveOutcome> {
+  const q = query.trim();
+  if (isCanonicalIdLike(q)) {
+    const byId = await pool.query<{ member_id: string; full_name: string }>(
+      `SELECT member_id, full_name FROM public.team_member
+        WHERE member_id = $1 AND NOT is_deleted LIMIT 1`,
+      [q]
+    );
+    const row = byId.rows[0];
+    return row
+      ? { ok: true, id: row.member_id, label: row.full_name }
+      : { ok: false, ambiguity: { field, query: q, not_found: true, candidates: [] } };
+  }
+  const res = await pool.query<{ member_id: string; full_name: string; email: string | null }>(
+    `SELECT member_id, full_name, email
+       FROM public.team_member
+      WHERE is_active = true
+        AND NOT is_deleted
+        AND (LOWER(full_name) LIKE LOWER($1) OR LOWER(COALESCE(email, '')) LIKE LOWER($1))
+      ORDER BY full_name ASC
+      LIMIT 10`,
+    [`%${q}%`]
+  );
+  if (res.rows.length === 1) {
+    return { ok: true, id: res.rows[0].member_id, label: res.rows[0].full_name };
+  }
+  return {
+    ok: false,
+    ambiguity: {
+      field,
+      query: q,
+      not_found: res.rows.length === 0 ? true : undefined,
+      candidates: res.rows.map((r) => ({
+        id: r.member_id,
+        label: r.email
+          ? `${r.full_name} (${r.member_id}, ${r.email})`
+          : `${r.full_name} (${r.member_id})`,
+      })),
+    },
+  };
+}
+
+export async function resolveCampaign(
+  pool: QueryablePool,
+  query: string,
+  editionId: string,
+  recordClass: string,
+  field = 'campaign_id'
+): Promise<ResolveOutcome> {
+  const q = query.trim();
+  if (isCanonicalIdLike(q)) {
+    const byId = await pool.query<{ campaign_id: string; name: string }>(
+      `SELECT campaign_id, name FROM public.campaign
+        WHERE campaign_id = $1 AND edition_id = $2 AND NOT is_deleted LIMIT 1`,
+      [q, editionId]
+    );
+    const row = byId.rows[0];
+    return row
+      ? { ok: true, id: row.campaign_id, label: row.name }
+      : { ok: false, ambiguity: { field, query: q, not_found: true, candidates: [] } };
+  }
+  const res = await pool.query<{ campaign_id: string; name: string }>(
+    `SELECT campaign_id, name
+       FROM public.campaign
+      WHERE edition_id = $1
+        AND record_class = $2
+        AND NOT is_deleted
+        AND LOWER(name) LIKE LOWER($3)
+      ORDER BY name ASC
+      LIMIT 10`,
+    [editionId, recordClass, `%${q}%`]
+  );
+  if (res.rows.length === 1) {
+    return { ok: true, id: res.rows[0].campaign_id, label: res.rows[0].name };
+  }
+  return {
+    ok: false,
+    ambiguity: {
+      field,
+      query: q,
+      not_found: res.rows.length === 0 ? true : undefined,
+      candidates: res.rows.map((r) => ({
+        id: r.campaign_id,
+        label: `${r.name} (${r.campaign_id})`,
+      })),
+    },
+  };
 }
 
 async function resolveEntitiesForAction(
@@ -1415,38 +1518,11 @@ async function resolveEntitiesForAction(
       : null);
 
   if (memberQuery) {
-    const res = await pool.query<{
-      member_id: string;
-      full_name: string;
-      email: string | null;
-    }>(
-      `SELECT member_id, full_name, email
-         FROM public.team_member
-        WHERE is_active = true
-          AND NOT is_deleted
-          AND (LOWER(full_name) LIKE LOWER($1) OR LOWER(COALESCE(email, '')) LIKE LOWER($1))
-        ORDER BY full_name ASC
-        LIMIT 10`,
-      [`%${memberQuery}%`]
-    );
-    if (res.rows.length > 1) {
-      ambiguities.push({
-        field: targetMemberField,
-        query: memberQuery,
-        candidates: res.rows.map((r) => ({
-          id: r.member_id,
-          label: r.email ? `${r.full_name} (${r.member_id}, ${r.email})` : `${r.full_name} (${r.member_id})`,
-        })),
-      });
-    } else if (res.rows.length === 0) {
-      ambiguities.push({
-        field: targetMemberField,
-        query: memberQuery,
-        not_found: true,
-        candidates: [],
-      });
+    const member = await resolveTeamMember(pool, memberQuery, targetMemberField);
+    if (member.ok) {
+      payload[targetMemberField] = member.id;
     } else {
-      payload[targetMemberField] = res.rows[0].member_id;
+      ambiguities.push(member.ambiguity);
     }
     delete payload.owner_name;
     delete payload.ownerName;
@@ -1605,35 +1681,16 @@ async function resolveEntitiesForAction(
       : null);
 
   if (campaignQuery) {
-    const res = await pool.query<{ campaign_id: string; name: string }>(
-      `SELECT campaign_id, name
-         FROM public.campaign
-        WHERE edition_id = $1
-          AND record_class = $2
-          AND NOT is_deleted
-          AND LOWER(name) LIKE LOWER($3)
-        ORDER BY name ASC
-        LIMIT 10`,
-      [editionId, recordClass, `%${campaignQuery}%`]
+    const campaign = await resolveCampaign(
+      pool,
+      campaignQuery,
+      editionId,
+      recordClass
     );
-    if (res.rows.length > 1) {
-      ambiguities.push({
-        field: 'campaign_id',
-        query: campaignQuery,
-        candidates: res.rows.map((r) => ({
-          id: r.campaign_id,
-          label: `${r.name} (${r.campaign_id})`,
-        })),
-      });
-    } else if (res.rows.length === 0) {
-      ambiguities.push({
-        field: 'campaign_id',
-        query: campaignQuery,
-        not_found: true,
-        candidates: [],
-      });
+    if (campaign.ok) {
+      payload.campaign_id = campaign.id;
     } else {
-      payload.campaign_id = res.rows[0].campaign_id;
+      ambiguities.push(campaign.ambiguity);
     }
     delete payload.campaign_name;
     delete payload.campaignName;
@@ -2075,6 +2132,37 @@ export async function prepareProposeChanges(
     };
   }
 
+  // Reject (do not store) any change the signed-in user's role cannot make.
+  // The same check runs again at confirm time in executeAiActionInTransaction.
+  const forbidden: Array<{ type: AllowedAiActionType; reason: string }> = [];
+  const permittedItems = resolvedItems.filter((item) => {
+    const check = getActionPermissionSpec(item.type).allowed(ctx.roles);
+    if (!check.allowed) {
+      forbidden.push({
+        type: item.type,
+        reason: check.reason ?? `Your role is not permitted to ${item.type}.`,
+      });
+      return false;
+    }
+    return true;
+  });
+  const forbiddenLines = forbidden.map(
+    (f) => `- Not proposed (${f.type}): ${f.reason}`
+  );
+
+  if (permittedItems.length === 0) {
+    return {
+      batchId: '',
+      actions: [],
+      pendingInserts: [],
+      answer: `I can't propose ${forbidden.length === 1 ? 'this change' : 'these changes'} for your role:\n${forbiddenLines.join('\n')}`,
+      toolPayload: {
+        status: 'forbidden',
+        rejected: forbidden,
+      },
+    };
+  }
+
   const batchId = generatePrefixedId('AIB-');
   const verRes = await ctx.pool.query<{ data_version: string | number }>(
     `SELECT data_version FROM public.app_state WHERE id = 1`
@@ -2084,7 +2172,7 @@ export async function prepareProposeChanges(
   const actions: Array<Record<string, unknown>> = [];
   const pendingInserts: PendingAiActionInsert[] = [];
 
-  for (const item of resolvedItems) {
+  for (const item of permittedItems) {
     const cleanPayload = parseActionPayload(item.type, item.payload);
     const payloadSha256 = computePayloadSha256(cleanPayload);
     const permSpec = getActionPermissionSpec(item.type);
@@ -2145,7 +2233,10 @@ export async function prepareProposeChanges(
 
   const answer =
     `Prepared ${actions.length} proposed ${actions.length === 1 ? 'change' : 'changes'} for your review (${ctx.editionId}, ${writableClass}, data v${dataVersion}). No database records have been modified yet — confirm below to apply:\n` +
-    summaryLines.join('\n');
+    summaryLines.join('\n') +
+    (forbiddenLines.length > 0
+      ? `\n\nNot proposed for your role:\n${forbiddenLines.join('\n')}`
+      : '');
 
   return {
     batchId,
@@ -2156,6 +2247,7 @@ export async function prepareProposeChanges(
       batch_id: batchId,
       count: actions.length,
       status: 'proposed',
+      ...(forbidden.length > 0 ? { rejected: forbidden } : {}),
       actions: actions.map((a) => ({
         ai_action_id: a.ai_action_id,
         action_type: a.action_type,
@@ -2345,34 +2437,6 @@ async function assertTargetGuardFresh(
   }
 }
 
-async function assertLinkedRecordExists(
-  client: PoolClient,
-  linkedType: (typeof TASK_LINKED_TYPE_VALUES)[number],
-  linkedId: string
-): Promise<void> {
-  const tableByType: Record<
-    (typeof TASK_LINKED_TYPE_VALUES)[number],
-    { table: string; pk: string }
-  > = {
-    sponsor: { table: 'sponsor', pk: 'sponsor_id' },
-    opportunity: { table: 'opportunity', pk: 'opportunity_id' },
-    invoice: { table: 'invoice', pk: 'invoice_id' },
-    campaign: { table: 'campaign', pk: 'campaign_id' },
-    referral: { table: 'referral', pk: 'referral_id' },
-  };
-  const target = tableByType[linkedType];
-  const res = await client.query<{ ok: number }>(
-    `SELECT 1 AS ok FROM public.${target.table} WHERE ${target.pk} = $1 AND NOT is_deleted LIMIT 1`,
-    [linkedId]
-  );
-  if (!res.rows[0]) {
-    throw new AppApiError(
-      404,
-      'LINKED_RECORD_NOT_FOUND',
-      `Linked ${linkedType} "${linkedId}" was not found.`
-    );
-  }
-}
 
 export async function executeAiActionInTransaction(
   client: PoolClient,
@@ -2697,12 +2761,12 @@ export async function executeAiActionInTransaction(
       const spRes = await client.query<Record<string, unknown>>(
         `INSERT INTO public.sponsor (
            sponsor_id, display_name, legal_name, category_id,
-           lifecycle_status, first_source, website, city,
+           lifecycle_status, first_source, website, city, gstin,
            record_class, import_batch_id, source_ref, evidence_class,
            created_by, ai_action_id
          ) VALUES (
            $1, $2, $3, $4,
-           $5, $6, $7, $8,
+           $5, $6, $7, $8, NULL,
            $9, $10, $11, 'T',
            $12, $13
          ) RETURNING *`,
@@ -2735,7 +2799,7 @@ export async function executeAiActionInTransaction(
            created_by, ai_action_id
          ) VALUES (
            $1, 'sponsor', $2, $3,
-           'owner', 'AI confirmed creation', 1,
+           'owner', 'Initial sponsor creation', 1,
            $4, $5, $6, 'T',
            $7, $8
          )`,
@@ -2909,12 +2973,12 @@ export async function executeAiActionInTransaction(
       const cRes = await client.query<Record<string, unknown>>(
         `INSERT INTO public.contact (
            contact_id, sponsor_id, full_name, job_title, decision_role,
-           email, phone, consent_basis,
+           email, phone, consent_basis, opted_out_at,
            record_class, import_batch_id, source_ref, evidence_class,
            created_by, ai_action_id
          ) VALUES (
            $1, $2, $3, $4, $5,
-           $6, $7, $8,
+           $6, $7, $8, NULL,
            $9, $10, $11, 'T',
            $12, $13
          ) RETURNING *`,
@@ -3080,12 +3144,12 @@ export async function executeAiActionInTransaction(
         const insRes = await client.query<Record<string, unknown>>(
           `INSERT INTO public.contact (
              contact_id, sponsor_id, full_name, job_title, decision_role,
-             email, phone, consent_basis,
+             email, phone, consent_basis, opted_out_at,
              record_class, import_batch_id, source_ref, evidence_class,
              created_by, ai_action_id
            ) VALUES (
              $1, $2, $3, $4, $5,
-             $6, $7, $8,
+             $6, $7, $8, NULL,
              $9, $10, $11, 'T',
              $12, $13
            ) RETURNING *`,

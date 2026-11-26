@@ -18,14 +18,19 @@ import {
   computePayloadSha256,
   createAiActionsRouter,
   executeAiActionInTransaction,
+  getActionPermissionSpec,
   prepareProposeChanges,
   type AllowedAiActionType,
 } from '../server/llm/actions.ts';
 import { createOpenRouterClient } from '../server/llm/openrouter.ts';
 import { executeSetView } from '../server/llm/views.ts';
 import type { CanonicalRole } from '../server/permissions.ts';
-import { createAiApiRouter } from '../server/routes/aiApi.ts';
+import { buildSystemPrompt, createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
+import { trimToolResultForModel } from '../server/llm/tools.ts';
+import { createWriteApiRouter } from '../server/routes/writeApi.ts';
+import { createReadApiRouter } from '../server/routes/readApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
+import { answerTextForSpeech, speakAnswer } from '../src/lib/speech.ts';
 
 function createBaseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
   return {
@@ -358,6 +363,11 @@ function createTransactionalMockDb(store: Mock4bStore): DatabasePoolState {
     params: unknown[] = []
   ): Promise<{ rows: Record<string, unknown>[]; rowCount: number }> => {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
+
+    // Shared task link check (writeUtils.assertLinkedRecordExists).
+    if (/^SELECT EXISTS \( SELECT 1 FROM public\.(sponsor|opportunity|invoice|campaign|referral) WHERE \w+ = \$1 AND NOT is_deleted \) AS ok$/.test(sql)) {
+      return { rows: [{ ok: true }], rowCount: 1 };
+    }
 
     if (sql === 'BEGIN') {
       txSnapshot = captureSnapshot();
@@ -827,9 +837,6 @@ function createTransactionalMockDb(store: Mock4bStore): DatabasePoolState {
     }
 
     // TASK
-    if (sql.includes('SELECT 1 AS ok FROM public.')) {
-      return { rows: [{ ok: 1 }], rowCount: 1 };
-    }
 
     if (sql.includes('FROM public.task WHERE task_id = $1')) {
       const tk = store.tasks.get(String(params[0]));
@@ -1936,11 +1943,11 @@ test('[MOCKED] End-to-end /api/ai/ask propose_changes + set_view + viewer financ
         asOf: '2026-11-26',
       }
     );
-    const pinned = viewerView.viewSpec.pinned_metrics as Array<{
+    const pinned = viewerView.viewSpec!.pinned_metrics as Array<{
       metric_id: string;
       result: { computable: boolean };
     }>;
-    const widgets = viewerView.viewSpec.widgets as Array<{ restricted?: boolean }>;
+    const widgets = viewerView.viewSpec!.widgets as Array<{ restricted?: boolean }>;
     const m01Pinned = pinned.find((p) => p.metric_id === 'M-01');
     assert.equal(m01Pinned?.result.computable, false);
     assert.equal(widgets[0].restricted, true);
@@ -1990,6 +1997,83 @@ test('[MOCKED] Ambiguous name "Kavya" returns candidates and inserts 0 ai_action
   assert.ok(Array.isArray(prep.toolPayload.ambiguities));
   assert.match(prep.answer, /Kavya Nair/);
   assert.match(prep.answer, /Kavya Sharma/);
+});
+
+test('[MOCKED] 2.6: every one of the 21 action types is stored as permission_level L5', () => {
+  assert.equal(ALLOWED_AI_ACTION_TYPES.length, 21);
+  for (const type of ALLOWED_AI_ACTION_TYPES) {
+    assert.equal(getActionPermissionSpec(type).permissionLevel, 'L5', type);
+  }
+});
+
+test('[MOCKED] 2.2: human-only finance writes are refused and name the Collections screen; reads and operational writes are not', () => {
+  const refused: Array<[string, RegExp]> = [
+    ["Mark Bramble's invoice as paid", /Collections → Invoices/],
+    ['Record a receipt of ₹50,000 from Bramble', /Collections → Receipts/],
+    ['Allocate receipt RC-1 to Bramble', /Collections → Receipts/],
+    ['Reconcile the Bramble payment', /Collections → Receipts/],
+    ['Change the payment schedule for Bramble', /Collections → Payment schedules/],
+    ['Update payment terms to net 30', /Collections → Payment schedules/],
+    ['Add an instalment for Voltyatra', /Collections → Payment schedules/],
+    ['Edit the Minutekart contract', /Collections → Receivables/],
+    ['Change the contract value to ₹2L', /Collections → Receivables/],
+    ['Update the signed value of Bramble to ₹1.5L', /Pipeline and Collections/],
+    ['Raise an invoice for Voltyatra', /Collections → Invoices/],
+  ];
+  for (const [q, screen] of refused) {
+    const r = isHumanOnlyWriteRequest(q);
+    assert.equal(r.refuse, true, `should refuse: ${q}`);
+    assert.match(r.reason ?? '', screen, `should name the screen: ${q}`);
+  }
+  const allowed = [
+    'Which signed partnerships still have outstanding cash?',
+    'Confirm the Minutekart deal at ₹1,00,000',
+    'Move Voltyatra to negotiating and create a task for Kavya to follow up by Friday',
+    'Show cash collected by campaign',
+    'Which receipts were logged this week?',
+    'Which invoices are overdue?',
+    'What payments did we receive post-fest last year?',
+    'Show contracts with outstanding cash',
+    'Create a task to chase the Bramble invoice',
+  ];
+  for (const q of allowed) {
+    assert.equal(isHumanOnlyWriteRequest(q).refuse, false, `should not refuse: ${q}`);
+  }
+});
+
+test('[MOCKED] 2.4: change the role cannot make is rejected at propose time and never stored', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [
+    { member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: 'kavya@campusfest.in' },
+  ];
+  const db = createTransactionalMockDb(store);
+  const ctx = {
+    actorMemberId: 'SIM-VIEW',
+    roles: ['viewer'] as CanonicalRole[],
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated' as const,
+    asOf: '2026-11-26',
+    queryId: 'AIQ-FORBID',
+    pool: db.pool!,
+  };
+  const prep = await prepareProposeChanges(
+    {
+      changes: [
+        {
+          action_type: 'create_task',
+          fields: { title: 'Follow up', task_type: 'follow_up', owner_name: 'Kavya' },
+        },
+      ],
+      reason: 'viewer tries to create a task',
+    },
+    ctx
+  );
+  assert.equal(prep.batchId, '');
+  assert.equal(prep.actions.length, 0);
+  assert.equal(prep.pendingInserts.length, 0);
+  assert.equal(prep.toolPayload.status, 'forbidden');
+  assert.match(prep.answer, /can't propose/);
+  assert.equal(store.aiActions.size, 0);
 });
 
 test('[MOCKED] Stale target record returns 409 "This record changed since the proposal; ask again"', async () => {
@@ -2252,6 +2336,180 @@ test('[MOCKED] 3-model-call cap fallback produces Markdown table & notice; sanit
   }
 });
 
+async function askOnce(
+  store: Mock4bStore,
+  mockFetch: typeof fetch,
+  question: string
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const srv = await startTestApp(store, mockFetch);
+  try {
+    const r = await fetch(`${srv.baseUrl}/api/ai/ask`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: question,
+        edition_id: 'ED-2026-DEMO',
+        record_class: 'simulated',
+        as_of: '2026-11-26',
+      }),
+    });
+    return { status: r.status, body: (await r.json()) as Record<string, unknown> };
+  } finally {
+    await srv.close();
+  }
+}
+
+test('[MOCKED] §B: "Which signed partnerships still have outstanding cash?" is pre-routed to receivables + M-07 and costs 1 model request', async () => {
+  const store = createMock4bStore();
+  let modelCalls = 0;
+  let sawToolsInRequest = false;
+  let firstRequestToolNames: string[] = [];
+  const mockFetch: typeof fetch = async (input, init) => {
+    const url = String(input);
+    if (url.endsWith('/chat/completions')) {
+      modelCalls += 1;
+      const req = JSON.parse(String(init?.body ?? '{}')) as {
+        tools?: unknown[];
+        messages?: Array<{ role: string; tool_calls?: Array<{ function: { name: string; arguments: string } }> }>;
+      };
+      if (req.tools && req.tools.length > 0) sawToolsInRequest = true;
+      const pre = (req.messages ?? []).find((m) => m.role === 'assistant' && m.tool_calls);
+      firstRequestToolNames = (pre?.tool_calls ?? []).map(
+        (tc) => `${tc.function.name}:${tc.function.arguments}`
+      );
+      return new Response(
+        JSON.stringify({
+          model: DEFAULT_GROQ_MODEL_PRIMARY,
+          choices: [{ message: { role: 'assistant', content: 'Receivables are listed below [M-07].' } }],
+          usage: { prompt_tokens: 900, completion_tokens: 20, total_tokens: 920 },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
+  assert.equal(status, 200, JSON.stringify(body));
+  assert.equal(modelCalls, 1, 'one model request: the router picked the tools');
+  assert.equal(sawToolsInRequest, false, 'the phrasing request carries no tool schemas');
+  assert.ok(firstRequestToolNames.some((n) => n.startsWith('list_records:') && n.includes('"receivables"')));
+  assert.ok(firstRequestToolNames.some((n) => n.startsWith('get_metric:') && n.includes('M-07')));
+  const usage = body.token_usage as { model_requests: number; prompt_tokens: number };
+  assert.equal(usage.model_requests, 1);
+  assert.equal(usage.prompt_tokens, 900);
+});
+
+test('[MOCKED] §B: every provider failing still returns the found data as a table, never a dead end or raw error', async () => {
+  const store = createMock4bStore();
+  let modelCalls = 0;
+  const mockFetch: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.endsWith('/chat/completions')) {
+      modelCalls += 1;
+      return new Response(JSON.stringify({ error: { message: 'upstream exploded' } }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
+  assert.equal(status, 200, JSON.stringify(body));
+  assert.ok(modelCalls >= 1);
+  const answer = String(body.answer);
+  assert.match(answer, /\|/, 'a table built from the tool results');
+  assert.match(answer, /Summary not generated \(AI unavailable right now\); figures are from /);
+  assert.match(answer, /M-07/);
+  assert.ok(!/upstream exploded|SELECT|column/i.test(answer), 'no raw provider or SQL error text');
+});
+
+test('[MOCKED] §C: tool results handed to the model stay valid JSON within the ~2,500-token budget', () => {
+  const huge = {
+    source: 'list_receivables',
+    rows: Array.from({ length: 400 }, (_, i) => ({
+      sponsor_name: `Sponsor ${i} `.repeat(40),
+      outstanding: i * 1000,
+      notes: null,
+    })),
+  };
+  const out = trimToolResultForModel(huge);
+  assert.ok(out.length <= 9800, `length ${out.length}`);
+  const parsed = JSON.parse(out) as { rows?: Array<Record<string, unknown>> };
+  assert.ok((parsed.rows ?? []).length <= 25);
+  assert.ok(!(parsed.rows ?? []).some((r) => 'notes' in r), 'null fields dropped');
+  const pathological = { blob: Array.from({ length: 30 }, () => ({ k: Object.fromEntries(Array.from({ length: 400 }, (_, j) => [`f${j}`, 'x'.repeat(70)])) })) };
+  const out2 = trimToolResultForModel(pathological);
+  assert.doesNotThrow(() => JSON.parse(out2));
+  assert.ok(out2.length <= 9800);
+});
+
+test('[MOCKED] §C: system prompt stays within ~600 tokens and every model call uses temperature 0', async () => {
+  const sp = buildSystemPrompt({
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated',
+    asOf: '2026-11-26',
+    roles: ['coordination_lead', 'admin', 'finance_collections'],
+  });
+  assert.ok(sp.length / 4 <= 600, `≈${Math.ceil(sp.length / 4)} tokens`);
+  assert.match(sp, /untrusted data/);
+  assert.match(sp, /I don't have that in the data/);
+  assert.match(sp, /I have no record of/);
+  assert.match(sp, /No future speculation beyond approved scenarios/);
+
+  const store = createMock4bStore();
+  const temps: unknown[] = [];
+  const mockFetch: typeof fetch = async (input, init) => {
+    if (String(input).endsWith('/chat/completions')) {
+      temps.push((JSON.parse(String(init?.body ?? '{}')) as { temperature?: unknown }).temperature);
+      return new Response(
+        JSON.stringify({ model: DEFAULT_GROQ_MODEL_PRIMARY, choices: [{ message: { role: 'assistant', content: 'I don\'t have that in the data.' } }] }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  await askOnce(store, mockFetch, 'What is the colour of the sponsor lounge carpet?');
+  assert.ok(temps.length >= 1);
+  assert.ok(temps.every((x) => x === 0), JSON.stringify(temps));
+});
+
+test('[MOCKED] §D6: a deal for an entity that does not exist gets "no record of", and invented figures are flagged', async () => {
+  const store = createMock4bStore();
+  let modelCalls = 0;
+  const mockFetch: typeof fetch = async (input) => {
+    if (String(input).endsWith('/chat/completions')) {
+      modelCalls += 1;
+      const message =
+        modelCalls === 1
+          ? {
+              role: 'assistant',
+              content: '',
+              tool_calls: [
+                {
+                  id: 'tc_coke',
+                  type: 'function',
+                  function: {
+                    name: 'list_records',
+                    arguments: JSON.stringify({ kind: 'sponsors', filters: { search: 'Coca-Cola' } }),
+                  },
+                },
+              ],
+            }
+          : { role: 'assistant', content: "Coca-Cola's deal is worth ₹5,00,000 and is at negotiation." };
+      return new Response(
+        JSON.stringify({ model: DEFAULT_GROQ_MODEL_PRIMARY, choices: [{ message }] }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const { status, body } = await askOnce(store, mockFetch, "What's the status of Coca-Cola's deal?");
+  assert.equal(status, 200, JSON.stringify(body));
+  const answer = String(body.answer);
+  assert.match(answer, /^I have no record of "Coca-Cola"/);
+  assert.match(answer, /could not be verified/i, 'the invented ₹5,00,000 is flagged by the answer check');
+});
+
 test('[MOCKED] Prompt injection in tool result creates 0 ai_action rows', async () => {
   const store = createMock4bStore();
   store.sponsors.set('S26-INJ', {
@@ -2332,3 +2590,480 @@ test('[MOCKED] Prompt injection in tool result creates 0 ai_action rows', async 
     await srv.close();
   }
 });
+
+function sqlSpyDb(store: Mock4bStore): { db: DatabasePoolState; calls: Array<{ sql: string; params: unknown[] }> } {
+  const db = createTransactionalMockDb(store);
+  const calls: Array<{ sql: string; params: unknown[] }> = [];
+  const inner = db.pool! as unknown as { query: (a: string, b?: unknown[]) => unknown };
+  const pool = {
+    query: (sql: string, params?: unknown[]) => {
+      calls.push({ sql: String(sql).replace(/\s+/g, ' '), params: params ?? [] });
+      return inner.query(sql, params);
+    },
+    connect: db.pool!.connect,
+  } as unknown as Pool;
+  return { db: { ...db, pool }, calls };
+}
+
+const VIEW_CTX = {
+  actorMemberId: 'SIM-LEAD',
+  roles: ['coordination_lead'] as CanonicalRole[],
+  editionId: 'ED-2026-DEMO',
+  recordClass: 'simulated' as const,
+  asOf: '2026-11-26',
+};
+
+test('[MOCKED] 3.2: "Show Kavya\'s open deals" resolves Kavya -> SIM-PART on the server and filters by that id', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [
+    { member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: 'kavya@campusfest.in' },
+    { member_id: 'SIM-NET', full_name: 'Neha Verma', email: 'neha@campusfest.in' },
+  ];
+  const { db, calls } = sqlSpyDb(store);
+  const res = await executeSetView(
+    {
+      screen: 'pipeline',
+      title: "Kavya's open deals",
+      filters: { owner_name: 'Kavya' },
+      widgets: [{ type: 'table', list_kind: 'opportunities', title: 'Open deals' }],
+    },
+    { ...VIEW_CTX, pool: db.pool! }
+  );
+  assert.ok(res.viewSpec, res.answer);
+  const tableCall = calls.find((c) => c.sql.includes('sv.owner_member_id = $'));
+  assert.ok(tableCall, 'opportunities table query should filter by owner');
+  assert.ok(tableCall!.params.includes('SIM-PART'));
+  assert.ok(!tableCall!.params.includes('Kavya'));
+});
+
+test('[MOCKED] 3.2: ambiguous owner, unknown campaign and unapproved scenario render no view and say why', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [
+    { member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: null },
+    { member_id: 'SIM-PART-2', full_name: 'Kavya Sharma', email: null },
+  ];
+  const { db } = sqlSpyDb(store);
+  const amb = await executeSetView(
+    { screen: 'pipeline', filters: { owner_member_id: 'Kavya' } },
+    { ...VIEW_CTX, pool: db.pool! }
+  );
+  assert.equal(amb.viewSpec, undefined);
+  assert.equal(amb.toolPayload.status, 'ambiguous');
+  assert.match(amb.answer, /Kavya Reddy/);
+  assert.match(amb.answer, /Kavya Sharma/);
+
+  const unknown = await executeSetView(
+    { screen: 'campaigns', filters: { campaign_id: 'C26-NOPE', scenario_id: 'SC-09' } },
+    { ...VIEW_CTX, pool: db.pool! }
+  );
+  assert.equal(unknown.viewSpec, undefined);
+  assert.equal(unknown.toolPayload.status, 'not_found');
+  assert.match(unknown.answer, /C26-NOPE/);
+  assert.match(unknown.answer, /approved scenarios/);
+});
+
+async function callAudit(
+  roles: CanonicalRole[],
+  qs: string
+): Promise<{ status: number; body: Record<string, unknown>; auditSql: Array<{ sql: string; params: unknown[] }> }> {
+  const store = createMock4bStore();
+  store.roles = roles;
+  const { db, calls } = sqlSpyDb(store);
+  const app = express();
+  app.use(express.json());
+  app.use('/api', createReadApiRouter(createBaseConfig(), db, createAuthDeps(store, db)));
+  app.use(apiErrorHandler);
+  const server = await new Promise<http.Server>((resolve) => {
+    const s2 = app.listen(0, '127.0.0.1', () => resolve(s2));
+  });
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 0;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/audit${qs}`, {
+      headers: { authorization: 'Bearer mock-token' },
+    });
+    return {
+      status: res.status,
+      body: (await res.json()) as Record<string, unknown>,
+      auditSql: calls.filter((c) => c.sql.includes('FROM public.audit_event ae')),
+    };
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+}
+
+test('[MOCKED] 2.12: GET /api/audit honours limit (capped at 200) and channel, and stays lead/admin only', async () => {
+  const fifty = await callAudit(['coordination_lead'], '?limit=50');
+  assert.equal(fifty.status, 200, JSON.stringify(fifty.body));
+  assert.equal(fifty.auditSql.length, 1);
+  assert.match(fifty.auditSql[0].sql, /ORDER BY ae\.at DESC LIMIT \$\d+/);
+  assert.equal(fifty.auditSql[0].params.at(-1), 50);
+
+  const huge = await callAudit(['admin'], '?limit=100000&channel=ai_action');
+  assert.equal(huge.status, 200, JSON.stringify(huge.body));
+  assert.equal(huge.auditSql[0].params.at(-1), 200);
+  assert.ok(huge.auditSql[0].params.includes('ai_action'));
+  assert.match(huge.auditSql[0].sql, /ae\.channel = \$\d+/);
+
+  const bad = await callAudit(['admin'], '?channel=email');
+  assert.equal(bad.status, 400);
+
+  const viewer = await callAudit(['viewer'], '?limit=50');
+  assert.equal(viewer.status, 403);
+  assert.equal(viewer.auditSql.length, 0);
+});
+
+test('[MOCKED] 1.4: read-aloud speaks answer text only, in en-IN (browser speechSynthesis stub)', () => {
+  const answer = [
+    'Bramble Active has **₹60,000** outstanding [M-07].',
+    '',
+    '| Sponsor | Outstanding |',
+    '|---|---|',
+    '| Bramble Active | ₹60,000 |',
+    '',
+    '```json',
+    '{"raw": true}',
+    '```',
+    'Figures are from Collections → Receivables.',
+  ].join('\n');
+  const text = answerTextForSpeech(answer);
+  assert.equal(
+    text,
+    'Bramble Active has ₹60,000 outstanding [M-07]. Figures are from Collections → Receivables.'
+  );
+  assert.ok(!text.includes('|'));
+  assert.ok(!text.includes('raw'));
+
+  const spoken: Array<{ text: string; lang: string }> = [];
+  let cancels = 0;
+  const g = globalThis as unknown as Record<string, unknown>;
+  const prevWindow = g.window;
+  const prevUtterance = g.SpeechSynthesisUtterance;
+  class FakeUtterance {
+    lang = '';
+    onend: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    constructor(public text: string) {}
+  }
+  g.SpeechSynthesisUtterance = FakeUtterance;
+  g.window = {
+    speechSynthesis: {
+      cancel: () => {
+        cancels++;
+      },
+      speak: (u: FakeUtterance) => spoken.push({ text: u.text, lang: u.lang }),
+    },
+  };
+  try {
+    assert.equal(speakAnswer(answer), true);
+    assert.equal(spoken.length, 1);
+    assert.equal(spoken[0].lang, 'en-IN');
+    assert.equal(spoken[0].text, text);
+    assert.equal(cancels, 1, 'previous speech is cancelled first');
+    assert.equal(speakAnswer('| a | b |\n|---|---|'), false, 'a table-only answer reads nothing');
+  } finally {
+    g.window = prevWindow;
+    g.SpeechSynthesisUtterance = prevUtterance;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 2.10 write-path parity: the AI executor and the Stage 3B UI routes must write
+// the same rows for the same input. Both paths run against the same mock DB;
+// every INSERT / UPDATE / SECURITY DEFINER call is recorded and compared.
+// ---------------------------------------------------------------------------
+
+interface RecordedWrite {
+  op: 'insert' | 'update' | 'call';
+  table: string;
+  cols: Record<string, unknown>;
+}
+
+function splitTopLevel(input: string, sep = ','): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let inStr = false;
+  let cur = '';
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === "'" ) inStr = !inStr;
+    if (!inStr) {
+      if (ch === '(') depth++;
+      if (ch === ')') depth--;
+      if (ch === sep && depth === 0) {
+        out.push(cur.trim());
+        cur = '';
+        continue;
+      }
+    }
+    cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+function balancedParen(text: string, openIdx: number): string {
+  let depth = 0;
+  for (let i = openIdx; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    if (text[i] === ')') {
+      depth--;
+      if (depth === 0) return text.slice(openIdx + 1, i);
+    }
+  }
+  return text.slice(openIdx + 1);
+}
+
+function evalSqlExpr(expr: string, params: unknown[]): unknown {
+  let e = expr.trim().replace(/::[a-z_]+(\[\])?/gi, '');
+  const p = /^\$(\d+)$/.exec(e);
+  if (p) return params[Number(p[1]) - 1] ?? null;
+  if (/^null$/i.test(e)) return null;
+  if (/^(true|false)$/i.test(e)) return e.toLowerCase() === 'true';
+  const lit = /^'(.*)'$/s.exec(e);
+  if (lit) return lit[1];
+  if (/^-?\d+(\.\d+)?$/.test(e)) return Number(e);
+  // Expressions referencing params (COALESCE($3, col), now(), CASE...) keep a
+  // canonical text form with param values substituted.
+  e = e.replace(/\$(\d+)/g, (_m, n) => JSON.stringify(params[Number(n) - 1] ?? null));
+  return `expr:${e.replace(/\s+/g, ' ')}`;
+}
+
+function parseRecordedWrite(sql: string, params: unknown[] = []): RecordedWrite | null {
+  const text = sql.replace(/\s+/g, ' ').trim();
+  const ins = /^INSERT INTO ([\w.]+) \(/i.exec(text);
+  if (ins) {
+    const colsRaw = balancedParen(text, text.indexOf('('));
+    const vIdx = text.search(/\)\s*VALUES\s*\(/i);
+    if (vIdx < 0) return null;
+    const valsRaw = balancedParen(text, text.indexOf('(', vIdx + 1));
+    const cols = splitTopLevel(colsRaw);
+    const vals = splitTopLevel(valsRaw);
+    const out: Record<string, unknown> = {};
+    cols.forEach((c, i) => (out[c.trim()] = evalSqlExpr(vals[i] ?? '', params)));
+    return { op: 'insert', table: ins[1].replace(/^public\./, ''), cols: out };
+  }
+  const upd = /^UPDATE ([\w.]+) SET (.*?) WHERE /i.exec(text);
+  if (upd) {
+    const out: Record<string, unknown> = {};
+    for (const part of splitTopLevel(upd[2])) {
+      const eq = part.indexOf('=');
+      out[part.slice(0, eq).trim()] = evalSqlExpr(part.slice(eq + 1), params);
+    }
+    return { op: 'update', table: upd[1].replace(/^public\./, ''), cols: out };
+  }
+  const call = /\b(public\.fn_[a-z0-9_]+|public\.[a-z0-9_]+_secure)\s*\(/i.exec(text);
+  if (call && /^SELECT/i.test(text)) {
+    return { op: 'call', table: call[1], cols: { args: params } };
+  }
+  return null;
+}
+
+// Columns that legitimately differ between a UI write and an AI-confirmed write.
+const PARITY_IGNORED_COLUMNS = new Set([
+  'origin',
+  'source_ref',
+  'ai_action_id',
+  'channel',
+  'after',
+  'before',
+  'after_json',
+  'before_json',
+  'created_at',
+  'updated_at',
+  'audit_id',
+  'data_version',
+]);
+const PARITY_IGNORED_TABLES = new Set(['ai_action', 'import_batch', 'app_state']);
+const GENERATED_ID_RE = /^[A-Z]{1,4}[0-9]*-[A-Z0-9]{6,}$/;
+
+function normalizeWrites(writes: RecordedWrite[], inputIds: Set<string>): string[] {
+  return writes
+    .filter((w) => !PARITY_IGNORED_TABLES.has(w.table))
+    .map((w) => {
+      const cols: Record<string, unknown> = {};
+      for (const k of Object.keys(w.cols).sort()) {
+        if (PARITY_IGNORED_COLUMNS.has(k)) continue;
+        let v = w.cols[k];
+        if (typeof v === 'string' && GENERATED_ID_RE.test(v) && !inputIds.has(v)) v = '<generated-id>';
+        if (v instanceof Date) v = v.toISOString();
+        // Server-generated "now" timestamps differ by milliseconds between runs.
+        if (
+          typeof v === 'string' &&
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(v) &&
+          Math.abs(Date.parse(v) - Date.now()) < 5 * 60 * 1000
+        )
+          v = '<now>';
+        cols[k] = v;
+      }
+      return `${w.op} ${w.table} ${JSON.stringify(cols)}`;
+    })
+    .sort();
+}
+
+function recordingDb(store: Mock4bStore): { db: DatabasePoolState; writes: RecordedWrite[] } {
+  const db = createTransactionalMockDb(store);
+  const writes: RecordedWrite[] = [];
+  const inner = db.pool!;
+  const record = (sql: string, params?: unknown[]) => {
+    const w = parseRecordedWrite(String(sql), params ?? []);
+    if (w) writes.push(w);
+  };
+  const pool = {
+    query: (sql: string, params?: unknown[]) => {
+      record(sql, params);
+      return (inner as unknown as { query: (a: string, b?: unknown[]) => unknown }).query(sql, params);
+    },
+    connect: async () => {
+      const c = await inner.connect();
+      return {
+        query: (sql: string, params?: unknown[]) => {
+          record(sql, params);
+          return (c as unknown as { query: (a: string, b?: unknown[]) => unknown }).query(sql, params);
+        },
+        release: () => c.release(),
+      } as unknown as PoolClient;
+    },
+  } as unknown as Pool;
+  return { db: { ...db, pool }, writes };
+}
+
+const UI_ROUTE_FOR_ACTION: Record<
+  AllowedAiActionType,
+  { method: 'POST' | 'PATCH'; path: (p: Record<string, unknown>) => string }
+> = {
+  create_sponsor: { method: 'POST', path: () => '/api/sponsors' },
+  update_sponsor: { method: 'PATCH', path: (p) => `/api/sponsors/${p.sponsor_id}` },
+  change_owner: { method: 'POST', path: () => '/api/ownership' },
+  create_contact: { method: 'POST', path: () => '/api/contacts' },
+  update_contact: { method: 'PATCH', path: (p) => `/api/contacts/${p.contact_id}` },
+  upsert_sponsor_contact: { method: 'POST', path: () => '/api/contacts' },
+  create_campaign: { method: 'POST', path: () => '/api/campaigns' },
+  update_campaign: { method: 'PATCH', path: (p) => `/api/campaigns/${p.campaign_id}` },
+  log_outreach: { method: 'POST', path: () => '/api/outreach' },
+  log_interaction: { method: 'POST', path: () => '/api/interactions' },
+  log_meeting: { method: 'POST', path: () => '/api/meetings' },
+  record_qualification: { method: 'POST', path: () => '/api/qualifications' },
+  create_opportunity: { method: 'POST', path: () => '/api/opportunities' },
+  update_opportunity: { method: 'PATCH', path: (p) => `/api/opportunities/${p.opportunity_id}` },
+  change_stage: { method: 'POST', path: (p) => `/api/opportunities/${p.opportunity_id}/stage` },
+  confirm_deal: { method: 'POST', path: (p) => `/api/opportunities/${p.opportunity_id}/confirm` },
+  create_task: { method: 'POST', path: () => '/api/tasks' },
+  update_task: { method: 'PATCH', path: (p) => `/api/tasks/${p.task_id}` },
+  log_time: { method: 'POST', path: () => '/api/time-logs' },
+  create_network_partner: { method: 'POST', path: () => '/api/network-partners' },
+  record_referral: { method: 'POST', path: () => '/api/referrals' },
+};
+
+async function runParityForAction(actionType: AllowedAiActionType): Promise<{
+  ui: string[];
+  ai: string[];
+  uiStatus: number;
+  uiBody: unknown;
+  aiError: string | null;
+}> {
+  const raw = samplePayloadForAction(actionType);
+  if (actionType === 'create_sponsor') raw.first_source = 'referral';
+
+  // AI path: propose (clean payload) then execute.
+  const aiStore = createMock4bStore();
+  const aiRec = recordingDb(aiStore);
+  const prep = await prepareProposeChanges(
+    { actions: [{ type: actionType, payload: raw }] },
+    {
+      actorMemberId: 'SIM-LEAD',
+      roles: ['coordination_lead'],
+      editionId: 'ED-2026-DEMO',
+      recordClass: 'simulated',
+      asOf: '2026-11-26',
+      queryId: `AIQ-P-${actionType}`,
+      pool: aiRec.db.pool!,
+    }
+  );
+  const ins = prep.pendingInserts[0];
+  const cleanPayload: Record<string, unknown> = { ...(ins.payload as Record<string, unknown>) };
+  delete cleanPayload._preview;
+  delete cleanPayload._target_guard;
+  aiRec.writes.length = 0;
+  let aiError: string | null = null;
+  const client = await aiRec.db.pool!.connect();
+  try {
+    aiStore.aiActions.set(ins.ai_action_id, {
+      ...ins,
+      status: 'proposed',
+      query_id: `AIQ-P-${actionType}`,
+      confirmed_by: null,
+      confirmed_at: null,
+      executed_at: null,
+      import_batch_id: 'IB-UI',
+      created_at: new Date().toISOString(),
+    });
+    await executeAiActionInTransaction(
+      client,
+      aiStore.aiActions.get(ins.ai_action_id) as never,
+      'SIM-LEAD',
+      ['coordination_lead'],
+      'ED-2026-DEMO'
+    );
+  } catch (e) {
+    aiError = (e as Error).message;
+  } finally {
+    client.release();
+  }
+
+  // UI path: same clean payload through the Stage 3B route.
+  const uiStore = createMock4bStore();
+  const uiRec = recordingDb(uiStore);
+  const config = createBaseConfig();
+  const app = express();
+  app.use(express.json());
+  app.use('/api', createWriteApiRouter(config, uiRec.db, createAuthDeps(uiStore, uiRec.db)));
+  app.use(apiErrorHandler);
+  const server = await new Promise<http.Server>((resolve) => {
+    const s2 = app.listen(0, '127.0.0.1', () => resolve(s2));
+  });
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 0;
+  const route = UI_ROUTE_FOR_ACTION[actionType];
+  let uiStatus = 0;
+  let uiBody: unknown = null;
+  try {
+    uiRec.writes.length = 0;
+    // PATCH routes treat edition_id in the body as an attempted change to an
+    // immutable field, so the edition goes on the query string there.
+    const editionQs = route.method === 'PATCH' ? '?edition_id=ED-2026-DEMO' : '';
+    const body = route.method === 'PATCH' ? cleanPayload : { ...cleanPayload, edition_id: 'ED-2026-DEMO' };
+    const res = await fetch(`http://127.0.0.1:${port}${route.path(cleanPayload)}${editionQs}`, {
+      method: route.method,
+      headers: { 'content-type': 'application/json', authorization: 'Bearer mock-token' },
+      body: JSON.stringify(body),
+    });
+    uiStatus = res.status;
+    uiBody = await res.json().catch(() => null);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+
+  const inputIds = new Set(
+    Object.values(cleanPayload).filter((v): v is string => typeof v === 'string')
+  );
+  return {
+    ui: normalizeWrites(uiRec.writes, inputIds),
+    ai: normalizeWrites(aiRec.writes, inputIds),
+    uiStatus,
+    uiBody,
+    aiError,
+  };
+}
+
+for (const actionType of ALLOWED_AI_ACTION_TYPES) {
+  test(`[MOCKED] 2.10 write parity: ${actionType} writes the same rows via the AI executor and the 3B UI route`, async () => {
+    const r = await runParityForAction(actionType);
+    assert.equal(r.aiError, null, `AI path failed: ${r.aiError}`);
+    assert.ok(r.uiStatus >= 200 && r.uiStatus < 300, `UI route returned ${r.uiStatus}: ${JSON.stringify(r.uiBody)}`);
+    const business = r.ui.filter((l) => !l.includes(' audit_event '));
+    assert.ok(business.length > 0, 'UI path wrote no business rows');
+    assert.ok(r.ui.some((l) => l.includes(' audit_event ')), 'UI path wrote no audit row');
+    assert.deepEqual(r.ai, r.ui);
+  });
+}

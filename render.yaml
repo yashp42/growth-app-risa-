@@ -1,0 +1,64 @@
+# Render Blueprint: one free Node web service serves the built React app and
+# the Express API (/api/*) from a single process.
+#
+# Secrets are declared with `sync: false`: Render asks for their values when the
+# Blueprint is created; they are never stored in this file or the repo.
+#
+# NODE_ENV is deliberately not set: `npm ci` must install devDependencies
+# (tailwindcss) for the build. server.ts serves dist/ in production mode on its
+# own whenever dist/index.html exists and NODE_ENV is not "development".
+services:
+  - type: web
+    name: sponsorship-growth-platform
+    runtime: node
+    plan: free
+    region: singapore # closest Render region to the Supabase project (Mumbai)
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm start # node server.ts; Node >= 22.18 strips TypeScript types natively
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Runtime (non-secret)
+      - key: NODE_VERSION
+        value: "22"
+      - key: APP_ENV
+        value: demo
+      - key: EDITION_ID_DEFAULT
+        value: ED-2026-DEMO
+      # PORT is provided by Render automatically; the server reads it.
+
+      # Database (server only): app_service user on the Supabase transaction pooler, port 6543
+      - key: DATABASE_URL
+        sync: false
+
+      # Supabase Auth (public URL + publishable/anon key; never a service_role key)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+
+      # One-click demo sign-in (server only)
+      - key: DEMO_LOGIN_EMAIL
+        sync: false
+      - key: DEMO_LOGIN_PASSWORD
+        sync: false
+
+      # LLM chain, all free tiers: Groq first, OpenRouter :free last
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_MODEL_FALLBACK
+        value: qwen/qwen3.8-27b
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_MODEL
+        value: nvidia/nemotron-3-ultra-550b-a55b:free
+      - key: OPENROUTER_MODEL_FALLBACK
+        value: inclusionai/ling-3.2-flash:free
+
+      # Public URL of this service, sent as OpenRouter's HTTP-Referer (optional;
+      # set it to the onrender.com URL after the first deploy)
+      - key: APP_URL
+        sync: false

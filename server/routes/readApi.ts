@@ -3778,6 +3778,20 @@ export function createReadApiRouter(
         params.push(entityId);
         where.push(`ae.entity_id = $${params.length}`);
       }
+      const channel = getQueryString(req, 'channel');
+      if (channel) {
+        if (!['ui', 'ai_action', 'import', 'system'].includes(channel)) {
+          throw new AppApiError(400, 'INVALID_CHANNEL', `Unknown audit channel "${channel}".`);
+        }
+        params.push(channel);
+        where.push(`ae.channel = $${params.length}`);
+      }
+      const limitRaw = Number(getQueryString(req, 'limit') ?? 200);
+      const limit = Number.isFinite(limitRaw)
+        ? Math.min(200, Math.max(1, Math.trunc(limitRaw)))
+        : 200;
+      params.push(limit);
+      const limitParam = `$${params.length}`;
 
       const qRes = await wrapDb(
         pool.query<Record<string, unknown>>(
@@ -3789,7 +3803,7 @@ export function createReadApiRouter(
              LEFT JOIN public.team_member tm ON tm.member_id = ae.actor_id
             WHERE ${where.join(' AND ')}
             ORDER BY ae.at DESC
-            LIMIT 200`,
+            LIMIT ${limitParam}`,
           params
         )
       );

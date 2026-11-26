@@ -12,6 +12,7 @@ import {
   type CanonicalRole,
 } from '../permissions.ts';
 import {
+  assertLinkedRecordExists,
   ensureUiImportBatch,
   extractRequestedEditionAndClass,
   fetchAppDataVersion,
@@ -267,37 +268,6 @@ function getDecision(req: Request): {
     scope: req.permissionDecision?.scope ?? 'none',
     memberId: req.actor?.memberId ?? '',
   };
-}
-
-async function assertLinkedRecordExists(
-  client: PoolClient,
-  linkedType: string,
-  linkedId: string
-): Promise<void> {
-  const tableMap: Record<string, { table: string; pk: string }> = {
-    sponsor: { table: 'sponsor', pk: 'sponsor_id' },
-    opportunity: { table: 'opportunity', pk: 'opportunity_id' },
-    invoice: { table: 'invoice', pk: 'invoice_id' },
-    campaign: { table: 'campaign', pk: 'campaign_id' },
-    referral: { table: 'referral', pk: 'referral_id' },
-  };
-  const target = tableMap[linkedType];
-  if (!target) {
-    throw new AppApiError(422, 'INVALID_LINK', `Unsupported linked_type "${linkedType}".`);
-  }
-  const res = await client.query<{ ok: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM public.${target.table} WHERE ${target.pk} = $1 AND NOT is_deleted
-     ) AS ok`,
-    [linkedId]
-  );
-  if (!res.rows[0]?.ok) {
-    throw new AppApiError(
-      422,
-      'LINKED_RECORD_NOT_FOUND',
-      `Linked ${linkedType} "${linkedId}" does not exist.`
-    );
-  }
 }
 
 export function createWriteApiRouter(

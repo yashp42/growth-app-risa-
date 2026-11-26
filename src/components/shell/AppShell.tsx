@@ -7,10 +7,23 @@ import type { AiActionRecord, AiViewSpec } from '../../types/analyst';
 import type { NavSectionId } from '../../types/overview';
 import { GrowthAnalystLauncher } from '../analyst/GrowthAnalystLauncher';
 import { GrowthAnalystPanel } from '../analyst/GrowthAnalystPanel';
+import { AUDIT_LOG_ANCHOR_ID } from '../settings/AuditLogPanel';
 import { SlideOverDrawer } from '../ui/SlideOverDrawer';
 import { GlobalSearchModal } from './GlobalSearchModal';
 import { Sidebar } from './Sidebar';
 import { TopNav, type QuickAddEntityType } from './TopNav';
+
+/** Scroll to an element once the newly selected section has rendered it. */
+function scrollToWhenRendered(elementId: string, attemptsLeft = 30): void {
+  const el = document.getElementById(elementId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  if (attemptsLeft > 0) {
+    window.setTimeout(() => scrollToWhenRendered(elementId, attemptsLeft - 1), 50);
+  }
+}
 
 const QUICK_ADD_SCHEMA_META: Record<
   QuickAddEntityType,
@@ -206,6 +219,7 @@ export function AppShell({
                     onClick={() => {
                       analystSession.dismissAppliedToast();
                       onSelectSection('team-settings');
+                      scrollToWhenRendered(AUDIT_LOG_ANCHOR_ID);
                     }}
                     className="text-[12px] font-medium text-[#315F52] hover:underline"
                   >

@@ -143,3 +143,25 @@ export async function endMemberRole(
     }
   );
 }
+
+export interface AuditLogEvent {
+  audit_id: string;
+  actor_id: string;
+  actor_name: string | null;
+  ai_action_id: string | null;
+  channel: 'ui' | 'ai_action' | 'import' | 'system';
+  entity: string;
+  entity_id: string;
+  operation: 'insert' | 'update' | 'soft_delete';
+  data_version: number | null;
+  at: string;
+  record_class: string;
+}
+
+/** Read-only: latest audit_event rows (coordination_lead or admin). */
+export async function fetchAuditLog(limit = 50): Promise<AuditLogEvent[]> {
+  const res = await requestTeamAdminJson<{ events: AuditLogEvent[] }>(
+    `${OVERVIEW_API_ENDPOINTS.audit}?limit=${encodeURIComponent(String(limit))}`
+  );
+  return res.events ?? [];
+}

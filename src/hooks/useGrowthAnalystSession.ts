@@ -2,6 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSeason } from '../contexts/SeasonContext';
 import {
+  isSpeechSynthesisSupported,
+  loadAutoReadPreference,
+  saveAutoReadPreference,
+  speakAnswer,
+  stopSpeaking,
+} from '../lib/speech';
+import {
   AnalystApiError,
   cancelAiAction,
   cancelAiActionBatch,
@@ -163,6 +170,10 @@ export interface UseGrowthAnalystSessionResult {
   resetConversation: () => void;
   dismissError: () => void;
   clearDataVersionChanged: () => void;
+  /** Speaker toggle: read each new answer aloud (en-IN, answer text only). */
+  autoReadAloud: boolean;
+  setAutoReadAloud: (on: boolean) => void;
+  readAloudSupported: boolean;
 }
 
 export function useGrowthAnalystSession(
@@ -841,6 +852,37 @@ export function useGrowthAnalystSession(
     return null;
   }, [messages]);
 
+  // Speaker toggle. Only answers that arrive after the toggle is on are read;
+  // existing history is never read back on load.
+  const readAloudSupported = isSpeechSynthesisSupported();
+  const [autoReadAloud, setAutoReadAloudState] = useState<boolean>(
+    () => readAloudSupported && loadAutoReadPreference()
+  );
+  const lastSpokenMessageIdRef = useRef<string | null>(null);
+  const lastSeenMessageIdRef = useRef<string | null>(null);
+  const setAutoReadAloud = useCallback(
+    (on: boolean) => {
+      const next = on && readAloudSupported;
+      setAutoReadAloudState(next);
+      saveAutoReadPreference(next);
+      if (!next) stopSpeaking();
+    },
+    [readAloudSupported]
+  );
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    const previousLastId = lastSeenMessageIdRef.current;
+    lastSeenMessageIdRef.current = last?.message_id ?? null;
+    if (!autoReadAloud || !last || last.role !== 'assistant') return;
+    // First render after load: remember where history ends, read nothing.
+    if (previousLastId === null && messages.length > 1) return;
+    if (last.message_id === previousLastId) return;
+    if (last.message_id === lastSpokenMessageIdRef.current) return;
+    lastSpokenMessageIdRef.current = last.message_id;
+    speakAnswer(last.content);
+  }, [messages, autoReadAloud]);
+  useEffect(() => () => stopSpeaking(), []);
+
   const actions = useMemo(() => Object.values(actionsMap), [actionsMap]);
 
   return {
@@ -883,5 +925,8 @@ export function useGrowthAnalystSession(
     resetConversation,
     dismissError: () => setError(null),
     clearDataVersionChanged: () => setDataVersionChanged(false),
+    autoReadAloud,
+    setAutoReadAloud,
+    readAloudSupported,
   };
 }
