@@ -706,6 +706,7 @@ export async function executeReadTool(
 
   if (toolName === 'get_sponsor_metrics') {
     const args=SponsorMetricsArgsSchema.parse(rawArgs);
+    if(args.filters?.scenario_id)throw new Error('Sponsor actuals cannot be filtered by forecast scenario.');
     const ed=await resolveEditionFromPool(ctx.pool,args.edition_id??ctx.userSeason.editionId);
     const asOf=args.as_of??(ed.edition_id==='ED-2025'?'2025-04-20':ctx.userSeason.asOf);
     const result=await querySponsorMetrics({...ctx,userSeason:{editionId:ed.edition_id,recordClass:ed.record_class,asOf}},args.metric_id,args.filters??{},args.limit);

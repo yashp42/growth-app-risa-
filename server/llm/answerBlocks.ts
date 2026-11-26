@@ -146,7 +146,7 @@ const METRIC_LABELS: Record<string, string> = {
   'M-04': 'Signed in-kind',
   'M-06': 'Collected ÷ signed cash',
   'M-07': 'Outstanding cash',
-  'M-08': 'Cumulative collected (pacing)',
+  'M-08': 'Cumulative signed value',
   'M-21': 'Open pipeline',
   'M-30': 'Approved target',
 };

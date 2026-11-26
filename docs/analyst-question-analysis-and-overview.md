@@ -120,6 +120,8 @@ Reviewed all 66 existing bank questions. The bank and expected business answers 
 
 ## Validation and remaining work
 
+MOCKED / GitHub Linux CI on `e229b66`: TypeScript (`tsc --noEmit`), Vite production build and all 192 full regression tests passed. The generated static component preview is explicitly labelled MOCKED and uses test-only fixtures; it was not visually accepted because the browser could not reach the local preview server. No desktop/mobile visual or real workflow pass is claimed.
+
 MOCKED checks cover sponsor paraphrases, ambiguity, changed data, ties, role restrictions, as-of receipt rules, canonical reconciliation, historical absence, structured answer blocks, provider schema recovery and HTTP turns with no model requests. An existing mock's provider-call sequence was updated because the season-wide cash turn now uses zero model calls; its scope and financial assertions remain unchanged. UI tests use explicit fixtures for layout review, never as product fallback data.
 
 LIVE acceptance after deployment must check sponsor ranking against current receipts, own-role scoping and canonical parity, rerun the retrieval comparison, and run the full existing chatbot evaluation. Desktop/mobile visual inspection and real navigation on this new branch remain required before design acceptance.

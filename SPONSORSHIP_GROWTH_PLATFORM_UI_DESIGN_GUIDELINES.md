@@ -66,3 +66,8 @@ TypeScript, build and existing regressions run in GitHub CI. New tests exercise 
 ## Business language in primary screens
 
 Use business names (Cash collected, Signed value, Collection rate, Base/Plan/Stretch) rather than metric, scenario or rule codes. Show recommended actions as plain-language alert headlines. Keep internal IDs, formulas, raw ratios, forecast percentiles, assessment expressions and source checks in closed details or contextual definitions. Never strip identifiers from API objects or change metric keys, numerical values, permissions or calculations. Keep cash/in-kind distinctions, missing-data explanations and historical/demo/live context visible.
+
+
+## Overview reference layout revision
+
+Use a deep green navigation rail and warm cream canvas, four compact source-backed financial cards, and a two-column desktop composition of signed pacing/funnel followed by priority actions/campaign highlights. Keep the mobile layout in one column below 1100px, with financial cards in two columns. Weekly chart geometry must use supplied snapshot values; gaps remain gaps and absent history is an empty state. Signed pacing cannot be relabelled as collected cash. Campaign bars show relative signed value, not invented target attainment. Move full campaign sorting, rule definitions and team detail behind disclosures without removing the underlying workflows. References guide hierarchy, spacing and surfaces only; their sponsor names, figures, progress percentages and features are not business requirements.

@@ -100,6 +100,8 @@ export function describeToolStep(toolName: string, args: unknown): string {
       return `Loading the ${String(a.metric_id ?? 'metric')} weekly series…`;
     case 'search_knowledge':
       return 'Searching the strategy notes…';
+    case 'get_sponsor_metrics':
+      return 'Comparing sponsor contributions…';
     case 'list_records': {
       const kind = String(a.kind ?? 'records').replace(/_/g, ' ');
       return `Listing ${kind}…`;

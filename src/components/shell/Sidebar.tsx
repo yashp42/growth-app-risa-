@@ -138,7 +138,7 @@ export function Sidebar({
         className="flex-1 overflow-y-auto px-3 py-4"
       >
         <div className="space-y-6">
-          {SIDEBAR_NAV_GROUPS.map((group) => (
+          {SIDEBAR_NAV_GROUPS.filter(g=>g.id!=='intelligence').map(g=>g.id==='workspace'?{...g,items:[...g.items,...(SIDEBAR_NAV_GROUPS.find(x=>x.id==='intelligence')?.items??[])]}:g).map((group) => (
             <div key={group.id}>
               {!isCompact ? (
                 <p className="mb-1.5 px-2.5 text-[12px] font-medium tracking-[0.02em] text-[var(--color-ink-subtle)]">
