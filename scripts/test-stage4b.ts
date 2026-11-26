@@ -25,7 +25,8 @@ import {
 import { createOpenRouterClient } from '../server/llm/openrouter.ts';
 import { executeSetView } from '../server/llm/views.ts';
 import type { CanonicalRole } from '../server/permissions.ts';
-import { createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
+import { buildSystemPrompt, createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
+import { trimToolResultForModel } from '../server/llm/tools.ts';
 import { createWriteApiRouter } from '../server/routes/writeApi.ts';
 import { createReadApiRouter } from '../server/routes/readApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
@@ -2333,6 +2334,180 @@ test('[MOCKED] 3-model-call cap fallback produces Markdown table & notice; sanit
   } finally {
     await srv.close();
   }
+});
+
+async function askOnce(
+  store: Mock4bStore,
+  mockFetch: typeof fetch,
+  question: string
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const srv = await startTestApp(store, mockFetch);
+  try {
+    const r = await fetch(`${srv.baseUrl}/api/ai/ask`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: question,
+        edition_id: 'ED-2026-DEMO',
+        record_class: 'simulated',
+        as_of: '2026-11-26',
+      }),
+    });
+    return { status: r.status, body: (await r.json()) as Record<string, unknown> };
+  } finally {
+    await srv.close();
+  }
+}
+
+test('[MOCKED] §B: "Which signed partnerships still have outstanding cash?" is pre-routed to receivables + M-07 and costs 1 model request', async () => {
+  const store = createMock4bStore();
+  let modelCalls = 0;
+  let sawToolsInRequest = false;
+  let firstRequestToolNames: string[] = [];
+  const mockFetch: typeof fetch = async (input, init) => {
+    const url = String(input);
+    if (url.endsWith('/chat/completions')) {
+      modelCalls += 1;
+      const req = JSON.parse(String(init?.body ?? '{}')) as {
+        tools?: unknown[];
+        messages?: Array<{ role: string; tool_calls?: Array<{ function: { name: string; arguments: string } }> }>;
+      };
+      if (req.tools && req.tools.length > 0) sawToolsInRequest = true;
+      const pre = (req.messages ?? []).find((m) => m.role === 'assistant' && m.tool_calls);
+      firstRequestToolNames = (pre?.tool_calls ?? []).map(
+        (tc) => `${tc.function.name}:${tc.function.arguments}`
+      );
+      return new Response(
+        JSON.stringify({
+          model: DEFAULT_GROQ_MODEL_PRIMARY,
+          choices: [{ message: { role: 'assistant', content: 'Receivables are listed below [M-07].' } }],
+          usage: { prompt_tokens: 900, completion_tokens: 20, total_tokens: 920 },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
+  assert.equal(status, 200, JSON.stringify(body));
+  assert.equal(modelCalls, 1, 'one model request: the router picked the tools');
+  assert.equal(sawToolsInRequest, false, 'the phrasing request carries no tool schemas');
+  assert.ok(firstRequestToolNames.some((n) => n.startsWith('list_records:') && n.includes('"receivables"')));
+  assert.ok(firstRequestToolNames.some((n) => n.startsWith('get_metric:') && n.includes('M-07')));
+  const usage = body.token_usage as { model_requests: number; prompt_tokens: number };
+  assert.equal(usage.model_requests, 1);
+  assert.equal(usage.prompt_tokens, 900);
+});
+
+test('[MOCKED] §B: every provider failing still returns the found data as a table, never a dead end or raw error', async () => {
+  const store = createMock4bStore();
+  let modelCalls = 0;
+  const mockFetch: typeof fetch = async (input) => {
+    const url = String(input);
+    if (url.endsWith('/chat/completions')) {
+      modelCalls += 1;
+      return new Response(JSON.stringify({ error: { message: 'upstream exploded' } }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
+  assert.equal(status, 200, JSON.stringify(body));
+  assert.ok(modelCalls >= 1);
+  const answer = String(body.answer);
+  assert.match(answer, /\|/, 'a table built from the tool results');
+  assert.match(answer, /Summary not generated \(AI unavailable right now\); figures are from /);
+  assert.match(answer, /M-07/);
+  assert.ok(!/upstream exploded|SELECT|column/i.test(answer), 'no raw provider or SQL error text');
+});
+
+test('[MOCKED] §C: tool results handed to the model stay valid JSON within the ~2,500-token budget', () => {
+  const huge = {
+    source: 'list_receivables',
+    rows: Array.from({ length: 400 }, (_, i) => ({
+      sponsor_name: `Sponsor ${i} `.repeat(40),
+      outstanding: i * 1000,
+      notes: null,
+    })),
+  };
+  const out = trimToolResultForModel(huge);
+  assert.ok(out.length <= 9800, `length ${out.length}`);
+  const parsed = JSON.parse(out) as { rows?: Array<Record<string, unknown>> };
+  assert.ok((parsed.rows ?? []).length <= 25);
+  assert.ok(!(parsed.rows ?? []).some((r) => 'notes' in r), 'null fields dropped');
+  const pathological = { blob: Array.from({ length: 30 }, () => ({ k: Object.fromEntries(Array.from({ length: 400 }, (_, j) => [`f${j}`, 'x'.repeat(70)])) })) };
+  const out2 = trimToolResultForModel(pathological);
+  assert.doesNotThrow(() => JSON.parse(out2));
+  assert.ok(out2.length <= 9800);
+});
+
+test('[MOCKED] §C: system prompt stays within ~600 tokens and every model call uses temperature 0', async () => {
+  const sp = buildSystemPrompt({
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated',
+    asOf: '2026-11-26',
+    roles: ['coordination_lead', 'admin', 'finance_collections'],
+  });
+  assert.ok(sp.length / 4 <= 600, `≈${Math.ceil(sp.length / 4)} tokens`);
+  assert.match(sp, /untrusted data/);
+  assert.match(sp, /I don't have that in the data/);
+  assert.match(sp, /I have no record of/);
+  assert.match(sp, /No future speculation beyond approved scenarios/);
+
+  const store = createMock4bStore();
+  const temps: unknown[] = [];
+  const mockFetch: typeof fetch = async (input, init) => {
+    if (String(input).endsWith('/chat/completions')) {
+      temps.push((JSON.parse(String(init?.body ?? '{}')) as { temperature?: unknown }).temperature);
+      return new Response(
+        JSON.stringify({ model: DEFAULT_GROQ_MODEL_PRIMARY, choices: [{ message: { role: 'assistant', content: 'I don\'t have that in the data.' } }] }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  await askOnce(store, mockFetch, 'What is the colour of the sponsor lounge carpet?');
+  assert.ok(temps.length >= 1);
+  assert.ok(temps.every((x) => x === 0), JSON.stringify(temps));
+});
+
+test('[MOCKED] §D6: a deal for an entity that does not exist gets "no record of", and invented figures are flagged', async () => {
+  const store = createMock4bStore();
+  let modelCalls = 0;
+  const mockFetch: typeof fetch = async (input) => {
+    if (String(input).endsWith('/chat/completions')) {
+      modelCalls += 1;
+      const message =
+        modelCalls === 1
+          ? {
+              role: 'assistant',
+              content: '',
+              tool_calls: [
+                {
+                  id: 'tc_coke',
+                  type: 'function',
+                  function: {
+                    name: 'list_records',
+                    arguments: JSON.stringify({ kind: 'sponsors', filters: { search: 'Coca-Cola' } }),
+                  },
+                },
+              ],
+            }
+          : { role: 'assistant', content: "Coca-Cola's deal is worth ₹5,00,000 and is at negotiation." };
+      return new Response(
+        JSON.stringify({ model: DEFAULT_GROQ_MODEL_PRIMARY, choices: [{ message }] }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    return new Response(JSON.stringify({ data: { limit: 50, limit_remaining: 45 } }), { status: 200 });
+  };
+  const { status, body } = await askOnce(store, mockFetch, "What's the status of Coca-Cola's deal?");
+  assert.equal(status, 200, JSON.stringify(body));
+  const answer = String(body.answer);
+  assert.match(answer, /^I have no record of "Coca-Cola"/);
+  assert.match(answer, /could not be verified/i, 'the invented ₹5,00,000 is flagged by the answer check');
 });
 
 test('[MOCKED] Prompt injection in tool result creates 0 ai_action rows', async () => {

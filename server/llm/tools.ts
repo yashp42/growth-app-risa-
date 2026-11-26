@@ -120,11 +120,17 @@ export function trimToolResultForModel(obj: unknown): string {
   json = JSON.stringify(tighter);
   if (json.length <= 9800) return json;
 
-  const minimal = stripNullsAndTruncate(obj, 80, 8);
-  json = JSON.stringify(minimal);
-  if (json.length <= 9800) return json;
+  for (const rows of [8, 4, 2, 1]) {
+    json = JSON.stringify(stripNullsAndTruncate(obj, 80, rows));
+    if (json.length <= 9800) return json;
+  }
 
-  return `${json.slice(0, 9750)}…`;
+  // Still too large: hand the model valid JSON saying so, never a cut-off string.
+  return JSON.stringify({
+    ok: false,
+    error_code: 'RESULT_TOO_LARGE',
+    hint: 'Result too large to summarise; narrow the request (filters, fewer rows).',
+  });
 }
 
 const METRIC_ID_RE = /^M-(0[1-9]|[12][0-9]|30)$/;
@@ -1526,6 +1532,12 @@ export async function executeReadTool(
       data_version: dataVersion,
       count: rows.length,
       rows,
+      // A name search that finds nothing is stated explicitly, so the answer
+      // says "no record of ..." instead of inventing details (guardrail D6).
+      ...(f.search ? { search: f.search } : {}),
+      ...(f.search && rows.length === 0
+        ? { no_record: `I have no record of "${f.search}" in ${args.kind} (${ed.edition_id}).` }
+        : {}),
     };
     acc.toolResults.push(payload);
     return payload;

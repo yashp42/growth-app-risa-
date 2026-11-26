@@ -221,7 +221,7 @@ function getWeekdayLabel(isoDate: string): string {
   return names[dt.getUTCDay()] ?? '';
 }
 
-function buildSystemPrompt(params: {
+export function buildSystemPrompt(params: {
   editionId: string;
   recordClass: string;
   asOf: string;
@@ -549,7 +549,7 @@ function formatToolResultMarkdownSection(resObj: Record<string, unknown>): {
 
 function buildDeterministicToolFallback(
   acc: ToolRunAccumulator,
-  mode: 'cap' | 'quota'
+  mode: 'cap' | 'quota' | 'unavailable'
 ): string {
   const sections: string[] = [];
   const sources: string[] = [];
@@ -575,7 +575,9 @@ function buildDeterministicToolFallback(
   const footer =
     mode === 'quota'
       ? `Template summary from ${sourceLabel} (${QUOTA_EXHAUSTED_MESSAGE})`
-      : `Summary not generated (AI limit for this question); figures are from ${sourceLabel}`;
+      : mode === 'unavailable'
+        ? `Summary not generated (AI unavailable right now); figures are from ${sourceLabel}`
+        : `Summary not generated (AI limit for this question); figures are from ${sourceLabel}`;
 
   return `${sections.join('\n\n')}\n\n${footer}`;
 }
@@ -1379,6 +1381,9 @@ export function createAiApiRouter(
             trackCompletionUsage(synth);
             modelUsed = synth.model;
             finalAnswer = (synth.message.content ?? '').trim();
+            if (!finalAnswer) {
+              finalAnswer = buildDeterministicToolFallback(acc, 'cap');
+            }
           } catch (err) {
             if (
               err instanceof OpenRouterError &&
@@ -1386,7 +1391,11 @@ export function createAiApiRouter(
             ) {
               finalAnswer = buildDeterministicToolFallback(acc, 'quota');
             } else {
-              throw err;
+              // Data was found by the pre-run tools: answer from it rather than fail.
+              console.error(
+                `[ai:synth_error] ${err instanceof Error ? err.message : String(err)}`
+              );
+              finalAnswer = buildDeterministicToolFallback(acc, 'unavailable');
             }
           }
         } else {
@@ -1420,6 +1429,13 @@ export function createAiApiRouter(
                   acc.toolResults.length > 0
                     ? buildDeterministicToolFallback(acc, 'quota')
                     : QUOTA_EXHAUSTED_MESSAGE;
+                break;
+              }
+              if (acc.toolResults.length > 0) {
+                console.error(
+                  `[ai:model_error] ${err instanceof Error ? err.message : String(err)}`
+                );
+                finalAnswer = buildDeterministicToolFallback(acc, 'unavailable');
                 break;
               }
               throw err;
@@ -1615,13 +1631,20 @@ export function createAiApiRouter(
           if (!finalAnswer && llmMessages.length > 0 && !terminalDone) {
             if (modelCalls < MAX_MODEL_CALLS_PER_TURN) {
               modelCalls += 1;
-              const synth = await openrouter.createChatCompletion({
-                messages: llmMessages,
-                temperature: 0,
-              });
-              trackCompletionUsage(synth);
-              modelUsed = synth.model;
-              finalAnswer = (synth.message.content ?? '').trim();
+              try {
+                const synth = await openrouter.createChatCompletion({
+                  messages: llmMessages,
+                  temperature: 0,
+                });
+                trackCompletionUsage(synth);
+                modelUsed = synth.model;
+                finalAnswer = (synth.message.content ?? '').trim();
+              } catch (err) {
+                console.error(
+                  `[ai:synth_error] ${err instanceof Error ? err.message : String(err)}`
+                );
+                finalAnswer = buildDeterministicToolFallback(acc, 'unavailable');
+              }
             }
           }
 
@@ -1652,12 +1675,19 @@ export function createAiApiRouter(
               content: `Verification failed: these numbers in your previous draft do not appear in any tool result or retrieved source: ${ungroundedList}. Rewrite using ONLY exact numbers from the tool outputs above, or say "I don't have that in the data".`,
             },
           ];
-          const retryRes = await openrouter.createChatCompletion({
-            messages: retryMessages,
-            temperature: 0,
-          });
-          trackCompletionUsage(retryRes);
-          const candidate = (retryRes.message.content ?? '').trim();
+          let candidate = '';
+          try {
+            const retryRes = await openrouter.createChatCompletion({
+              messages: retryMessages,
+              temperature: 0,
+            });
+            trackCompletionUsage(retryRes);
+            candidate = (retryRes.message.content ?? '').trim();
+          } catch (err) {
+            console.error(
+              `[ai:answer_check_retry_error] ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
           if (candidate) {
             finalAnswer = candidate;
             check = verifyAnswerNumbers(finalAnswer, {
@@ -1674,6 +1704,27 @@ export function createAiApiRouter(
           if (check.warningMessage) {
             finalAnswer = `${finalAnswer}\n\nWarning: ${check.warningMessage}`;
           }
+        }
+      }
+
+      // Guardrail D6: if every name search this turn found nothing, the answer
+      // must say so rather than describe a record that does not exist.
+      if (!terminalDone && finalAnswer) {
+        const searches = acc.toolResults.filter(
+          (r): r is Record<string, unknown> =>
+            !!r && typeof r === 'object' && typeof (r as Record<string, unknown>).search === 'string'
+        );
+        const allMissed =
+          searches.length > 0 && searches.every((r) => typeof r.no_record === 'string');
+        const anyRows = acc.toolResults.some(
+          (r) =>
+            !!r &&
+            typeof r === 'object' &&
+            Array.isArray((r as Record<string, unknown>).rows) &&
+            ((r as Record<string, unknown>).rows as unknown[]).length > 0
+        );
+        if (allMissed && !anyRows && !/\bno record\b/i.test(finalAnswer)) {
+          finalAnswer = `${String(searches[0].no_record)}\n\n${finalAnswer}`;
         }
       }
     }
