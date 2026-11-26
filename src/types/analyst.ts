@@ -1,3 +1,4 @@
+import type { AnswerBlock } from './answerBlocks';
 import type { MetricQueryResult } from './campaigns';
 import type { NavSectionId } from './overview';
 import type { CanonicalRole } from './sponsors';
@@ -238,6 +239,8 @@ export interface AiStructuredResponse {
   shortcut?: boolean;
   quota?: AiQuotaInfo | null;
   view_spec?: AiViewSpec | null;
+  /** Server-built tables/charts/KPIs for this answer (numbers from tools only). */
+  blocks?: AnswerBlock[];
   model_id?: string | null;
   latency_ms?: number | null;
   token_usage?: {

@@ -1,3 +1,4 @@
+import { isAnswerBlock } from '../types/answerBlocks';
 import { apiFetch } from './authSession';
 import {
   ALLOWED_AI_ACTION_TYPES,
@@ -677,6 +678,7 @@ function normalizeStructuredResponse(
     shortcut: Boolean(raw.shortcut),
     quota: (raw.quota as AiQuotaInfo | null | undefined) ?? null,
     view_spec: (raw.view_spec as AiViewSpec | null | undefined) ?? null,
+    blocks: Array.isArray(raw.blocks) ? (raw.blocks as unknown[]).filter(isAnswerBlock) : [],
     model_id: (raw.model_id as string | null | undefined) ?? null,
     latency_ms:
       typeof raw.latency_ms === 'number' ? raw.latency_ms : null,

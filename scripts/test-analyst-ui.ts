@@ -133,3 +133,69 @@ test('[MOCKED] Change card: before → after with ₹ grouping and contract line
     assert.ok(!html.includes('{&quot;'), `${status}: no JSON objects`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// 4D answer blocks (server data only; the client formats and sorts)
+// ---------------------------------------------------------------------------
+import { AnswerBlocks } from '../src/components/analyst/AnswerBlocks.tsx';
+import type { AnswerBlock } from '../src/types/answerBlocks.ts';
+
+test('[MOCKED] 4D blocks render: sortable table, bar, line and KPI, each with its source chip and data version', () => {
+  const blocks: AnswerBlock[] = [
+    {
+      type: 'table',
+      title: 'Receivables by active contract',
+      columns: [
+        { key: 'sponsor_name', label: 'Sponsor', format: 'text' },
+        { key: 'outstanding', label: 'Outstanding', format: 'inr' },
+      ],
+      rows: [{ sponsor_name: 'Bramble Active', outstanding: 60000 }],
+      source: 'list_receivables',
+      data_version: 61,
+      edition_id: 'ED-2026-DEMO',
+    },
+    {
+      type: 'bar',
+      title: 'Cash collected by campaign',
+      metric_id: 'M-01',
+      unit: 'INR',
+      total: 272500,
+      series: [
+        { label: 'C26-WARM', value: 150000, computable: true },
+        { label: 'C26-B3', value: 122500, computable: true },
+      ],
+      source: 'set_view · metrics.get_metric',
+      data_version: 61,
+    },
+    {
+      type: 'line',
+      title: 'Cash collected by week',
+      metric_id: 'M-01',
+      unit: 'INR',
+      series: [
+        { x: '2026-11-01', y: 50000 },
+        { x: '2026-11-08', y: null },
+        { x: '2026-11-15', y: 272500 },
+      ],
+      source: 'metrics.get_metric_series',
+      data_version: 61,
+    },
+    { type: 'kpi', metric_id: 'M-07', label: 'Outstanding cash', value: 592500, unit: 'INR', computable: true, source: 'metrics.get_metric', data_version: 61 },
+    { type: 'kpi', metric_id: 'M-01', label: 'Cash collected', value: null, unit: 'INR', computable: false, reason: 'No receipts in 2025 synthetic data', source: 'metrics.get_metric', data_version: 61 },
+  ];
+  const html = renderToStaticMarkup(createElement(AnswerBlocks, { blocks }));
+  assert.match(html, /<table/);
+  assert.match(html, /Bramble Active/);
+  assert.match(html, /₹60,000/);
+  assert.match(html, /aria-sort="none"/, 'sortable headers');
+  assert.match(html, /list_receivables · data v61/);
+  assert.match(html, /aria-label="Cash collected by campaign bar chart"/);
+  assert.match(html, /₹1,50,000/);
+  assert.match(html, /Total \[M-01\]: <span[^>]*>₹2,72,500/);
+  assert.match(html, /<svg[^>]*aria-label="Cash collected by week line chart"/);
+  assert.match(html, /<polyline/);
+  assert.match(html, /₹5.92L/);
+  assert.match(html, /₹5,92,500/);
+  assert.match(html, /Not computable/);
+  assert.match(html, /No receipts in 2025 synthetic data/);
+});

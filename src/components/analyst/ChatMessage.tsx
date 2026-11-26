@@ -14,6 +14,7 @@ import {
   speakAnswer,
   stopSpeaking,
 } from '../../lib/speech';
+import { AnswerBlocks } from './AnswerBlocks';
 import { MarkdownAnswer } from './MarkdownAnswer';
 import { useEffect, useState } from 'react';
 import {
@@ -217,6 +218,11 @@ export function ChatMessage({
       <div className="mt-3 text-[13px] leading-relaxed text-[#202824]">
         <MarkdownAnswer>{message.content}</MarkdownAnswer>
       </div>
+
+      {/* Server-built tables / charts / KPIs (numbers from tool results only) */}
+      {structured?.blocks && structured.blocks.length > 0 ? (
+        <AnswerBlocks blocks={structured.blocks} />
+      ) : null}
 
       {/* Collapsed tool steps accordion */}
       {toolCalls.length > 0 ? (
