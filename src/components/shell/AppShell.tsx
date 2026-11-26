@@ -2,13 +2,11 @@ import { CheckCircle2, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
 import type { UseGrowthAnalystSessionResult } from '../../hooks/useGrowthAnalystSession';
-import { READ_ONLY_2025_MESSAGE } from '../../lib/dateIst';
 import type { AiActionRecord, AiViewSpec } from '../../types/analyst';
 import type { NavSectionId } from '../../types/overview';
 import { GrowthAnalystLauncher } from '../analyst/GrowthAnalystLauncher';
 import { GrowthAnalystPanel } from '../analyst/GrowthAnalystPanel';
 import { AUDIT_LOG_ANCHOR_ID } from '../settings/AuditLogPanel';
-import { SlideOverDrawer } from '../ui/SlideOverDrawer';
 import { GlobalSearchModal } from './GlobalSearchModal';
 import { Sidebar } from './Sidebar';
 import { TopNav, type QuickAddEntityType } from './TopNav';
@@ -25,67 +23,10 @@ function scrollToWhenRendered(elementId: string, attemptsLeft = 30): void {
   }
 }
 
-const QUICK_ADD_SCHEMA_META: Record<
-  QuickAddEntityType,
-  {
-    title: string;
-    fields: string[];
-  }
-> = {
-  opportunity: {
-    title: 'New sponsorship opportunity',
-    fields: [
-      'Sponsor organisation',
-      'Campaign',
-      'Cash commitment estimate',
-      'In-kind valuation (separate)',
-      'Stage',
-      'Owner',
-    ],
-  },
-  sponsor: {
-    title: 'New sponsor organisation',
-    fields: [
-      'Organisation name',
-      'Industry category',
-      'Primary contact',
-      'Owner',
-      'Prior edition history',
-    ],
-  },
-  campaign: {
-    title: 'New sponsorship campaign',
-    fields: [
-      'Campaign name',
-      'Festival edition',
-      'Owner',
-      'Target cash value',
-      'Strategic bet',
-    ],
-  },
-  task: {
-    title: 'New execution task',
-    fields: [
-      'Task title',
-      'Linked opportunity or campaign',
-      'Assignee',
-      'Due date',
-    ],
-  },
-  collection: {
-    title: 'Log cash receipt',
-    fields: [
-      'Confirmed partnership',
-      'Receipt amount (cash only)',
-      'Settlement date',
-      'Reference',
-    ],
-  },
-};
-
 interface AppShellProps {
   activeSection: NavSectionId;
   onSelectSection: (section: NavSectionId) => void;
+  onQuickAdd: (entity: QuickAddEntityType) => void;
   onOpenAnalystWorkspace: (promptContext?: string) => void;
   analystSession: UseGrowthAnalystSessionResult;
   autoStartVoiceNonce: number;
@@ -104,6 +45,7 @@ interface AppShellProps {
 export function AppShell({
   activeSection,
   onSelectSection,
+  onQuickAdd,
   onOpenAnalystWorkspace,
   analystSession,
   autoStartVoiceNonce,
@@ -120,9 +62,6 @@ export function AppShell({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [analystPanelOpen, setAnalystPanelOpen] = useState(false);
-  const [quickAddEntity, setQuickAddEntity] = useState<QuickAddEntityType | null>(
-    null
-  );
 
   useEffect(() => {
     if (activeSection === 'growth-analyst') {
@@ -130,11 +69,6 @@ export function AppShell({
     }
   }, [activeSection]);
 
-  useEffect(() => {
-    if (isReadOnlyHistorical && quickAddEntity) {
-      setQuickAddEntity(null);
-    }
-  }, [isReadOnlyHistorical, quickAddEntity]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -159,9 +93,6 @@ export function AppShell({
     }, 60);
   };
 
-  const quickAddDetails = quickAddEntity
-    ? QUICK_ADD_SCHEMA_META[quickAddEntity]
-    : null;
 
   return (
     <div className="flex min-h-screen bg-[var(--color-canvas)] text-[var(--color-ink)]">
@@ -182,7 +113,7 @@ export function AppShell({
           onOpenSearch={() => setSearchOpen(true)}
           onSelectQuickAdd={(entity) => {
             if (!isReadOnlyHistorical) {
-              setQuickAddEntity(entity);
+              onQuickAdd(entity);
             }
           }}
           onNavigateSection={onSelectSection}
@@ -278,40 +209,6 @@ export function AppShell({
         onOpenRecord={onOpenAnalystLinkedRecord}
       />
 
-      <SlideOverDrawer
-        open={Boolean(quickAddDetails)}
-        onClose={() => setQuickAddEntity(null)}
-        meta="Quick add"
-        title={quickAddDetails?.title ?? ''}
-      >
-        {quickAddDetails ? (
-          <div className="space-y-5">
-            <div className="rounded-md border border-dashed border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-4 py-3.5">
-              <p className="text-[14px] text-[var(--color-ink-muted)]">
-                {isReadOnlyHistorical
-                  ? READ_ONLY_2025_MESSAGE
-                  : 'Use the respective workspace directory to create or edit records in this edition.'}
-              </p>
-            </div>
-
-            <div>
-              <p className="mb-2 text-[13px] font-medium text-[var(--color-ink-subtle)]">
-                Fields
-              </p>
-              <ul className="divide-y divide-[var(--color-border-subtle)] rounded-md border border-[var(--color-border)] bg-white">
-                {quickAddDetails.fields.map((field) => (
-                  <li
-                    key={field}
-                    className="px-3.5 py-2.5 text-[14px] text-[var(--color-ink)]"
-                  >
-                    {field}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ) : null}
-      </SlideOverDrawer>
     </div>
   );
 }

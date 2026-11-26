@@ -31,6 +31,8 @@ import { TasksDirectoryPage } from './TasksDirectoryPage';
 
 interface TasksWorkspaceProps {
   showDevControls: boolean;
+  createRequest?: boolean;
+  onCreateRequestHandled?: () => void;
   initialTaskId?: string | null;
   prefillCreateTask?: Partial<TaskCreatePayload> | null;
   onClearInitialTaskId?: () => void;
@@ -55,6 +57,8 @@ const EMPTY_LINKED_CATALOG: LinkedRecordCatalog = {
 
 export function TasksWorkspace({
   showDevControls,
+  createRequest = false,
+  onCreateRequestHandled,
   initialTaskId = null,
   prefillCreateTask = null,
   onClearInitialTaskId,
@@ -248,6 +252,15 @@ export function TasksWorkspace({
     [invalidateAll, isHistoricalReadOnly]
   );
 
+  useEffect(() => {
+    if (!createRequest) return;
+    if (!isHistoricalReadOnly) {
+      setEditingTask(null);
+      setFormOpen(true);
+    }
+    onCreateRequestHandled?.();
+  }, [createRequest, isHistoricalReadOnly, onCreateRequestHandled]);
+
   return (
     <>
       {selectedTaskId ? (
@@ -342,3 +355,4 @@ export function TasksWorkspace({
     </>
   );
 }
+

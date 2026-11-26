@@ -15,6 +15,7 @@ import { OverviewDashboard } from './components/overview/OverviewDashboard';
 import { PipelineWorkspace } from './components/pipeline/PipelineWorkspace';
 import { TeamSettingsWorkspace } from './components/settings/TeamSettingsWorkspace';
 import { AppShell } from './components/shell/AppShell';
+import type { QuickAddEntityType } from './components/shell/TopNav';
 import { SponsorsWorkspace } from './components/sponsors/SponsorsWorkspace';
 import { TasksWorkspace } from './components/tasks/TasksWorkspace';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -139,6 +140,7 @@ function AuthenticatedWorkspace() {
   const [analystPromptContext, setAnalystPromptContext] = useState<string | null>(
     null
   );
+  const [quickCreate, setQuickCreate] = useState<QuickAddEntityType | null>(null);
   const [autoStartVoiceNonce, setAutoStartVoiceNonce] = useState(0);
   const [externalDataNonce, setExternalDataNonce] = useState(0);
   const [devControlsEnabled, setDevControlsEnabled] = useState<boolean>(() => {
@@ -414,6 +416,16 @@ function AuthenticatedWorkspace() {
     <AppShell
       activeSection={activeSection}
       onSelectSection={handleSelectSection}
+      onQuickAdd={(entity) => {
+        const sections: Record<QuickAddEntityType, NavSectionId> = { campaign: 'campaigns', sponsor: 'sponsors', opportunity: 'pipeline', task: 'tasks', collection: 'collections' };
+        setSelectedCampaignId(null);
+        setSelectedSponsorId(null);
+        setSelectedOpportunityId(null);
+        setSelectedTaskId(null);
+        setPrefillCreateTask(null);
+        handleSelectSection(sections[entity]);
+        setQuickCreate(entity);
+      }}
       onOpenAnalystWorkspace={handleOpenAnalyst}
       analystSession={analystSession}
       autoStartVoiceNonce={autoStartVoiceNonce}
@@ -457,6 +469,8 @@ function AuthenticatedWorkspace() {
         />
       ) : activeSection === 'campaigns' ? (
         <CampaignsWorkspace
+          createRequest={quickCreate === 'campaign'}
+          onCreateRequestHandled={() => setQuickCreate(null)}
           key={`campaigns-${externalDataNonce}`}
           showDevControls={showDevControls}
           initialCampaignId={selectedCampaignId}
@@ -465,6 +479,8 @@ function AuthenticatedWorkspace() {
         />
       ) : activeSection === 'sponsors' ? (
         <SponsorsWorkspace
+          createRequest={quickCreate === 'sponsor'}
+          onCreateRequestHandled={() => setQuickCreate(null)}
           key={`sponsors-${externalDataNonce}`}
           showDevControls={showDevControls}
           initialSponsorId={selectedSponsorId}
@@ -473,6 +489,8 @@ function AuthenticatedWorkspace() {
         />
       ) : activeSection === 'pipeline' ? (
         <PipelineWorkspace
+          createRequest={quickCreate === 'opportunity'}
+          onCreateRequestHandled={() => setQuickCreate(null)}
           key={`pipeline-${externalDataNonce}`}
           showDevControls={showDevControls}
           initialOpportunityId={selectedOpportunityId}
@@ -482,6 +500,8 @@ function AuthenticatedWorkspace() {
         />
       ) : activeSection === 'tasks' ? (
         <TasksWorkspace
+          createRequest={quickCreate === 'task'}
+          onCreateRequestHandled={() => setQuickCreate(null)}
           key={`tasks-${externalDataNonce}`}
           showDevControls={showDevControls}
           initialTaskId={selectedTaskId}
@@ -494,6 +514,8 @@ function AuthenticatedWorkspace() {
         />
       ) : activeSection === 'collections' ? (
         <CollectionsWorkspace
+          createRequest={quickCreate === 'collection'}
+          onCreateRequestHandled={() => setQuickCreate(null)}
           key={`collections-${externalDataNonce}`}
           showDevControls={showDevControls}
           onOpenSponsor={handleOpenSponsorDetail}
@@ -535,3 +557,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+

@@ -25,6 +25,8 @@ import { CampaignPortfolioPage } from './CampaignPortfolioPage';
 
 interface CampaignsWorkspaceProps {
   showDevControls: boolean;
+  createRequest?: boolean;
+  onCreateRequestHandled?: () => void;
   initialCampaignId?: string | null;
   onClearInitialCampaignId?: () => void;
   onOpenSponsor?: (sponsorId: string) => void;
@@ -32,6 +34,8 @@ interface CampaignsWorkspaceProps {
 
 export function CampaignsWorkspace({
   showDevControls,
+  createRequest = false,
+  onCreateRequestHandled,
   initialCampaignId = null,
   onClearInitialCampaignId,
   onOpenSponsor,
@@ -186,6 +190,15 @@ export function CampaignsWorkspace({
     filters.record_class
   );
 
+  useEffect(() => {
+    if (!createRequest) return;
+    if (!isHistoricalReadOnly) {
+      setEditingCampaign(null);
+      setFormOpen(true);
+    }
+    onCreateRequestHandled?.();
+  }, [createRequest, isHistoricalReadOnly, onCreateRequestHandled]);
+
   return (
     <>
       {selectedCampaignId ? (
@@ -261,3 +274,4 @@ export function CampaignsWorkspace({
     </>
   );
 }
+

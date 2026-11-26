@@ -32,6 +32,8 @@ import { ReceiptFormDrawer } from './ReceiptFormDrawer';
 
 interface CollectionsWorkspaceProps {
   showDevControls: boolean;
+  createRequest?: boolean;
+  onCreateRequestHandled?: () => void;
   onOpenSponsor?: (sponsorId: string) => void;
   onOpenOpportunity?: (opportunityId: string) => void;
 }
@@ -65,6 +67,8 @@ const EMPTY_DATA: CollectionsWorkspaceData = {
 
 export function CollectionsWorkspace({
   showDevControls,
+  createRequest = false,
+  onCreateRequestHandled,
   onOpenSponsor,
   onOpenOpportunity,
 }: CollectionsWorkspaceProps) {
@@ -273,6 +277,15 @@ export function CollectionsWorkspace({
     [filters.edition_id, invalidateAll, isHistoricalReadOnly, permissionProfile]
   );
 
+  useEffect(() => {
+    if (!createRequest) return;
+    if (!isHistoricalReadOnly) {
+      setReceiptDefaultSponsorId(null);
+      setReceiptDrawerOpen(true);
+    }
+    onCreateRequestHandled?.();
+  }, [createRequest, isHistoricalReadOnly, onCreateRequestHandled]);
+
   return (
     <>
       <CollectionsWorkspacePage
@@ -411,3 +424,4 @@ export function CollectionsWorkspace({
     </>
   );
 }
+
