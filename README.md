@@ -15,7 +15,7 @@ npm start
 
 Open the address printed by the server. Render uses `render.yaml`; the health endpoint is `/api/health`. First load may take up to a minute (free hosting).
 
-The current lockfile failed `npm ci` in the Windows review environment with missing optional platform-package entries. Dependencies could not be fetched there. TypeScript and the Vite build must pass in an environment with dependencies before merging this change. Do not substitute the native syntax check for a type check.
+The current lockfile failed `npm ci` in the Windows review environment with missing optional platform-package entries. Dependencies could not be fetched there. GitHub Linux CI subsequently installed dependencies and passed TypeScript and the Vite build. Do not substitute the native syntax check for a type check.
 
 ## Database setup
 
@@ -67,7 +67,8 @@ Demo records changed during earlier LIVE checks, so screenshots and old handoff 
 
 - **MOCKED:** 16 new regression checks passed using Node's test runner.
 - **MOCKED:** native syntax checks passed for 10 server/script files. This is not a TypeScript type check.
-- **Blocked:** dependency install, TypeScript type checking and Vite build in the review environment.
+- **MOCKED / GitHub CI:** clean dependency install, TypeScript type checking and Vite build passed on Linux. Local Windows installation remains blocked.
+- **MOCKED / GitHub CI:** the first full run passed 119 of 121 checks; the two failures concerned prompt size and safe-fallback wording and are addressed in the follow-up commit. Re-run results must be checked before merge.
 - **LIVE:** not run. No new database parity, retrieval comparison, release-gate score, browser performance result or production-deployment success is claimed.
 
 Remaining acceptance work includes the researched-prospects UI, allocation-drawer empty state, complete scenario-view review, orb/browser checks, and all LIVE evaluations. See `docs/handoff/` for their original requirements.
