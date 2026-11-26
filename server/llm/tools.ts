@@ -1,3 +1,4 @@
+import { querySponsorMetrics, SPONSOR_METRICS } from './sponsorMetrics.ts';
 import { getInventory } from './financialAnswers.ts';
 import { expandedTerms, lexicalRank } from './lexicalSearch.ts';
 import { getProspects } from './prospects.ts';
@@ -246,7 +247,10 @@ export const GetDatasetArgsSchema = z.object({
 }).strict();
 export const ListDatasetsArgsSchema = z.object({ query: z.string().trim().max(240).optional() }).strict();
 
+export const SponsorMetricsArgsSchema = z.object({metric_id:z.enum(SPONSOR_METRICS),filters:MetricFiltersSchema,limit:z.number().int().min(1).max(25).default(10),edition_id:z.string().trim().optional(),as_of:z.string().refine(isValidIsoDate).optional()}).strict();
+
 export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
+ {type:'function',function:{name:'get_sponsor_metrics',description:'Rank sponsors by database-computed cash collected (M-01), signed total (M-02), signed cash (M-03), in-kind (M-04), or unpaid cash (M-07). Full permitted cohort ranked before limiting. Do not use channel totals to answer sponsor questions.',parameters:{type:'object',properties:{metric_id:{type:'string',enum:[...SPONSOR_METRICS]},limit:{type:'integer',minimum:1,maximum:25},edition_id:{type:'string'},as_of:{type:'string'},filters:{type:'object',properties:{campaign_id:{type:'string'},channel_group:{type:'string',enum:['warm','inbound','cold','renewal','premium']},bet_id:{type:'string'}},additionalProperties:false}},required:['metric_id'],additionalProperties:false}}},
   { type: 'function', function: {
     name: 'list_datasets',
     description: 'Find AI-visible reference datasets: market_research.prospect_register; financial_modelling.inventory.b_pricing_summary; data_foundation.curated_data.commercial_inventory and external_benchmarks; strategy.resource_allocation.staffing, bets and scenario_capacity; strategy.risk_register; financial_modelling.scenario_catalogue; strategy.d010_approved.out.s7_ranking. Research is not pipeline; analysis is not an approved target.',
@@ -380,7 +384,7 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
     function: {
       name: 'list_records',
       description:
-        'List RBAC-scoped records (opportunities with state=open|confirmed|lost, tasks, receivables per active contract, sponsors, campaigns, contacts, team_members).',
+        'List at most 25 RBAC-scoped records; limit must be 1..25. Use get_sponsor_metrics for financial rankings, not a partial record listing. Records: (opportunities with state=open|confirmed|lost, tasks, receivables per active contract, sponsors, campaigns, contacts, team_members).',
       parameters: {
         type: 'object',
         properties: {
@@ -694,6 +698,16 @@ export async function executeReadTool(
       decision_status: String(payload.status_label ?? payload.status ?? 'reference'),
       record_class: String(payload.record_class), data_version: dataVersion,
     });
+    return payload;
+  }
+
+  if (toolName === 'get_sponsor_metrics') {
+    const args=SponsorMetricsArgsSchema.parse(rawArgs);
+    const ed=await resolveEditionFromPool(ctx.pool,args.edition_id??ctx.userSeason.editionId);
+    const asOf=args.as_of??(ed.edition_id==='ED-2025'?'2025-04-20':ctx.userSeason.asOf);
+    const result=await querySponsorMetrics({...ctx,userSeason:{editionId:ed.edition_id,recordClass:ed.record_class,asOf}},args.metric_id,args.filters??{},args.limit);
+    const payload={...result,source:'list_sponsor_metrics',kind:'sponsor_metrics',metric_id:args.metric_id,unit:'INR',title:'Sponsors by '+({'M-01':'cash collected','M-02':'signed value','M-03':'signed cash','M-04':'in-kind value','M-07':'outstanding cash'}[args.metric_id]),scope:profile.opportunitiesScope==='own'||profile.sponsorsScope==='own'||profile.contractsScope==='own'?'own':'all',edition_id:ed.edition_id,record_class:ed.record_class,as_of:asOf,data_version:dataVersion};
+    acc.toolResults.push(payload);acc.citations.push({type:'record',id:'sponsor_metrics:'+args.metric_id,title:payload.title,record_class:ed.record_class,data_version:dataVersion});
     return payload;
   }
 

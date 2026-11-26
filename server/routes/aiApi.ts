@@ -1,3 +1,4 @@
+import { operationalIntent, answerOperational } from '../llm/operationalAnswers.ts';
 import { financialIntent, answerFinancial } from '../llm/financialAnswers.ts';
 import { prospectIntent, answerProspects } from '../llm/prospectAnswers.ts';
 import { basicAnalyticsIntent, answerBasicAnalytics } from '../llm/basicAnalytics.ts';
@@ -296,6 +297,7 @@ export function buildSystemPrompt(params: {
     `${datasetNote} edition_id="${params.editionId}", as_of="${params.asOf}"${asOfWeekday ? ` (${asOfWeekday})` : ''}, roles=[${params.roles.join(', ')}].`,
     ...(vcParts.length > 0 ? [`UI context: ${vcParts.join('; ')}.`] : []),
     'Prospects: get_register(kind=prospects). Empty CRM ≠ no research; route ≠ introduction. Research ≠ pipeline/forecast; unapproved ≠ target. Cite status_label/dataset_id; keep ASK/ACTUAL/COST.',
+    'For sponsor financial rankings, use get_sponsor_metrics. A channel/campaign total cannot identify the highest-paying sponsor. If money is ambiguous, ask collected cash vs signed commitment. list_records limit is at most 25. CRM sponsors are list_records(kind=sponsors), not get_register.',
     'RULES:',
     '1. Grounding: Use ONLY exact tool values. Never invent, estimate or scale numbers.',
     '2. Missing data: If no tool returns the needed data or computable=false, say "I don\'t have that in the data", name the missing data/screen/tool, and never guess. If a named entity lookup returns 0 rows, state "I have no record of <name>" and never invent details.',
@@ -1272,6 +1274,8 @@ export function createAiApiRouter(
       }
     };
 
+    const previousQuestion = [...priorMessages].reverse().find(m=>m.role==='user')?.content;
+    const operationalQuery = operationalIntent(question,Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)),typeof previousQuestion==='string'?previousQuestion:'');
     const basicIntent = basicAnalyticsIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
     const financialQuery = financialIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
     const prospectQuery = prospectIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
@@ -1279,10 +1283,10 @@ export function createAiApiRouter(
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
-    } else if (basicIntent || prospectQuery || financialQuery) {
-      routeOverride = basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
+    } else if (operationalQuery || basicIntent || prospectQuery || financialQuery) {
+      routeOverride = operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
       usedMetrics = Boolean(basicIntent) || financialQuery === 'forecast_actual';
-      usedKnowledge = true;
+      usedKnowledge = !operationalQuery;
       const readDeterministic = async (name: string, args: Record<string, unknown>) => {
         reportStep(describeToolStep(name, args));
         const result = await executeReadTool(name, args, {
@@ -1292,7 +1296,7 @@ export function createAiApiRouter(
         toolTrace.push({ tool_call_id: 'basic-' + (toolTrace.length + 1), tool_name: name, status: 'ok', summary: String(args.metric_id ?? name), record_class: result.record_class, data_version: dataVersion });
         return result;
       };
-      finalAnswer = basicIntent ? await answerBasicAnalytics(basicIntent, readDeterministic, acc) : financialQuery ? await answerFinancial(financialQuery, readDeterministic, acc) : await answerProspects(prospectQuery!, readDeterministic, acc);
+      finalAnswer = operationalQuery ? await answerOperational(operationalQuery, readDeterministic, acc) : basicIntent ? await answerBasicAnalytics(basicIntent, readDeterministic, acc) : financialQuery ? await answerFinancial(financialQuery, readDeterministic, acc) : await answerProspects(prospectQuery!, readDeterministic, acc);
       const check = verifyAnswerNumbers(finalAnswer, { toolResults: acc.toolResults, knowledgeTexts: acc.knowledgeTexts, userQuestion: question });
       answerCheckPassed = check.passed;
       if (!check.passed) {
