@@ -1,3 +1,4 @@
+import { prospectIntent, answerProspects } from '../llm/prospectAnswers.ts';
 import { basicAnalyticsIntent, answerBasicAnalytics } from '../llm/basicAnalytics.ts';
 import { isGreeting, requestBudget } from '../llm/requestBudget.ts';
 import { formatScenarioCash, hasRawToolCall } from '../llm/responsePolicy.ts';
@@ -293,9 +294,9 @@ export function buildSystemPrompt(params: {
     'You are the Sponsorship Growth Analyst.',
     `${datasetNote} edition_id="${params.editionId}", as_of="${params.asOf}"${asOfWeekday ? ` (${asOfWeekday})` : ''}, roles=[${params.roles.join(', ')}].`,
     ...(vcParts.length > 0 ? [`UI context: ${vcParts.join('; ')}.`] : []),
-    'Research/benchmarks are not pipeline or forecasts. Unapproved scenarios are not targets. State dataset status_label, cite dataset_id and preserve ASK/ACTUAL/COST.',
+    'Prospects: get_register(kind=prospects). Empty CRM ≠ no research; route ≠ introduction. Research ≠ pipeline/forecast; unapproved ≠ target. Cite status_label/dataset_id; keep ASK/ACTUAL/COST.',
     'RULES:',
-    '1. Grounding: Never invent, estimate, or scale numbers. Use ONLY exact values returned by tools (or pre-loaded tool data).',
+    '1. Grounding: Use ONLY exact tool values. Never invent, estimate or scale numbers.',
     '2. Missing data: If no tool returns the needed data or computable=false, say "I don\'t have that in the data", name the missing data/screen/tool, and never guess. If a named entity lookup returns 0 rows, state "I have no record of <name>" and never invent details.',
     '3. Scope: Default to active edition_id & as_of unless user asks another season. Apply campaign_id/channel_group/bet_id filters ONLY when named in the question (never silently inherit ui_filters); state any applied filter explicitly.',
     '4. Definitions: Keep signed total (M-02), cash-signed (M-03), in-kind (M-04), and cash collected (M-01) strictly separate. No future speculation beyond approved scenarios (SC-01..SC-03) and gate/rule outputs.',
@@ -1245,7 +1246,7 @@ export function createAiApiRouter(
     const collectedActions: Array<Record<string, unknown>> = [];
     const pendingActionInserts: PendingAiActionInsert[] = [];
     let viewSpec: Record<string, unknown> | undefined;
-    let routeOverride: 'sql' | 'action' | undefined;
+    let routeOverride: 'sql' | 'hybrid' | 'action' | undefined;
 
     const tokenUsage = {
       prompt_tokens: 0,
@@ -1271,15 +1272,16 @@ export function createAiApiRouter(
     };
 
     const basicIntent = basicAnalyticsIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
+    const prospectQuery = prospectIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
     if (greeting) {
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
-    } else if (basicIntent) {
-      routeOverride = 'sql';
-      usedMetrics = true;
+    } else if (basicIntent || prospectQuery) {
+      routeOverride = basicIntent || prospectQuery?.kind === 'routes' ? 'sql' : 'hybrid';
+      usedMetrics = Boolean(basicIntent);
       usedKnowledge = true;
-      finalAnswer = await answerBasicAnalytics(basicIntent, async (name, args) => {
+      const readDeterministic = async (name: string, args: Record<string, unknown>) => {
         reportStep(describeToolStep(name, args));
         const result = await executeReadTool(name, args, {
           pool, actorMemberId: actor.memberId, roles, defaultEditionId: config.editionIdDefault,
@@ -1287,7 +1289,8 @@ export function createAiApiRouter(
         }, acc);
         toolTrace.push({ tool_call_id: 'basic-' + (toolTrace.length + 1), tool_name: name, status: 'ok', summary: String(args.metric_id ?? name), record_class: result.record_class, data_version: dataVersion });
         return result;
-      }, acc);
+      };
+      finalAnswer = basicIntent ? await answerBasicAnalytics(basicIntent, readDeterministic, acc) : await answerProspects(prospectQuery!, readDeterministic, acc);
       const check = verifyAnswerNumbers(finalAnswer, { toolResults: acc.toolResults, knowledgeTexts: acc.knowledgeTexts, userQuestion: question });
       answerCheckPassed = check.passed;
       if (!check.passed) {

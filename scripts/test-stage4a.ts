@@ -1123,3 +1123,27 @@ test('[MOCKED] signed analytics bypass model quota and retain permission-checked
   const campaignBody=await campaignResponse.json();assert.equal(campaignResponse.status,200,JSON.stringify(campaignBody));assert.equal(campaignBody.answer_check_passed,true);assert.equal(campaignBody.token_usage.model_requests,0);assert.equal(modelCalls,0);assert.match(campaignBody.answer,/Mock campaign \| 2 \| 5 \| 0.4 ratio/);
  }finally{client.stop();await srv.close();}
 });
+
+test('[MOCKED] prospect prioritisation, research status and verified-route answers need zero model requests',async()=>{
+ const store=createMockStore();const dbState=createMockDbState(store);const original=dbState.pool!.query.bind(dbState.pool);
+ const prospectRows=[{company:'Alpha',category:'Consumer fintech',action:'1 Pursue now',route_class:'V1',priority_index:73,track:'cash',introductions:0,face_value_lakh:2.5},{company:'Beta',category:'Consumer fintech',action:'2 Later',route_class:'U1',priority_index:90,track:'cash',introductions:0,face_value_lakh:4.5}];
+ dbState.pool!.query=(async(sql:any,params?:any[])=>{
+  if(String(sql).includes('FROM ref.dataset WHERE'))return {rows:[{dataset_id:'market_research.prospect_register',title:'Prospect register',source_path:'research.csv',status:'research',record_class:'external_research',columns:Object.keys(prospectRows[0]),row_count:2}]};
+  if(String(sql).includes('FROM ref.dataset_row r'))return {rows:prospectRows.map((data,i)=>({row_no:i+1,data}))};
+  return original(sql,params);
+ }) as typeof original;
+ let modelCalls=0;
+ const client=createOpenRouterClient(createBaseConfig(),{startBackgroundRefresh:false,fetchFn:async(input)=>{
+  if(String(input).endsWith('/chat/completions')){modelCalls++;throw Error('Model unavailable');}
+  return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,used:50,remaining:0}}}),{status:200});
+ }});
+ const app=express();app.use(express.json());app.use('/api',createAiApiRouter(createBaseConfig(),dbState,createAuthDeps(store,dbState),{openrouter:client}).router);app.use(apiErrorHandler);
+ const srv=await startServer(app);
+ try{
+  for(const question of ['Which prospects should we pursue first?','Is Alpha in our pipeline, and what is it worth?','Which fintech prospects have a verified route to them?']){
+   const response=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question,edition_id:'ED-2026-DEMO',as_of:'2026-11-26'})});
+   const body=await response.json();assert.equal(response.status,200,JSON.stringify(body));assert.equal(body.generation_status,'complete');assert.equal(body.token_usage.model_requests,0);assert.equal(body.answer_check_passed,true,JSON.stringify(body));assert.ok(body.tool_calls.some((t:any)=>t.tool_name==='get_register'&&t.status==='ok'));assert.ok(body.tool_calls.some((t:any)=>t.tool_name==='search_knowledge'&&t.status==='ok'));assert.match(body.answer,/Alpha/);assert.doesNotMatch(body.answer,/\| Beta \|/);
+  }
+  assert.equal(modelCalls,0);
+ }finally{client.stop();await srv.close();}
+});

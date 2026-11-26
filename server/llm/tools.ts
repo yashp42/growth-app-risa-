@@ -1,3 +1,4 @@
+import { getProspects } from './prospects.ts';
 import { z } from 'zod';
 import { getDataset, listDatasets } from './referenceData.ts';
 import { getKnowledgeRankMode } from './retrievalRanking.ts';
@@ -186,8 +187,10 @@ export const GetRegisterArgsSchema = z
       'gate',
       'source',
       'benchmark',
+      'prospects',
     ]),
     id: z.string().trim().min(1).optional(),
+    filters: z.object({ company: z.string().trim().min(1).max(80).optional(), category: z.string().trim().min(1).max(80).optional(), action: z.string().trim().min(1).max(80).optional(), verified_route: z.boolean().optional() }).strict().optional(),
     edition_id: z.string().trim().min(1).optional(),
     as_of: z.string().trim().optional(),
   })
@@ -333,15 +336,16 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
     type: 'function',
     function: {
       name: 'get_register',
-      description: 'Read kpi, rule, experiment, assumption, decision, bet, gate, source or benchmark. Benchmarks are external research: preserve ASK vs ACTUAL vs COST.',
+      description: 'Read kpi, rule, experiment, assumption, decision, bet, gate, source, benchmark or prospects. Prospects are external research targets, not pipeline or forecasts; verified routes are not introductions. Use filters for company, category, action or verified_route. Benchmarks are external research: preserve ASK vs ACTUAL vs COST.',
       parameters: {
         type: 'object',
         properties: {
           kind: {
             type: 'string',
-            enum: ['kpi', 'rule', 'experiment', 'assumption', 'decision', 'bet', 'gate', 'source', 'benchmark'],
+            enum: ['kpi', 'rule', 'experiment', 'assumption', 'decision', 'bet', 'gate', 'source', 'benchmark', 'prospects'],
           },
           id: { type: 'string' },
+          filters: { type: 'object', properties: { company: { type: 'string' }, category: { type: 'string' }, action: { type: 'string' }, verified_route: { type: 'boolean' } }, additionalProperties: false },
           edition_id: { type: 'string' },
           as_of: { type: 'string' },
         },
@@ -903,6 +907,13 @@ export async function executeReadTool(
 
   if (toolName === 'get_register') {
     const args = GetRegisterArgsSchema.parse(rawArgs);
+    if (args.kind === 'prospects') {
+      const payload = await getProspects(ctx.pool, args.filters ?? (args.id ? {company:args.id} : {}), {asOf:ctx.userSeason.asOf,dataVersion});
+      acc.toolResults.push(payload);
+      if(payload.available === true) acc.citations.push({type:'reference',id:'market_research.prospect_register',title:'Prospect research register',record_class:'external_research',data_version:dataVersion});
+      return payload;
+    }
+    if (args.filters) throw new Error('Register filters are only supported for prospects.');
     if (args.kind === 'source' || args.kind === 'benchmark') {
       const source = args.kind === 'source';
       const table = source ? 'source_register' : 'benchmark';
