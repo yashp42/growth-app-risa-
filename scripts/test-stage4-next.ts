@@ -70,3 +70,37 @@ test('[MOCKED] curated benchmark exports retain external-research status',()=>{
   assert.match(referenceStatus('model_output','curated export','data_foundation.curated_data.external_benchmarks'),/External research/);
   assert.match(referenceStatus('model_output','analysis, not approved'),/not approved/);
 });
+import { hasRawToolCall, formatScenarioCash, answerOnlyMessages, ANSWER_ONLY_INSTRUCTION } from '../server/llm/responsePolicy.ts';
+test('[MOCKED] synthesis has an explicit answer-only instruction without mutating history or retry text',()=>{
+  const messages=[{role:'system' as const,content:'Original guardrails'},{role:'user' as const,content:'Verification failed: rewrite only'}];
+  const result=answerOnlyMessages(messages);assert.ok(result[0].content?.includes(ANSWER_ONLY_INSTRUCTION));
+  assert.equal(result.at(-1)?.content,'Verification failed: rewrite only');assert.equal(messages[0].content,'Original guardrails');
+});
+test('[MOCKED] raw model tool-call markup is rejected, not executed or displayed',()=>{
+  assert.equal(hasRawToolCall('<tool_call><function=search_knowledge><parameter=query>x</parameter></tool_call>'),true);
+  assert.equal(hasRawToolCall('Collected cash is ₹2,72,500 [M-01].'),false);
+});
+test('[MOCKED] scenario fallback money explicitly preserves the stored lakh unit',()=>{
+  assert.equal(formatScenarioCash(21.23),'₹21.23L');assert.equal(formatScenarioCash(28.64),'₹28.64L');assert.equal(formatScenarioCash(null),'—');
+});
+import { isGreeting, requestBudget } from '../server/llm/requestBudget.ts';
+test('[MOCKED] reviewer and evaluation allowances are separate; unknown internal tokens grant no evaluation budget',()=>{
+  const secret='s'.repeat(64);const reviewer=requestBudget('demo','client','demo',secret);
+  const evaluation=requestBudget('demo','loopback','demo',secret,secret);
+  assert.equal(reviewer.limit,60);assert.equal(evaluation.limit,300);assert.notEqual(reviewer.key,evaluation.key);
+  assert.equal(requestBudget('demo','client','demo',secret,'forged').evaluation,false);
+  assert.equal(requestBudget('normal','client','production').limit,15);
+});
+test('[MOCKED] greetings need no model request; operational commands are not mistaken for greetings',()=>{
+  assert.equal(isGreeting('hello!'),true);assert.equal(isGreeting('Hi'),true);assert.equal(isGreeting('hello, move Voltyatra'),false);
+});
+import { providerOrder, readDailyFreeQuota } from '../server/llm/freeModelPolicy.ts';
+test('[MOCKED] OpenRouter USD credit balances are never treated as free request counts',()=>{
+  assert.deepEqual(readDailyFreeQuota({limit:0,limit_remaining:0,usage_daily:0,free_model_daily_requests:{limit:50,used:7,remaining:43}}),{limit:50,used:7,remaining:43,exhausted:false});
+  assert.equal(readDailyFreeQuota({limit_remaining:0}).exhausted,false);
+  assert.equal(readDailyFreeQuota({free_model_daily_requests:{limit:50,used:50,remaining:0}}).exhausted,true);
+});
+test('[MOCKED] OpenRouter-first preserves model order within each provider and retains Groq fallback',()=>{
+  const entries=[{provider:'groq' as const,model:'g1'},{provider:'openrouter' as const,model:'o1'},{provider:'groq' as const,model:'g2'},{provider:'openrouter' as const,model:'o2'}];
+  assert.deepEqual(providerOrder(entries,'openrouter_first').map(x=>x.model),['o1','o2','g1','g2']);assert.equal(entries[0].model,'g1');
+});

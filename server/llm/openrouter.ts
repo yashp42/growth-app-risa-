@@ -1,3 +1,5 @@
+import { providerOrder, readDailyFreeQuota } from './freeModelPolicy.ts';
+import { answerOnlyMessages } from './responsePolicy.ts';
 import {
   assertValidFreeOpenRouterModel,
   DEFAULT_GROQ_MODEL_FALLBACK,
@@ -310,56 +312,13 @@ export function createOpenRouterClient(
   }
 
   const buildChain = (): ChainEntry[] => {
-    const entries: ChainEntry[] = [];
-    if (groqKey) {
-      entries.push({
-        provider: 'groq',
-        model: groqPrimary,
-        baseUrl: GROQ_BASE_URL,
-        apiKey: groqKey,
-      });
-      if (groqFallback && groqFallback !== groqPrimary) {
-        entries.push({
-          provider: 'groq',
-          model: groqFallback,
-          baseUrl: GROQ_BASE_URL,
-          apiKey: groqKey,
-        });
-      }
-      if (config.openrouterApiKey && openrouterPrimaryModel) {
-        entries.push({
-          provider: 'openrouter',
-          model: openrouterPrimaryModel,
-          baseUrl: OPENROUTER_BASE_URL,
-          apiKey: config.openrouterApiKey,
-        });
-      }
-    } else {
-      if (openrouterPrimaryModel) {
-        entries.push({
-          provider: 'openrouter',
-          model: openrouterPrimaryModel,
-          baseUrl: OPENROUTER_BASE_URL,
-          apiKey: config.openrouterApiKey,
-        });
-      }
-      if (
-        openrouterFallbackModel &&
-        openrouterFallbackModel !== openrouterPrimaryModel
-      ) {
-        entries.push({
-          provider: 'openrouter',
-          model: openrouterFallbackModel,
-          baseUrl: OPENROUTER_BASE_URL,
-          apiKey: config.openrouterApiKey,
-        });
-      }
-    }
-    return entries;
+    const entries: ChainEntry[]=[];
+    if(groqKey)for(const model of new Set([groqPrimary,groqFallback].filter(Boolean)))entries.push({provider:'groq',model,baseUrl:GROQ_BASE_URL,apiKey:groqKey});
+    if(config.openrouterApiKey || !groqKey)for(const model of new Set([openrouterPrimaryModel,openrouterFallbackModel].filter(Boolean)))entries.push({provider:'openrouter',model,baseUrl:OPENROUTER_BASE_URL,apiKey:config.openrouterApiKey});
+    return providerOrder(entries,config.aiProviderOrder??'groq_first');
   };
-
-  const primaryModel = groqKey ? groqPrimary : openrouterPrimaryModel;
-  const fallbackModel = groqKey ? groqFallback : openrouterFallbackModel;
+  const primaryModel = buildChain()[0]?.model ?? null;
+  const fallbackModel = buildChain()[1]?.model ?? null;
 
   let primaryCheck: OpenRouterModelCheck | null = null;
   let fallbackCheck: OpenRouterModelCheck | null = null;
@@ -604,11 +563,12 @@ export function createOpenRouterClient(
       groqFallback && groqFallback !== groqPrimary ? 2 : 1;
     const totalLimit =
       groqModelCount * 1000 + (openrouterQuota.limit ?? 0);
+    const unknownOpenRouter = Boolean(config.openrouterApiKey) && openrouterQuota.remaining === null;
     return {
-      limit: totalLimit,
-      remaining: totalRemaining,
-      used: Math.max(0, totalLimit - totalRemaining),
-      exhausted: totalRemaining <= 0,
+      limit: unknownOpenRouter ? null : totalLimit,
+      remaining: unknownOpenRouter ? null : totalRemaining,
+      used: unknownOpenRouter ? null : Math.max(0, totalLimit - totalRemaining),
+      exhausted: totalRemaining <= 0 && !unknownOpenRouter,
       checked_at: new Date().toISOString(),
       reset_note: OPENROUTER_QUOTA_RESET_NOTE,
       source: 'provider_chain',
@@ -660,32 +620,14 @@ export function createOpenRouterClient(
       const data =
         body.data && typeof body.data === 'object' ? body.data : body;
 
-      const limit =
-        toFiniteOrNull(data.limit) ??
-        toFiniteOrNull(data.free_limit) ??
-        (data.is_free_tier === true ? 50 : null);
-      const remainingRaw =
-        toFiniteOrNull(data.limit_remaining) ??
-        toFiniteOrNull(data.remaining);
-      const usedRaw =
-        toFiniteOrNull(data.usage_daily) ??
-        toFiniteOrNull(data.usage) ??
-        toFiniteOrNull(data.used);
-
-      const used =
-        usedRaw ??
-        (limit !== null && remainingRaw !== null
-          ? Math.max(0, limit - remainingRaw)
-          : null);
-      const remaining =
-        remainingRaw ??
-        (limit !== null && used !== null ? Math.max(0, limit - used) : null);
+      // Credit limits are USD, not request counts. Use OpenRouter's separate free counter.
+      const {limit,remaining,used,exhausted}=readDailyFreeQuota(data);
 
       openrouterQuota = {
         limit,
         remaining,
         used,
-        exhausted: remaining !== null && remaining <= 0,
+        exhausted,
         checked_at: new Date().toISOString(),
         reset_note: OPENROUTER_QUOTA_RESET_NOTE,
         source: 'openrouter_key_api',
@@ -757,7 +699,7 @@ export function createOpenRouterClient(
 
     const payload: Record<string, unknown> = {
       model: entry.model,
-      messages,
+      messages: tools?.length ? messages : answerOnlyMessages(messages),
       temperature,
     };
 
@@ -788,6 +730,7 @@ export function createOpenRouterClient(
     }
 
     let res: Response;
+    if(entry.provider==='openrouter')decrementLocalQuotaEstimate('openrouter');
     try {
       res = await fetchFn(`${entry.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -833,7 +776,8 @@ export function createOpenRouterClient(
 
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      const retryable = res.status === 429 || res.status >= 500;
+      const toolProtocolFailure = !tools?.length && res.status === 400 && /tool choice is none|tool_use_failed/i.test(errText);
+      const retryable = toolProtocolFailure || res.status === 429 || res.status >= 500;
       const retryAfterMs = retryable
         ? parseRetryAfterMs(res.headers.get('retry-after'))
         : 0;
@@ -843,7 +787,7 @@ export function createOpenRouterClient(
       throw new OpenRouterError(
         `${entry.provider} returned HTTP ${res.status}${errText ? `: ${errText.slice(0, 220)}` : ''}`,
         res.status,
-        res.status === 429 ? 'OPENROUTER_RATE_LIMIT' : 'OPENROUTER_UPSTREAM_ERROR',
+        toolProtocolFailure ? 'AI_TOOL_PROTOCOL' : res.status === 429 ? 'OPENROUTER_RATE_LIMIT' : 'OPENROUTER_UPSTREAM_ERROR',
         retryable
       );
     }
@@ -876,11 +820,9 @@ export function createOpenRouterClient(
       );
     }
 
-    if (entry.provider === 'openrouter') {
-      decrementLocalQuotaEstimate('openrouter');
-    } else if (
+    if (entry.provider === 'groq' && (
       res.headers.get('x-ratelimit-remaining-requests') === null
-    ) {
+    )) {
       decrementLocalQuotaEstimate('groq', entry.model);
     }
 
@@ -932,6 +874,7 @@ export function createOpenRouterClient(
     let lastErr: unknown = null;
     for (let i = 0; i < chain.length; i += 1) {
       const entry = chain[i];
+      if(entry.provider==='openrouter' && openrouterQuota.exhausted)continue;
       const reasoningSupported =
         entry.provider === 'openrouter'
           ? entry.model === openrouterPrimaryModel
@@ -954,7 +897,7 @@ export function createOpenRouterClient(
         lastErr = err;
         const canContinue =
           err instanceof OpenRouterError &&
-          (err.status === 429 || err.status >= 500) &&
+          (err.code === 'AI_TOOL_PROTOCOL' || err.status === 429 || err.status >= 500) &&
           err.status !== 504 &&
           i + 1 < chain.length;
         if (!canContinue) {
@@ -979,7 +922,7 @@ export function createOpenRouterClient(
         .filter((p) => p.provider === 'groq')
         .every((p) => (lastVerifiedAt !== null ? p.verified : true));
     return {
-      provider: groqKey ? 'groq' : 'openrouter',
+      provider: buildChain()[0]?.provider ?? 'openrouter',
       orchestration_implemented: true,
       api_key_configured: Boolean(groqKey || config.openrouterApiKey),
       groq_key_configured: Boolean(groqKey),
@@ -1037,3 +980,4 @@ export function createOpenRouterClient(
     },
   };
 }
+

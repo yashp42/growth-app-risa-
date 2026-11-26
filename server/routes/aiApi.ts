@@ -1,3 +1,5 @@
+import { isGreeting, requestBudget } from '../llm/requestBudget.ts';
+import { formatScenarioCash, hasRawToolCall } from '../llm/responsePolicy.ts';
 import crypto from 'node:crypto';
 import { Router, type Request, type Response } from 'express';
 import type { PoolClient } from 'pg';
@@ -78,6 +80,7 @@ export type ExtraTerminalToolHandler = (
 }>;
 
 export interface AiApiRouterDeps {
+  evaluationToken?: string;
   openrouter?: OpenRouterClient;
   extraToolDefinitions?: OpenRouterToolDefinition[];
   extraToolHandler?: ExtraTerminalToolHandler;
@@ -572,11 +575,11 @@ function formatToolResultMarkdownSection(resObj: Record<string, unknown>): {
     const rows = resObj.scenarios as Array<Record<string, unknown>>;
     if (rows.length === 0) return null;
     const lines = [
-      `| Scenario | Name | Expected Cash | P10 | P50 | P90 |`,
+      `| Scenario | Name | Expected cash (₹ lakh) | P10 (₹ lakh) | P50 (₹ lakh) | P90 (₹ lakh) |`,
       `|---|---|---:|---:|---:|---:|`,
       ...rows.map(
         (s) =>
-          `| ${String(s.scenario_id ?? '')} | ${String(s.name ?? '')} | ${formatInrCompact(s.expected_cash)} | ${formatInrCompact(s.p10)} | ${formatInrCompact(s.p50)} | ${formatInrCompact(s.p90)} |`
+          `| ${String(s.scenario_id ?? '')} | ${String(s.name ?? '')} | ${formatScenarioCash(s.expected_cash)} | ${formatScenarioCash(s.p10)} | ${formatScenarioCash(s.p50)} | ${formatScenarioCash(s.p90)} |`
       ),
     ];
     return { source: 'scenario_reference', markdown: lines.join('\n') };
@@ -767,7 +770,7 @@ export function createAiApiRouter(
     { cachedAt: number; payload: Record<string, unknown> }
   >();
 
-  function checkSessionRateLimit(sessionKey: string): {
+  function checkSessionRateLimit(sessionKey: string, limit = SESSION_RATE_LIMIT_PER_HOUR): {
     allowed: boolean;
     retryAfterSeconds: number;
   } {
@@ -781,7 +784,7 @@ export function createAiApiRouter(
     const recent = (sessionBuckets.get(sessionKey) ?? []).filter(
       (ts) => ts > cutoff
     );
-    if (recent.length >= SESSION_RATE_LIMIT_PER_HOUR) {
+    if (recent.length >= limit) {
       sessionBuckets.set(sessionKey, recent);
       const oldest = recent[0] ?? now;
       return {
@@ -1027,6 +1030,11 @@ export function createAiApiRouter(
   // POST /api/ai/ask and POST /api/ai/chat
   const handleAsk = asyncHandler(async (req: Request, res: Response) => {
     const startedAt = Date.now();
+    let generationFallbackReason: 'cap' | 'quota' | 'unavailable' | null = null;
+    const fallbackFromTools = (acc: ToolRunAccumulator, mode: 'cap' | 'quota' | 'unavailable') => {
+      generationFallbackReason = mode;
+      return buildDeterministicToolFallback(acc, mode);
+    };
     const parsed = AskBodySchema.safeParse(req.body);
     if (!parsed.success) {
       throw new AppApiError(
@@ -1119,18 +1127,7 @@ export function createAiApiRouter(
     const queryId = generatePrefixedId('AIQ-');
     const question = parsed.data.message;
 
-    // Session hourly cap (15/hr per authenticated user session)
-    const sessionKey = actor.authUserId;
-    const rateCheck = checkSessionRateLimit(sessionKey);
-    if (!rateCheck.allowed) {
-      res.setHeader('Retry-After', String(rateCheck.retryAfterSeconds));
-      throw new AppApiError(
-        429,
-        'SESSION_RATE_LIMIT',
-        'Hourly limit of 15 Growth Analyst questions per session reached. Please wait before asking again.'
-      );
-    }
-
+    const greeting = isGreeting(question);
     const verRes = await pool.query<{ data_version: string | number }>(
       `SELECT data_version FROM public.app_state WHERE id = 1`
     );
@@ -1155,6 +1152,14 @@ export function createAiApiRouter(
       };
       res.status(200).json(cachedPayload);
       return;
+    }
+
+    // Cache hits and greetings spend no model budget. Evaluations use a private server token.
+    const budget=requestBudget(actor.authUserId,req.ip??req.socket.remoteAddress??'unknown',config.appEnv,deps.evaluationToken,req.header('x-internal-evaluation'));
+    const rateCheck = greeting ? {allowed:true,retryAfterSeconds:0} : checkSessionRateLimit(budget.key,budget.limit);
+    if(!rateCheck.allowed){
+      res.setHeader('Retry-After',String(rateCheck.retryAfterSeconds));
+      throw new AppApiError(429,'SESSION_RATE_LIMIT','Hourly allowance of '+budget.limit+' analyst questions reached. Cached answers and greetings remain available; try again after the indicated wait.');
     }
 
     // Load recent messages: keep last 4 turns (8 messages) verbatim + 1-line summary of older turns
@@ -1264,7 +1269,9 @@ export function createAiApiRouter(
       }
     };
 
-    if (refusalCheck.refuse) {
+    if (greeting) {
+      finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
+    } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
     } else {
       const quotaBefore = await openrouter.fetchQuota(false);
@@ -1422,7 +1429,7 @@ export function createAiApiRouter(
 
       if (quotaBefore.exhausted) {
         if (preRoutedReady) {
-          finalAnswer = buildDeterministicToolFallback(acc, 'quota');
+          finalAnswer = fallbackFromTools(acc, 'quota');
         } else {
           res.status(200).json({
             conversation_id: conversationId,
@@ -1468,20 +1475,20 @@ export function createAiApiRouter(
             modelUsed = synth.model;
             finalAnswer = (synth.message.content ?? '').trim();
             if (!finalAnswer) {
-              finalAnswer = buildDeterministicToolFallback(acc, 'cap');
+              finalAnswer = fallbackFromTools(acc, 'cap');
             }
           } catch (err) {
             if (
               err instanceof OpenRouterError &&
               err.code === 'AI_QUOTA_EXHAUSTED'
             ) {
-              finalAnswer = buildDeterministicToolFallback(acc, 'quota');
+              finalAnswer = fallbackFromTools(acc, 'quota');
             } else {
               // Data was found by the pre-run tools: answer from it rather than fail.
               console.error(
                 `[ai:synth_error] ${err instanceof Error ? err.message : String(err)}`
               );
-              finalAnswer = buildDeterministicToolFallback(acc, 'unavailable');
+              finalAnswer = fallbackFromTools(acc, 'unavailable');
             }
           }
         } else {
@@ -1514,7 +1521,7 @@ export function createAiApiRouter(
               ) {
                 finalAnswer =
                   acc.toolResults.length > 0
-                    ? buildDeterministicToolFallback(acc, 'quota')
+                    ? fallbackFromTools(acc, 'quota')
                     : QUOTA_EXHAUSTED_MESSAGE;
                 break;
               }
@@ -1522,7 +1529,7 @@ export function createAiApiRouter(
                 console.error(
                   `[ai:model_error] ${err instanceof Error ? err.message : String(err)}`
                 );
-                finalAnswer = buildDeterministicToolFallback(acc, 'unavailable');
+                finalAnswer = fallbackFromTools(acc, 'unavailable');
                 break;
               }
               throw err;
@@ -1732,13 +1739,13 @@ export function createAiApiRouter(
                 console.error(
                   `[ai:synth_error] ${err instanceof Error ? err.message : String(err)}`
                 );
-                finalAnswer = buildDeterministicToolFallback(acc, 'unavailable');
+                finalAnswer = fallbackFromTools(acc, 'unavailable');
               }
             }
           }
 
           if (!finalAnswer && !terminalDone) {
-            finalAnswer = buildDeterministicToolFallback(acc, 'cap');
+            finalAnswer = fallbackFromTools(acc, 'cap');
           }
         }
       }
@@ -1816,6 +1823,9 @@ export function createAiApiRouter(
         }
       }
     }
+
+    // Tool-call text is never an executable action or a user-facing answer.
+    if (hasRawToolCall(finalAnswer)) finalAnswer = fallbackFromTools(acc, 'unavailable');
 
     // Structured answer blocks, built from this turn's tool results only. The
     // model may choose the kind with a trailing [[blocks: ...]] tag, stripped
@@ -2061,6 +2071,8 @@ export function createAiApiRouter(
       data_version: dataVersion,
       answer_check_passed: answerCheckPassed,
       answer_check_status: answerCheckStatus,
+      generation_status: generationFallbackReason ? 'fallback' : 'complete',
+      generation_fallback_reason: generationFallbackReason,
       model_id: modelUsed,
       latency_ms: latencyMs,
       cached: false,
@@ -2071,6 +2083,7 @@ export function createAiApiRouter(
     if (
       collectedActions.length === 0 &&
       !viewSpec &&
+      !generationFallbackReason &&
       answerCheckPassed &&
       finalAnswer.trim().length > 0 &&
       priorMessages.length === 0

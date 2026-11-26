@@ -45,6 +45,8 @@ services:
         sync: false
 
       # LLM chain, all free tiers: Groq first, OpenRouter :free last
+      - key: AI_PROVIDER_ORDER
+        value: openrouter_first
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
@@ -62,3 +64,4 @@ services:
       # set it to the onrender.com URL after the first deploy)
       - key: APP_URL
         sync: false
+

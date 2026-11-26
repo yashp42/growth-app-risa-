@@ -47,7 +47,7 @@ export async function listDatasets(pool: QueryablePool, query: string, ctx: Refe
   const result = await pool.query<DatasetMetadata>(
     `SELECT dataset_id, title, status, record_class, row_count, source_path, source_sha256
        FROM ref.dataset
-      WHERE ai_visible = true AND ($1 = '' OR dataset_id ILIKE $2 ESCAPE '\\' OR title ILIKE $2 ESCAPE '\\')
+      WHERE ai_visible = true AND ($1 = '' OR dataset_id ILIKE $2 ESCAPE '\\' OR title ILIKE $2 ESCAPE '\\' OR to_tsvector('english', replace(dataset_id, '.', ' ') || ' ' || title) @@ plainto_tsquery('english', $1))
       ORDER BY dataset_id LIMIT 100`, [query, `%${query.replace(/[\\%_]/g, '\\$&')}%`]);
   return { source: 'list_datasets', kind: 'datasets', as_of: ctx.asOf, edition_id: 'REFERENCE',
     record_class: 'reference_catalogue', data_version: ctx.dataVersion,

@@ -32,7 +32,7 @@ Verify `metrics.parity_2025()` returns 32 passing checks and that all 30 metric 
 - AI changes are proposals. Only an explicit human Accept executes them through permission checks, actor-bound transactions and audit records. Finance changes, roles, deletes and historical data remain human-only or forbidden as specified in `CLAUDE.md`.
 - `get_dataset` and `list_datasets` read only AI-visible references. Filters use JSONB containment, column projection is validated, and results carry source path, checksum and status. External benchmarks preserve ASK / ACTUAL / COST.
 - Microphone metering stays local. Web Speech recognition may use the browser's recognition service; do not describe all voice recognition as guaranteed offline.
-- Only configured free-tier model providers are used. Quotas and the existing 15-turn hourly cap can pause evaluation.
+- Only configured free-tier model providers are used. Provider quotas can still pause evaluation. Demo reviewers have 60 uncached questions per hour per identity/address; production retains 15. The internal evaluator uses a separate server-authenticated allowance. Greetings and cache hits do not consume that allowance.
 
 ## Evaluation
 
@@ -72,3 +72,15 @@ Demo records changed during earlier LIVE checks, so screenshots and old handoff 
 - **LIVE:** not run. No new database parity, retrieval comparison, release-gate score, browser performance result or production-deployment success is claimed.
 
 Remaining acceptance work includes the researched-prospects UI, allocation-drawer empty state, complete scenario-view review, orb/browser checks, and all LIVE evaluations. See `docs/handoff/` for their original requirements.
+
+## LIVE gate follow-up
+
+The first gate run paused after 15 of 35 cases. Its zero strict-pass count was not an accuracy estimate: reference questions were sometimes run in historical context, legacy route names did not map cleanly, and missing action fixtures could not validate expected proposals. Genuine defects also appeared: provider tool-protocol errors, printed tool-call XML, and scenario fallback money missing its lakh unit.
+
+The follow-up separates reviewer/evaluator budgets, answers greetings without a model, constrains answer-only calls, rejects raw tool-call markup, preserves scenario units, improves dataset keyword search, records HTTP error details, and pauses rather than grading provider-degraded fallback responses. It does not relax the full release gate or change the original test bank. Further LIVE runs are still required.
+
+## Free-provider routing
+
+The server defaults to `AI_PROVIDER_ORDER=openrouter_first`: both explicitly configured OpenRouter `:free` models, then Groq. Set `AI_PROVIDER_ORDER=groq_first` to restore the previous priority. There is no Gemini integration and no paid/automatic-model routing. All OpenRouter models remain subject to startup zero-price/tool-support checks.
+
+OpenRouter free-request counts are read from `free_model_daily_requests`; USD credit limits are not request counts. Its daily allowance is shared across free model variants, so switching models does not multiply the allowance. Unknown quota is displayed as unknown rather than inferred from a dollar balance. Failed OpenRouter attempts reduce the local conservative estimate.

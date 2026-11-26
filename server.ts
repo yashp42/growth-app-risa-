@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import express from 'express';
 import fs from 'node:fs';
 import http, { type Server } from 'node:http';
@@ -52,16 +53,18 @@ async function startServer(): Promise<void> {
   });
 
   app.use('/api', express.json({ limit: '1mb' }));
+  const evaluationToken = randomBytes(32).toString('hex');
   const { router: aiRouter, openrouter: openrouterClient } = createAiApiRouter(
     config,
     dbState,
-    authDeps
+    authDeps,
+    { evaluationToken }
   );
   app.use('/api', createReadApiRouter(config, dbState, authDeps));
   app.use('/api', createWriteApiRouter(config, dbState, authDeps));
   app.use('/api', createFinanceAndTeamApiRouter(config, dbState, authDeps));
   app.use('/api', aiRouter);
-  app.use('/api', createEvaluationApiRouter(config, dbState, authDeps));
+  app.use('/api', createEvaluationApiRouter(config, dbState, authDeps, evaluationToken));
   app.use('/api', createAiActionsRouter(config, dbState, authDeps));
   app.use(
     '/api',
