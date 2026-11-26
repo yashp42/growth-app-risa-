@@ -20,6 +20,7 @@ import {
   type AiViewSpec,
   type AllowedAiActionType,
   type ActionFieldDiff,
+  AiDateResolution,
   type SavedAnalystView,
 } from '../types/analyst';
 import type { MetricQueryResult } from '../types/campaigns';
@@ -499,6 +500,9 @@ function normalizeActionRecord(raw: Record<string, unknown>): AiActionRecord | n
       null,
     field_diffs: Array.isArray(raw.field_diffs)
       ? (raw.field_diffs as ActionFieldDiff[])
+      : undefined,
+    date_resolutions: Array.isArray(raw.date_resolutions)
+      ? (raw.date_resolutions as AiDateResolution[])
       : undefined,
     impacted_note:
       (raw.impacted_note as string | null | undefined) ??

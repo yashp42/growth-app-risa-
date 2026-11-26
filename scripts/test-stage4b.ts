@@ -31,6 +31,7 @@ import { createWriteApiRouter } from '../server/routes/writeApi.ts';
 import { createReadApiRouter } from '../server/routes/readApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
 import { answerTextForSpeech, speakAnswer } from '../src/lib/speech.ts';
+import { formatIstDisplay, resolveRelativeDate } from '../server/llm/relativeDates.ts';
 
 function createBaseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
   return {
@@ -2765,6 +2766,87 @@ test('[MOCKED] 1.4: read-aloud speaks answer text only, in en-IN (browser speech
     g.window = prevWindow;
     g.SpeechSynthesisUtterance = prevUtterance;
   }
+});
+
+test('[MOCKED] Dates: relative phrases resolve on the server from the IST as-of date (Thu 26 Nov 2026)', () => {
+  const asOf = '2026-11-26';
+  const cases: Array<[string, string, string | null]> = [
+    ['today', '2026-11-26', null],
+    ['tomorrow', '2026-11-27', null],
+    ['Friday', '2026-11-27', null],
+    ['by Friday', '2026-11-27', null],
+    ['by Friday 5pm', '2026-11-27', '17:00'],
+    ['this Thursday', '2026-11-26', null],
+    ['next Friday', '2026-12-04', null],
+    ['next Monday', '2026-11-30', null],
+    ['next week', '2026-11-30', null],
+    ['by end of week', '2026-11-27', null],
+    ['end of next week', '2026-12-04', null],
+    ['in 3 days', '2026-11-29', null],
+    ['27 Nov', '2026-11-27', null],
+    ['5 Jan', '2027-01-05', null],
+    ['Dec 1', '2026-12-01', null],
+  ];
+  for (const [phrase, date, time] of cases) {
+    assert.deepEqual(resolveRelativeDate(phrase, asOf), { date, time }, phrase);
+  }
+  assert.equal(resolveRelativeDate('soonish', asOf), null);
+  assert.equal(resolveRelativeDate('31 Nov', asOf), null);
+  assert.equal(formatIstDisplay('2026-11-27T18:00:00+05:30'), 'Fri 27 Nov 2026, 18:00 IST');
+
+  // The server's own clock zone must not matter.
+  const prevTz = process.env.TZ;
+  process.env.TZ = 'America/Los_Angeles';
+  try {
+    assert.deepEqual(resolveRelativeDate('by Friday', asOf), { date: '2026-11-27', time: null });
+    assert.equal(formatIstDisplay('2026-11-27T18:00:00+05:30'), 'Fri 27 Nov 2026, 18:00 IST');
+  } finally {
+    if (prevTz === undefined) delete process.env.TZ;
+    else process.env.TZ = prevTz;
+  }
+});
+
+test('[MOCKED] Dates: "follow up by Friday" is stored as 2026-11-27 18:00 IST and shown resolved in the card', async () => {
+  const store = createMock4bStore();
+  store.teamMembers = [{ member_id: 'SIM-PART', full_name: 'Kavya Reddy', email: null }];
+  const db = createTransactionalMockDb(store);
+  const ctx = {
+    actorMemberId: 'SIM-LEAD',
+    roles: ['coordination_lead'] as CanonicalRole[],
+    editionId: 'ED-2026-DEMO',
+    recordClass: 'simulated' as const,
+    asOf: '2026-11-26',
+    queryId: 'AIQ-DATES',
+    pool: db.pool!,
+    question: 'Move Voltyatra to negotiating and create a task for Kavya to follow up by Friday',
+  };
+
+  // 1. The model passes the phrase verbatim.
+  const verbatim = await prepareProposeChanges(
+    { actions: [{ type: 'create_task', payload: { title: 'Follow up Voltyatra', task_type: 'follow_up', owner_name: 'Kavya', due_at: 'by Friday' } }] },
+    ctx
+  );
+  assert.equal(verbatim.pendingInserts.length, 1, verbatim.answer);
+  assert.equal(verbatim.pendingInserts[0].payload.due_at, '2026-11-27T18:00:00+05:30');
+  const res = verbatim.actions[0].date_resolutions as Array<{ display: string; input: string }>;
+  assert.equal(res[0].display, 'Fri 27 Nov 2026, 18:00 IST');
+  assert.equal(res[0].input, 'by Friday');
+
+  // 2. The model did its own (wrong) arithmetic: the server's resolution of the question wins.
+  const wrong = await prepareProposeChanges(
+    { actions: [{ type: 'create_task', payload: { title: 'Follow up Voltyatra', task_type: 'follow_up', owner_name: 'Kavya', due_at: '2026-11-28' } }] },
+    ctx
+  );
+  assert.equal(wrong.pendingInserts[0].payload.due_at, '2026-11-27T18:00:00+05:30');
+
+  // 3. An unresolvable phrase asks for a date and proposes nothing.
+  const vague = await prepareProposeChanges(
+    { actions: [{ type: 'create_task', payload: { title: 'Follow up', task_type: 'follow_up', owner_name: 'Kavya', due_at: 'soonish' } }] },
+    { ...ctx, question: 'create a task for Kavya to follow up soonish' }
+  );
+  assert.equal(vague.pendingInserts.length, 0);
+  assert.equal(vague.toolPayload.status, 'unresolved_date');
+  assert.match(vague.answer, /couldn't work out the date "soonish"/);
 });
 
 // ---------------------------------------------------------------------------

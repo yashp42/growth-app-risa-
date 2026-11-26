@@ -8,6 +8,12 @@ import {
   XCircle,
 } from 'lucide-react';
 import {
+  formatContractLine,
+  formatFieldLabel,
+  formatFieldValue,
+  isContractLineArray,
+} from '../../lib/displayFormat';
+import {
   canUserConfirmActionType,
   formatAiActionStatus,
   formatAiActionType,
@@ -38,10 +44,19 @@ interface ProposedBatchCardProps {
   compact?: boolean;
 }
 
-function formatPayloadValue(value: unknown): string {
-  if (value === null || value === undefined || value === '') return '—';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
+function FieldValue({ field, value }: { field: string; value: unknown }) {
+  if (isContractLineArray(value)) {
+    return (
+      <span className="inline-flex flex-col gap-0.5">
+        {value.map((line, i) => (
+          <span key={i} className="tabular-nums">
+            {formatContractLine(line)}
+          </span>
+        ))}
+      </span>
+    );
+  }
+  return <span className="tabular-nums">{formatFieldValue(field, value)}</span>;
 }
 
 export function ProposedBatchCard({
@@ -182,18 +197,22 @@ export function ProposedBatchCard({
                       key={`${diff.field}-${idx}`}
                       className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded bg-[#FAF9F6] px-2.5 py-1.5"
                     >
-                      <span className="font-mono text-[11px] text-[#788C83]">
-                        {diff.field}:
+                      <span className="text-[11px] text-[#788C83]">
+                        {formatFieldLabel(diff.field)}:
                       </span>
-                      <span className="text-[#525E58]">
-                        {formatPayloadValue(diff.before)}
-                      </span>
-                      <ArrowRight
-                        className="inline h-3 w-3 shrink-0 text-[#788C83]"
-                        aria-hidden="true"
-                      />
+                      {diff.before === null || diff.before === undefined || diff.before === '' ? null : (
+                        <>
+                          <span className="text-[#525E58]">
+                            <FieldValue field={diff.field} value={diff.before} />
+                          </span>
+                          <ArrowRight
+                            className="inline h-3 w-3 shrink-0 text-[#788C83]"
+                            aria-hidden="true"
+                          />
+                        </>
+                      )}
                       <span className="font-medium text-[#202824]">
-                        {formatPayloadValue(diff.after)}
+                        <FieldValue field={diff.field} value={diff.after} />
                       </span>
                     </li>
                   ))}
@@ -206,18 +225,31 @@ export function ProposedBatchCard({
                 >
                   {payloadEntries.map(([field, val]) => (
                     <div key={field} className="min-w-0">
-                      <dt className="font-mono text-[11px] text-[#788C83]">
-                        {field}
+                      <dt className="text-[11px] text-[#788C83]">
+                        {formatFieldLabel(field)}
                       </dt>
                       <dd
-                        className="truncate font-medium text-[#202824]"
-                        title={formatPayloadValue(val)}
+                        className="font-medium break-words text-[#202824]"
+                        title={formatFieldValue(field, val)}
                       >
-                        {formatPayloadValue(val)}
+                        <FieldValue field={field} value={val} />
                       </dd>
                     </div>
                   ))}
                 </dl>
+              ) : null}
+
+              {(action.date_resolutions ?? []).length > 0 ? (
+                <ul className="mt-1.5 space-y-0.5 text-[11px] text-[#525E58]">
+                  {(action.date_resolutions ?? []).map((r) => (
+                    <li key={`${r.field}-${r.input}`}>
+                      <span className="font-medium text-[#202824]">
+                        {formatFieldLabel(r.field)}: {r.display}
+                      </span>{' '}
+                      (from “{r.input}”, resolved on the server in IST)
+                    </li>
+                  ))}
+                </ul>
               ) : null}
 
               {itemExecuted &&

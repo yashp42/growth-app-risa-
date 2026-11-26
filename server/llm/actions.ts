@@ -32,6 +32,7 @@ import {
   runWriteTransaction,
 } from '../writeUtils.ts';
 import type { OpenRouterToolDefinition } from './openrouter.ts';
+import { resolvePayloadDates, type DateResolution } from './relativeDates.ts';
 import type { QueryablePool } from './tools.ts';
 
 export const ALLOWED_AI_ACTION_TYPES = [
@@ -2063,6 +2064,8 @@ export async function prepareProposeChanges(
     queryId: string;
     pool: QueryablePool;
     persistNow?: boolean;
+    /** The user's question: relative dates in it are resolved on the server. */
+    question?: string;
   }
 ): Promise<{
   batchId: string;
@@ -2088,14 +2091,20 @@ export async function prepareProposeChanges(
     type: AllowedAiActionType;
     payload: Record<string, unknown>;
     summary?: string;
+    dateResolutions: DateResolution[];
   }> = [];
   const allAmbiguities: EntityAmbiguityItem[] = [];
+  const unresolvedDates: Array<{ field: string; input: string }> = [];
 
   for (const item of parsedArgs.actions) {
+    // Relative dates ("by Friday") are resolved here, in IST from the as-of
+    // date, before hashing: the stored payload is always absolute.
+    const dated = resolvePayloadDates(item.payload, ctx.asOf, ctx.question);
+    unresolvedDates.push(...dated.unresolved);
     const resolved = await resolveEntitiesForAction(
       ctx.pool,
       item.type,
-      item.payload,
+      dated.payload,
       ctx.editionId,
       writableClass
     );
@@ -2106,8 +2115,22 @@ export async function prepareProposeChanges(
         type: item.type,
         payload: resolved.payload,
         summary: item.summary,
+        dateResolutions: dated.resolutions,
       });
     }
+  }
+
+  if (unresolvedDates.length > 0) {
+    const lines = unresolvedDates.map(
+      (u) => `- I couldn't work out the date "${u.input}" (${u.field}). Please give a day or date, e.g. "by Friday" or "2 Dec".`
+    );
+    return {
+      batchId: '',
+      actions: [],
+      pendingInserts: [],
+      answer: `Please clarify before I propose any changes:\n${lines.join('\n')}`,
+      toolPayload: { status: 'unresolved_date', unresolved_dates: unresolvedDates },
+    };
   }
 
   if (allAmbiguities.length > 0) {
@@ -2188,6 +2211,7 @@ export async function prepareProposeChanges(
         field_diffs: snapshot.fieldDiffs,
         impacted_note: snapshot.impactedNote,
         before_snapshot: snapshot.beforeSnapshot,
+        date_resolutions: item.dateResolutions,
       },
       _target_guard: snapshot.targetGuard,
     };
@@ -2208,6 +2232,7 @@ export async function prepareProposeChanges(
       field_diffs: snapshot.fieldDiffs,
       impacted_note: snapshot.impactedNote,
       before_snapshot: snapshot.beforeSnapshot,
+      date_resolutions: item.dateResolutions,
       linked_sponsor_id: snapshot.linkedSponsorId,
       linked_contact_id: snapshot.linkedContactId,
       linked_campaign_id: snapshot.linkedCampaignId,

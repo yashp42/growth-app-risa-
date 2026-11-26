@@ -174,6 +174,14 @@ export interface AiLinkedRecordSummary {
   subtitle?: string | null;
 }
 
+export interface AiDateResolution {
+  field: string;
+  input: string;
+  resolved: string;
+  display: string;
+  source: 'phrase' | 'question';
+}
+
 export interface AiActionRecord {
   ai_action_id: string;
   batch_id?: string | null;
@@ -187,6 +195,8 @@ export interface AiActionRecord {
   permission_reason?: string | null;
   affected_summary?: string | null;
   field_diffs?: ActionFieldDiff[];
+  /** Relative dates the server resolved in IST, e.g. "by Friday" -> Fri 27 Nov 2026, 18:00 IST. */
+  date_resolutions?: AiDateResolution[];
   impacted_note?: string | null;
   before_snapshot?: Record<string, unknown> | null;
   after_snapshot?: Record<string, unknown> | null;
