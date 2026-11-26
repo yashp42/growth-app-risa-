@@ -5,7 +5,6 @@ import type { UseGrowthAnalystSessionResult } from '../../hooks/useGrowthAnalyst
 import type { AiActionRecord, AiViewSpec } from '../../types/analyst';
 import type { NavSectionId } from '../../types/overview';
 import { GrowthAnalystLauncher } from '../analyst/GrowthAnalystLauncher';
-import { GrowthAnalystPanel } from '../analyst/GrowthAnalystPanel';
 import { AUDIT_LOG_ANCHOR_ID } from '../settings/AuditLogPanel';
 import { GlobalSearchModal } from './GlobalSearchModal';
 import { Sidebar } from './Sidebar';
@@ -61,13 +60,8 @@ export function AppShell({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [analystPanelOpen, setAnalystPanelOpen] = useState(false);
 
-  useEffect(() => {
-    if (activeSection === 'growth-analyst') {
-      setAnalystPanelOpen(false);
-    }
-  }, [activeSection]);
+
 
 
   useEffect(() => {
@@ -121,8 +115,8 @@ export function AppShell({
           onToggleDevControls={onToggleDevControls}
         />
 
-        <main id="main-content" tabIndex={-1} className="flex-1 px-4 pt-6 pb-24 sm:px-6 lg:px-9 lg:pt-9 lg:pb-24">
-          <div className="mx-auto w-full max-w-[1440px]">
+        <main id="main-content" tabIndex={-1} className={activeSection==='growth-analyst'?"flex-1 min-w-0":"flex-1 px-4 pt-6 pb-24 sm:px-6 lg:px-9 lg:pt-9 lg:pb-24"}>
+          <div className={activeSection==='growth-analyst'?"w-full":"mx-auto w-full max-w-[1440px]"}>
             {analystSession.appliedToast ? (
               <div
                 role="status"
@@ -169,37 +163,7 @@ export function AppShell({
         </main>
       </div>
 
-      <GrowthAnalystLauncher
-        orbState={analystSession.orbState}
-        visible={!analystPanelOpen}
-        onClick={() => {
-          if (activeSection === 'growth-analyst') {
-            const textarea = document.querySelector<HTMLTextAreaElement>(
-              'textarea[aria-label="Growth Analyst question"]'
-            );
-            textarea?.focus();
-          } else {
-            setAnalystPanelOpen(true);
-          }
-        }}
-        onVoiceClick={() => {
-          setAnalystPanelOpen(false);
-          if(activeSection !== 'growth-analyst')onOpenAnalystWorkspace();
-          onTriggerVoiceAsk();
-        }}
-      />
-
-      <GrowthAnalystPanel
-        open={analystPanelOpen && activeSection !== 'growth-analyst'}
-        onClose={() => setAnalystPanelOpen(false)}
-        contextSection={activeSection}
-        session={analystSession}
-        autoStartVoiceNonce={autoStartVoiceNonce}
-        onOpenFullWorkspace={onOpenAnalystWorkspace}
-        onEditAction={onEditAnalystAction}
-        onOpenRecord={onOpenAnalystLinkedRecord}
-        onOpenAiViewScreen={onOpenAiViewScreen}
-      />
+      <GrowthAnalystLauncher orbState={analystSession.orbState} visible={activeSection!=='growth-analyst'} onClick={()=>onOpenAnalystWorkspace()} onVoiceClick={()=>{onOpenAnalystWorkspace();onTriggerVoiceAsk();}}/>
 
       <GlobalSearchModal
         open={searchOpen}
@@ -212,4 +176,5 @@ export function AppShell({
     </div>
   );
 }
+
 

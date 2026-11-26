@@ -55,5 +55,10 @@ test('[MOCKED] a new Analyst conversation has no permanent empty evidence or act
  const noop=()=>{};const session:any={actions:[],messages:[],permissionProfile:{verifiedByServer:true,canUseAnalyst:true},filters:{record_class:'simulated',edition_id:'ED-2026-DEMO',as_of:'2026-11-27'},dataVersion:67,quota:{remaining:40},conversationId:null,setVoiceModeActive:noop,setRecordClass:noop,setFilters:noop,resetConversation:noop,orbState:'idle',progressSteps:[],interimTranscript:'',voiceListening:false,readAloudSupported:false,autoReadAloud:false,setAutoReadAloud:noop,setVoiceListening:noop,setInterimTranscript:noop,latestStructured:null,error:null,sending:false,loadingConversation:false,dataVersionChanged:false,actionErrorById:{},batchErrorById:{},sendMessage:async()=>{},dismissError:noop,clearDataVersionChanged:noop,cancelAction:noop,submitFeedback:noop};
  const html=renderToStaticMarkup(React.createElement(GrowthAnalystWorkspace,{session,activeContextSection:'overview'}));
  assert.doesNotMatch(html,/aria-label="Action workspace"|aria-label="Evidence and context"/);assert.match(html,/What would you like to explore/);assert.match(html,/Conversation context/);assert.match(html,/Growth Analyst question/);
+ assert.match(html,/voice-embedded/);assert.match(html,/Voice &amp; text/);
+ assert.equal((html.match(/aria-label="Growth Analyst question"/g)??[]).length,1,'one composer serves both input modes');
+ assert.doesNotMatch(html,/<dialog/,'the main analyst is not a separate voice modal');
+ assert.match(html,/Sources/);assert.match(html,/Send message/);assert.match(html,/Start microphone/);
 });
+
 
