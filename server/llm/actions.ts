@@ -17,6 +17,7 @@ import {
   type CanonicalRole,
 } from '../permissions.ts';
 import {
+  assertLinkedRecordExists,
   ensureUiImportBatch,
   fetchAppDataVersion,
   generatePrefixedId,
@@ -2380,34 +2381,6 @@ async function assertTargetGuardFresh(
   }
 }
 
-async function assertLinkedRecordExists(
-  client: PoolClient,
-  linkedType: (typeof TASK_LINKED_TYPE_VALUES)[number],
-  linkedId: string
-): Promise<void> {
-  const tableByType: Record<
-    (typeof TASK_LINKED_TYPE_VALUES)[number],
-    { table: string; pk: string }
-  > = {
-    sponsor: { table: 'sponsor', pk: 'sponsor_id' },
-    opportunity: { table: 'opportunity', pk: 'opportunity_id' },
-    invoice: { table: 'invoice', pk: 'invoice_id' },
-    campaign: { table: 'campaign', pk: 'campaign_id' },
-    referral: { table: 'referral', pk: 'referral_id' },
-  };
-  const target = tableByType[linkedType];
-  const res = await client.query<{ ok: number }>(
-    `SELECT 1 AS ok FROM public.${target.table} WHERE ${target.pk} = $1 AND NOT is_deleted LIMIT 1`,
-    [linkedId]
-  );
-  if (!res.rows[0]) {
-    throw new AppApiError(
-      404,
-      'LINKED_RECORD_NOT_FOUND',
-      `Linked ${linkedType} "${linkedId}" was not found.`
-    );
-  }
-}
 
 export async function executeAiActionInTransaction(
   client: PoolClient,
@@ -2732,12 +2705,12 @@ export async function executeAiActionInTransaction(
       const spRes = await client.query<Record<string, unknown>>(
         `INSERT INTO public.sponsor (
            sponsor_id, display_name, legal_name, category_id,
-           lifecycle_status, first_source, website, city,
+           lifecycle_status, first_source, website, city, gstin,
            record_class, import_batch_id, source_ref, evidence_class,
            created_by, ai_action_id
          ) VALUES (
            $1, $2, $3, $4,
-           $5, $6, $7, $8,
+           $5, $6, $7, $8, NULL,
            $9, $10, $11, 'T',
            $12, $13
          ) RETURNING *`,
@@ -2770,7 +2743,7 @@ export async function executeAiActionInTransaction(
            created_by, ai_action_id
          ) VALUES (
            $1, 'sponsor', $2, $3,
-           'owner', 'AI confirmed creation', 1,
+           'owner', 'Initial sponsor creation', 1,
            $4, $5, $6, 'T',
            $7, $8
          )`,
@@ -2944,12 +2917,12 @@ export async function executeAiActionInTransaction(
       const cRes = await client.query<Record<string, unknown>>(
         `INSERT INTO public.contact (
            contact_id, sponsor_id, full_name, job_title, decision_role,
-           email, phone, consent_basis,
+           email, phone, consent_basis, opted_out_at,
            record_class, import_batch_id, source_ref, evidence_class,
            created_by, ai_action_id
          ) VALUES (
            $1, $2, $3, $4, $5,
-           $6, $7, $8,
+           $6, $7, $8, NULL,
            $9, $10, $11, 'T',
            $12, $13
          ) RETURNING *`,
@@ -3115,12 +3088,12 @@ export async function executeAiActionInTransaction(
         const insRes = await client.query<Record<string, unknown>>(
           `INSERT INTO public.contact (
              contact_id, sponsor_id, full_name, job_title, decision_role,
-             email, phone, consent_basis,
+             email, phone, consent_basis, opted_out_at,
              record_class, import_batch_id, source_ref, evidence_class,
              created_by, ai_action_id
            ) VALUES (
              $1, $2, $3, $4, $5,
-             $6, $7, $8,
+             $6, $7, $8, NULL,
              $9, $10, $11, 'T',
              $12, $13
            ) RETURNING *`,

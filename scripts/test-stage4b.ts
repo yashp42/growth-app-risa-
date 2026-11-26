@@ -26,6 +26,7 @@ import { createOpenRouterClient } from '../server/llm/openrouter.ts';
 import { executeSetView } from '../server/llm/views.ts';
 import type { CanonicalRole } from '../server/permissions.ts';
 import { createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
+import { createWriteApiRouter } from '../server/routes/writeApi.ts';
 import { evaluateVoiceActionCommand } from '../src/hooks/useGrowthAnalystSession.ts';
 
 function createBaseConfig(overrides: Partial<ServerConfig> = {}): ServerConfig {
@@ -359,6 +360,11 @@ function createTransactionalMockDb(store: Mock4bStore): DatabasePoolState {
     params: unknown[] = []
   ): Promise<{ rows: Record<string, unknown>[]; rowCount: number }> => {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
+
+    // Shared task link check (writeUtils.assertLinkedRecordExists).
+    if (/^SELECT EXISTS \( SELECT 1 FROM public\.(sponsor|opportunity|invoice|campaign|referral) WHERE \w+ = \$1 AND NOT is_deleted \) AS ok$/.test(sql)) {
+      return { rows: [{ ok: true }], rowCount: 1 };
+    }
 
     if (sql === 'BEGIN') {
       txSnapshot = captureSnapshot();
@@ -828,9 +834,6 @@ function createTransactionalMockDb(store: Mock4bStore): DatabasePoolState {
     }
 
     // TASK
-    if (sql.includes('SELECT 1 AS ok FROM public.')) {
-      return { rows: [{ ok: 1 }], rowCount: 1 };
-    }
 
     if (sql.includes('FROM public.task WHERE task_id = $1')) {
       const tk = store.tasks.get(String(params[0]));
@@ -2410,3 +2413,304 @@ test('[MOCKED] Prompt injection in tool result creates 0 ai_action rows', async 
     await srv.close();
   }
 });
+
+// ---------------------------------------------------------------------------
+// 2.10 write-path parity: the AI executor and the Stage 3B UI routes must write
+// the same rows for the same input. Both paths run against the same mock DB;
+// every INSERT / UPDATE / SECURITY DEFINER call is recorded and compared.
+// ---------------------------------------------------------------------------
+
+interface RecordedWrite {
+  op: 'insert' | 'update' | 'call';
+  table: string;
+  cols: Record<string, unknown>;
+}
+
+function splitTopLevel(input: string, sep = ','): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let inStr = false;
+  let cur = '';
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === "'" ) inStr = !inStr;
+    if (!inStr) {
+      if (ch === '(') depth++;
+      if (ch === ')') depth--;
+      if (ch === sep && depth === 0) {
+        out.push(cur.trim());
+        cur = '';
+        continue;
+      }
+    }
+    cur += ch;
+  }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+function balancedParen(text: string, openIdx: number): string {
+  let depth = 0;
+  for (let i = openIdx; i < text.length; i++) {
+    if (text[i] === '(') depth++;
+    if (text[i] === ')') {
+      depth--;
+      if (depth === 0) return text.slice(openIdx + 1, i);
+    }
+  }
+  return text.slice(openIdx + 1);
+}
+
+function evalSqlExpr(expr: string, params: unknown[]): unknown {
+  let e = expr.trim().replace(/::[a-z_]+(\[\])?/gi, '');
+  const p = /^\$(\d+)$/.exec(e);
+  if (p) return params[Number(p[1]) - 1] ?? null;
+  if (/^null$/i.test(e)) return null;
+  if (/^(true|false)$/i.test(e)) return e.toLowerCase() === 'true';
+  const lit = /^'(.*)'$/s.exec(e);
+  if (lit) return lit[1];
+  if (/^-?\d+(\.\d+)?$/.test(e)) return Number(e);
+  // Expressions referencing params (COALESCE($3, col), now(), CASE...) keep a
+  // canonical text form with param values substituted.
+  e = e.replace(/\$(\d+)/g, (_m, n) => JSON.stringify(params[Number(n) - 1] ?? null));
+  return `expr:${e.replace(/\s+/g, ' ')}`;
+}
+
+function parseRecordedWrite(sql: string, params: unknown[] = []): RecordedWrite | null {
+  const text = sql.replace(/\s+/g, ' ').trim();
+  const ins = /^INSERT INTO ([\w.]+) \(/i.exec(text);
+  if (ins) {
+    const colsRaw = balancedParen(text, text.indexOf('('));
+    const vIdx = text.search(/\)\s*VALUES\s*\(/i);
+    if (vIdx < 0) return null;
+    const valsRaw = balancedParen(text, text.indexOf('(', vIdx + 1));
+    const cols = splitTopLevel(colsRaw);
+    const vals = splitTopLevel(valsRaw);
+    const out: Record<string, unknown> = {};
+    cols.forEach((c, i) => (out[c.trim()] = evalSqlExpr(vals[i] ?? '', params)));
+    return { op: 'insert', table: ins[1].replace(/^public\./, ''), cols: out };
+  }
+  const upd = /^UPDATE ([\w.]+) SET (.*?) WHERE /i.exec(text);
+  if (upd) {
+    const out: Record<string, unknown> = {};
+    for (const part of splitTopLevel(upd[2])) {
+      const eq = part.indexOf('=');
+      out[part.slice(0, eq).trim()] = evalSqlExpr(part.slice(eq + 1), params);
+    }
+    return { op: 'update', table: upd[1].replace(/^public\./, ''), cols: out };
+  }
+  const call = /\b(public\.fn_[a-z0-9_]+|public\.[a-z0-9_]+_secure)\s*\(/i.exec(text);
+  if (call && /^SELECT/i.test(text)) {
+    return { op: 'call', table: call[1], cols: { args: params } };
+  }
+  return null;
+}
+
+// Columns that legitimately differ between a UI write and an AI-confirmed write.
+const PARITY_IGNORED_COLUMNS = new Set([
+  'origin',
+  'source_ref',
+  'ai_action_id',
+  'channel',
+  'after',
+  'before',
+  'after_json',
+  'before_json',
+  'created_at',
+  'updated_at',
+  'audit_id',
+  'data_version',
+]);
+const PARITY_IGNORED_TABLES = new Set(['ai_action', 'import_batch', 'app_state']);
+const GENERATED_ID_RE = /^[A-Z]{1,4}[0-9]*-[A-Z0-9]{6,}$/;
+
+function normalizeWrites(writes: RecordedWrite[], inputIds: Set<string>): string[] {
+  return writes
+    .filter((w) => !PARITY_IGNORED_TABLES.has(w.table))
+    .map((w) => {
+      const cols: Record<string, unknown> = {};
+      for (const k of Object.keys(w.cols).sort()) {
+        if (PARITY_IGNORED_COLUMNS.has(k)) continue;
+        let v = w.cols[k];
+        if (typeof v === 'string' && GENERATED_ID_RE.test(v) && !inputIds.has(v)) v = '<generated-id>';
+        if (v instanceof Date) v = v.toISOString();
+        // Server-generated "now" timestamps differ by milliseconds between runs.
+        if (
+          typeof v === 'string' &&
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(v) &&
+          Math.abs(Date.parse(v) - Date.now()) < 5 * 60 * 1000
+        )
+          v = '<now>';
+        cols[k] = v;
+      }
+      return `${w.op} ${w.table} ${JSON.stringify(cols)}`;
+    })
+    .sort();
+}
+
+function recordingDb(store: Mock4bStore): { db: DatabasePoolState; writes: RecordedWrite[] } {
+  const db = createTransactionalMockDb(store);
+  const writes: RecordedWrite[] = [];
+  const inner = db.pool!;
+  const record = (sql: string, params?: unknown[]) => {
+    const w = parseRecordedWrite(String(sql), params ?? []);
+    if (w) writes.push(w);
+  };
+  const pool = {
+    query: (sql: string, params?: unknown[]) => {
+      record(sql, params);
+      return (inner as unknown as { query: (a: string, b?: unknown[]) => unknown }).query(sql, params);
+    },
+    connect: async () => {
+      const c = await inner.connect();
+      return {
+        query: (sql: string, params?: unknown[]) => {
+          record(sql, params);
+          return (c as unknown as { query: (a: string, b?: unknown[]) => unknown }).query(sql, params);
+        },
+        release: () => c.release(),
+      } as unknown as PoolClient;
+    },
+  } as unknown as Pool;
+  return { db: { ...db, pool }, writes };
+}
+
+const UI_ROUTE_FOR_ACTION: Record<
+  AllowedAiActionType,
+  { method: 'POST' | 'PATCH'; path: (p: Record<string, unknown>) => string }
+> = {
+  create_sponsor: { method: 'POST', path: () => '/api/sponsors' },
+  update_sponsor: { method: 'PATCH', path: (p) => `/api/sponsors/${p.sponsor_id}` },
+  change_owner: { method: 'POST', path: () => '/api/ownership' },
+  create_contact: { method: 'POST', path: () => '/api/contacts' },
+  update_contact: { method: 'PATCH', path: (p) => `/api/contacts/${p.contact_id}` },
+  upsert_sponsor_contact: { method: 'POST', path: () => '/api/contacts' },
+  create_campaign: { method: 'POST', path: () => '/api/campaigns' },
+  update_campaign: { method: 'PATCH', path: (p) => `/api/campaigns/${p.campaign_id}` },
+  log_outreach: { method: 'POST', path: () => '/api/outreach' },
+  log_interaction: { method: 'POST', path: () => '/api/interactions' },
+  log_meeting: { method: 'POST', path: () => '/api/meetings' },
+  record_qualification: { method: 'POST', path: () => '/api/qualifications' },
+  create_opportunity: { method: 'POST', path: () => '/api/opportunities' },
+  update_opportunity: { method: 'PATCH', path: (p) => `/api/opportunities/${p.opportunity_id}` },
+  change_stage: { method: 'POST', path: (p) => `/api/opportunities/${p.opportunity_id}/stage` },
+  confirm_deal: { method: 'POST', path: (p) => `/api/opportunities/${p.opportunity_id}/confirm` },
+  create_task: { method: 'POST', path: () => '/api/tasks' },
+  update_task: { method: 'PATCH', path: (p) => `/api/tasks/${p.task_id}` },
+  log_time: { method: 'POST', path: () => '/api/time-logs' },
+  create_network_partner: { method: 'POST', path: () => '/api/network-partners' },
+  record_referral: { method: 'POST', path: () => '/api/referrals' },
+};
+
+async function runParityForAction(actionType: AllowedAiActionType): Promise<{
+  ui: string[];
+  ai: string[];
+  uiStatus: number;
+  uiBody: unknown;
+  aiError: string | null;
+}> {
+  const raw = samplePayloadForAction(actionType);
+  if (actionType === 'create_sponsor') raw.first_source = 'referral';
+
+  // AI path: propose (clean payload) then execute.
+  const aiStore = createMock4bStore();
+  const aiRec = recordingDb(aiStore);
+  const prep = await prepareProposeChanges(
+    { actions: [{ type: actionType, payload: raw }] },
+    {
+      actorMemberId: 'SIM-LEAD',
+      roles: ['coordination_lead'],
+      editionId: 'ED-2026-DEMO',
+      recordClass: 'simulated',
+      asOf: '2026-11-26',
+      queryId: `AIQ-P-${actionType}`,
+      pool: aiRec.db.pool!,
+    }
+  );
+  const ins = prep.pendingInserts[0];
+  const cleanPayload: Record<string, unknown> = { ...(ins.payload as Record<string, unknown>) };
+  delete cleanPayload._preview;
+  delete cleanPayload._target_guard;
+  aiRec.writes.length = 0;
+  let aiError: string | null = null;
+  const client = await aiRec.db.pool!.connect();
+  try {
+    aiStore.aiActions.set(ins.ai_action_id, {
+      ...ins,
+      status: 'proposed',
+      query_id: `AIQ-P-${actionType}`,
+      confirmed_by: null,
+      confirmed_at: null,
+      executed_at: null,
+      import_batch_id: 'IB-UI',
+      created_at: new Date().toISOString(),
+    });
+    await executeAiActionInTransaction(
+      client,
+      aiStore.aiActions.get(ins.ai_action_id) as never,
+      'SIM-LEAD',
+      ['coordination_lead'],
+      'ED-2026-DEMO'
+    );
+  } catch (e) {
+    aiError = (e as Error).message;
+  } finally {
+    client.release();
+  }
+
+  // UI path: same clean payload through the Stage 3B route.
+  const uiStore = createMock4bStore();
+  const uiRec = recordingDb(uiStore);
+  const config = createBaseConfig();
+  const app = express();
+  app.use(express.json());
+  app.use('/api', createWriteApiRouter(config, uiRec.db, createAuthDeps(uiStore, uiRec.db)));
+  app.use(apiErrorHandler);
+  const server = await new Promise<http.Server>((resolve) => {
+    const s2 = app.listen(0, '127.0.0.1', () => resolve(s2));
+  });
+  const addr = server.address();
+  const port = typeof addr === 'object' && addr ? addr.port : 0;
+  const route = UI_ROUTE_FOR_ACTION[actionType];
+  let uiStatus = 0;
+  let uiBody: unknown = null;
+  try {
+    uiRec.writes.length = 0;
+    // PATCH routes treat edition_id in the body as an attempted change to an
+    // immutable field, so the edition goes on the query string there.
+    const editionQs = route.method === 'PATCH' ? '?edition_id=ED-2026-DEMO' : '';
+    const body = route.method === 'PATCH' ? cleanPayload : { ...cleanPayload, edition_id: 'ED-2026-DEMO' };
+    const res = await fetch(`http://127.0.0.1:${port}${route.path(cleanPayload)}${editionQs}`, {
+      method: route.method,
+      headers: { 'content-type': 'application/json', authorization: 'Bearer mock-token' },
+      body: JSON.stringify(body),
+    });
+    uiStatus = res.status;
+    uiBody = await res.json().catch(() => null);
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+
+  const inputIds = new Set(
+    Object.values(cleanPayload).filter((v): v is string => typeof v === 'string')
+  );
+  return {
+    ui: normalizeWrites(uiRec.writes, inputIds),
+    ai: normalizeWrites(aiRec.writes, inputIds),
+    uiStatus,
+    uiBody,
+    aiError,
+  };
+}
+
+for (const actionType of ALLOWED_AI_ACTION_TYPES) {
+  test(`[MOCKED] 2.10 write parity: ${actionType} writes the same rows via the AI executor and the 3B UI route`, async () => {
+    const r = await runParityForAction(actionType);
+    assert.equal(r.aiError, null, `AI path failed: ${r.aiError}`);
+    assert.ok(r.uiStatus >= 200 && r.uiStatus < 300, `UI route returned ${r.uiStatus}: ${JSON.stringify(r.uiBody)}`);
+    const business = r.ui.filter((l) => !l.includes(' audit_event '));
+    assert.ok(business.length > 0, 'UI path wrote no business rows');
+    assert.ok(r.ui.some((l) => l.includes(' audit_event ')), 'UI path wrote no audit row');
+    assert.deepEqual(r.ai, r.ui);
+  });
+}
