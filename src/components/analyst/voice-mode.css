@@ -161,3 +161,22 @@
 @media(prefers-reduced-motion:reduce) {.voice-dialog *, .voice-dialog *::before,.voice-dialog *::after{animation:none!important;transition:none!important;}.voice-orb{transform:none!important;}}
 @media(max-width:600px) and (max-height:700px) {.voice-stage{flex-direction:row;gap:12px;}.voice-orb{width:110px;}.voice-stage-copy{text-align:left;max-width:215px;}.voice-stage-copy h1{font-size:21px;}.voice-stage-copy>p{font-size:13px;}.voice-conversation{min-height:100px;}}
 
+
+/* Override light workspace hover surfaces inside the dark Analyst only. */
+.voice-dialog .icon-button,
+.voice-dialog .button-secondary {
+ background-color:#163d30;color:#e1f5e8;border-color:#c7ffdf26;
+}
+.voice-dialog .icon-button:hover:not(:disabled),
+.voice-dialog .button-secondary:hover:not(:disabled),
+.voice-dialog button[class~="hover:bg-white"]:hover:not(:disabled) {
+ background-color:#285342;color:#effbf5;border-color:#a8f0cf66;
+}
+.voice-dialog tbody tr:hover,
+.voice-dialog tbody tr:focus-within {
+ background-color:#244f3c;color:#effbf5;
+}
+.voice-dialog tbody tr:hover > :is(td,th),
+.voice-dialog tbody tr:focus-within > :is(td,th) {
+ background-color:#244f3c;color:#effbf5;
+}
