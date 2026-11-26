@@ -185,6 +185,8 @@ export interface UseGrowthAnalystSessionResult {
   /** Speaker toggle: read each new answer aloud (en-IN, answer text only). */
   speaking: boolean;
   voiceModeActive: boolean;
+  voiceModePaused: boolean;
+  setVoiceModePaused: (paused:boolean)=>void;
   setVoiceModeActive: (active:boolean)=>void;
   autoReadAloud: boolean;
   setAutoReadAloud: (on: boolean) => void;
@@ -896,6 +898,7 @@ export function useGrowthAnalystSession(
   useEffect(()=>{if(sending)stopSpeaking();},[sending]);
   const [speaking,setSpeaking]=useState(false);
   const [voiceModeActive,setVoiceModeActive]=useState(false);
+  const [voiceModePaused,setVoiceModePaused]=useState(false);
   useEffect(()=>{const listener=(e:Event)=>setSpeaking(Boolean((e as CustomEvent<{speaking:boolean}>).detail.speaking));window.addEventListener(SPEECH_ACTIVITY_EVENT,listener);return()=>window.removeEventListener(SPEECH_ACTIVITY_EVENT,listener);},[]);
   const readAloudSupported = isSpeechSynthesisSupported();
   const [autoReadAloud, setAutoReadAloudState] = useState<boolean>(
@@ -916,14 +919,14 @@ export function useGrowthAnalystSession(
     const last = messages[messages.length - 1];
     const previousLastId = lastSeenMessageIdRef.current;
     lastSeenMessageIdRef.current = last?.message_id ?? null;
-    if ((!autoReadAloud && !voiceModeActive) || !last || last.role !== 'assistant') return;
+    if ((voiceModeActive && voiceModePaused) || (!autoReadAloud && !voiceModeActive) || !last || last.role !== 'assistant') return;
     // First render after load: remember where history ends, read nothing.
     if (previousLastId === null && messages.length > 1) return;
     if (last.message_id === previousLastId) return;
     if (last.message_id === lastSpokenMessageIdRef.current) return;
     lastSpokenMessageIdRef.current = last.message_id;
     speakAnswer(last.content);
-  }, [messages, autoReadAloud, voiceModeActive]);
+  }, [messages, autoReadAloud, voiceModeActive, voiceModePaused]);
   useEffect(() => () => stopSpeaking(), []);
 
   // ---- Orb: state from real events only.
@@ -1009,6 +1012,8 @@ export function useGrowthAnalystSession(
     speaking,
     voiceModeActive,
     setVoiceModeActive,
+    voiceModePaused,
+    setVoiceModePaused,
     autoReadAloud,
     setAutoReadAloud,
     readAloudSupported,
@@ -1020,4 +1025,5 @@ export function useGrowthAnalystSession(
     setInterimTranscript,
   };
 }
+
 

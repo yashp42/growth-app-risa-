@@ -1,6 +1,6 @@
 import { Lock, PanelRightOpen } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { stopSpeaking } from '../../lib/speech';
+import { useEffect, useRef, useState } from 'react';
+import { stopSpeaking,pauseSpeaking,resumeSpeaking } from '../../lib/speech';
 import { VoiceMode } from './VoiceMode';
 import type { UseGrowthAnalystSessionResult } from '../../hooks/useGrowthAnalystSession';
 import type { AiActionRecord, AiViewSpec } from '../../types/analyst';
@@ -40,13 +40,22 @@ export function GrowthAnalystWorkspace({
   onOpenAiViewScreen,
 }: GrowthAnalystWorkspaceProps) {
   const [voiceMode,setVoiceMode]=useState(false);
+  const [voicePaused,setVoicePaused]=useState(false);
+  const resumeMicRef=useRef(false);
+  const [voiceInputCommand,setVoiceInputCommand]=useState<{id:number;action:'start'|'stop'}>();
+  const commandVoice=(action:'start'|'stop')=>setVoiceInputCommand(prev=>({id:(prev?.id??0)+1,action}));
+  useEffect(()=>{session.setVoiceModePaused(voicePaused);return()=>session.setVoiceModePaused(false);},[voicePaused,session.setVoiceModePaused]);
   const [micError,setMicError]=useState<string|null>(null);
   useEffect(()=>{const listen=(e:Event)=>setMicError((e as CustomEvent<string|null>).detail);window.addEventListener('analyst:voice-error',listen);return()=>window.removeEventListener('analyst:voice-error',listen);},[]);
   useEffect(()=>{session.setVoiceModeActive(voiceMode);return()=>session.setVoiceModeActive(false);},[voiceMode,session.setVoiceModeActive]);
-  useEffect(()=>{if(autoStartVoiceNonce>0)setVoiceMode(true);},[autoStartVoiceNonce]);
-  const openVoice=()=>{stopSpeaking();setVoiceMode(true);setMicError(null);if(!session.voiceListening)setToggleVoiceNonce(n=>n+1);};
-  const closeVoice=()=>{if(session.voiceListening)setToggleVoiceNonce(n=>n+1);stopSpeaking();setVoiceMode(false);};
-  const [toggleVoiceNonce, setToggleVoiceNonce] = useState(0);
+  useEffect(()=>{if(autoStartVoiceNonce>0){setVoicePaused(false);setVoiceMode(true);setMicError(null);}},[autoStartVoiceNonce]);
+  const openVoice=()=>{stopSpeaking();setVoicePaused(false);setVoiceMode(true);setMicError(null);if(!session.voiceListening)commandVoice('start');};
+  const closeVoice=()=>{commandVoice('stop');stopSpeaking();setVoicePaused(false);setVoiceMode(false);};
+  const togglePause=()=>{
+    if(voicePaused){setVoicePaused(false);resumeSpeaking();if(resumeMicRef.current&&!session.sending)commandVoice('start');}
+    else{resumeMicRef.current=session.voiceListening;commandVoice('stop');if(!pauseSpeaking()&&session.speaking)stopSpeaking();setVoicePaused(true);}
+  };
+  const toggleVoiceMic=()=>{stopSpeaking();setVoicePaused(false);setMicError(null);commandVoice(session.voiceListening?'stop':'start');};
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<'chat' | 'evidence' | 'actions'>(
     'chat'
@@ -173,7 +182,7 @@ export function GrowthAnalystWorkspace({
               batchErrorById={session.batchErrorById}
               initialDraft={initialDraft}
               autoStartVoiceNonce={autoStartVoiceNonce}
-              toggleVoiceNonce={toggleVoiceNonce}
+              voiceInputCommand={voiceInputCommand}
               onListeningChange={session.setVoiceListening}
               onInterimTranscript={session.setInterimTranscript}
               onSend={session.sendMessage}
@@ -214,7 +223,7 @@ export function GrowthAnalystWorkspace({
         </div>
       )}
 
-      <VoiceMode open={voiceMode} state={session.orbState} listening={session.voiceListening} transcript={session.interimTranscript} answer={[...session.messages].reverse().find(m=>m.role==='assistant')?.content??''} error={micError??session.error?.message} step={session.progressSteps.at(-1)} onToggleMic={()=>{stopSpeaking();setToggleVoiceNonce(n=>n+1);}} onStopSpeaking={stopSpeaking} onClose={closeVoice}/>
+      <VoiceMode open={voiceMode} state={session.orbState} listening={session.voiceListening} transcript={session.interimTranscript} messages={session.messages} paused={voicePaused} answer={[...session.messages].reverse().find(m=>m.role==='assistant')?.content??''} error={micError??session.error?.message} step={session.progressSteps.at(-1)} onToggleMic={toggleVoiceMic} onTogglePause={togglePause} onStopSpeaking={stopSpeaking} onClose={closeVoice}/>
       <ActionConfirmationDialog
         action={pendingConfirmAction}
         processing={
@@ -228,4 +237,5 @@ export function GrowthAnalystWorkspace({
     </div>
   );
 }
+
 

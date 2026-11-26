@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { SPEECH_ACTIVITY_EVENT, speakAnswer, stopSpeaking } from '../src/lib/speech.ts';
+import { SPEECH_ACTIVITY_EVENT, speakAnswer, stopSpeaking, pauseSpeaking, resumeSpeaking } from '../src/lib/speech.ts';
 import { deriveOrbState } from '../src/lib/orbState.ts';
 import { AnalystOrb } from '../src/components/analyst/AnalystOrb.tsx';
 import { GrowthAnalystWorkspace } from '../src/components/analyst/GrowthAnalystWorkspace.tsx';
@@ -14,10 +14,22 @@ function fakeBrowser(){
  events.addEventListener(SPEECH_ACTIVITY_EVENT,(e:Event)=>activity.push((e as CustomEvent).detail.speaking));
  events.addEventListener('analyst:voice-error',(e:Event)=>errors.push((e as CustomEvent).detail));
  class Utterance {text:string;lang='';onstart:any;onend:any;onerror:any;constructor(text:string){this.text=text;}}
- Object.defineProperty(globalThis,'window',{configurable:true,value:{dispatchEvent:events.dispatchEvent.bind(events),speechSynthesis:{cancel(){const last=utterances.at(-1);last?.onerror?.(new Event('cancel'));},speak(u:any){utterances.push(u);}}}});
+ const playback={pauses:0,resumes:0,cancels:0};
+ Object.defineProperty(globalThis,'window',{configurable:true,value:{dispatchEvent:events.dispatchEvent.bind(events),speechSynthesis:{pause(){playback.pauses++;},resume(){playback.resumes++;},cancel(){playback.cancels++;const last=utterances.at(-1);last?.onerror?.(new Event('cancel'));},speak(u:any){utterances.push(u);}}}});
  Object.defineProperty(globalThis,'SpeechSynthesisUtterance',{configurable:true,value:Utterance});
- return {utterances,activity,errors,restore(){stopSpeaking();if(beforeWindow)Object.defineProperty(globalThis,'window',beforeWindow);else Reflect.deleteProperty(globalThis,'window');if(beforeUtterance)Object.defineProperty(globalThis,'SpeechSynthesisUtterance',beforeUtterance);else Reflect.deleteProperty(globalThis,'SpeechSynthesisUtterance');}};
+ return {utterances,activity,errors,playback,restore(){stopSpeaking();if(beforeWindow)Object.defineProperty(globalThis,'window',beforeWindow);else Reflect.deleteProperty(globalThis,'window');if(beforeUtterance)Object.defineProperty(globalThis,'SpeechSynthesisUtterance',beforeUtterance);else Reflect.deleteProperty(globalThis,'SpeechSynthesisUtterance');}};
 }
+
+test('[MOCKED] pause and resume preserve the browser utterance; stop cancels paused playback',()=>{
+ const browser=fakeBrowser();try{
+  assert.equal(pauseSpeaking(),false);assert.equal(resumeSpeaking(),false);
+  speakAnswer('An answer from the current conversation.');browser.utterances[0].onstart(new Event('start'));
+  const cancellations=browser.playback.cancels;
+  assert.equal(pauseSpeaking(),true);assert.equal(browser.activity.at(-1),false);assert.equal(browser.playback.cancels,cancellations);
+  assert.equal(resumeSpeaking(),true);assert.equal(browser.activity.at(-1),true);assert.equal(browser.utterances.length,1);
+  pauseSpeaking();stopSpeaking();assert.equal(resumeSpeaking(),false);assert.equal(browser.playback.cancels,cancellations+1);assert.deepEqual(browser.errors,[]);
+ }finally{browser.restore();}
+});
 test('[MOCKED] speaking starts on the browser speech event, ends on completion, and cancellation is not an error',()=>{
  const browser=fakeBrowser();try{
   let ended=0;assert.equal(speakAnswer('Collected cash is available.',{onEnd:()=>ended++}),true);
@@ -44,3 +56,4 @@ test('[MOCKED] a new Analyst conversation has no permanent empty evidence or act
  const html=renderToStaticMarkup(React.createElement(GrowthAnalystWorkspace,{session,activeContextSection:'overview'}));
  assert.doesNotMatch(html,/aria-label="Action workspace"|aria-label="Evidence and context"/);assert.match(html,/What would you like to explore/);assert.match(html,/Conversation context/);assert.match(html,/Growth Analyst question/);
 });
+

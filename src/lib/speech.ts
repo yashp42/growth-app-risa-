@@ -65,6 +65,16 @@ export function stopSpeaking(): void {
  finish?.();reportSpeech(false);
 }
 
+/** Pause/resume the current browser utterance without replaying conversation history. */
+export function pauseSpeaking(): boolean {
+ if(!activeUtterance||!isSpeechSynthesisSupported())return false;
+ try{window.speechSynthesis.pause();reportSpeech(false);return true;}catch{return false;}
+}
+export function resumeSpeaking(): boolean {
+ if(!activeUtterance||!isSpeechSynthesisSupported())return false;
+ try{window.speechSynthesis.resume();reportSpeech(true);return true;}catch{return false;}
+}
+
 const AUTO_READ_STORAGE_KEY = 'growth_analyst_auto_read_v1';
 
 export function loadAutoReadPreference(): boolean {
@@ -82,4 +92,5 @@ export function saveAutoReadPreference(on: boolean): void {
     // Storage unavailable (private window): the toggle still works this session.
   }
 }
+
 
