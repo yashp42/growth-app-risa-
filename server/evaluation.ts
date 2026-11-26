@@ -42,7 +42,8 @@ export function scoreAnswer(c: EvalCase, body: Record<string, any>, safe: boolea
   const forbidden=(c.must_not_cite??'').match(/(?:KB-\d+(?:\.\d+)?|M-\d+|SC-\d+|SRC-\d+|BM-\d+)/g)??[];
   for(const id of forbidden)if(cited.has(id)||answer.includes('['+id+']'))fail.push('Forbidden citation '+id);
   const required=(c.expected_citation??'').match(/(?:KB-\d+(?:\.\d+)?|M-\d+|SC-\d+)/g)??[];
-  for(const id of required)if(!cited.has(id)&&!answer.includes('['+id+']'))fail.push('Missing citation '+id);
+  for(const id of required){const documentMatch=/^KB-\d+$/.test(id)&&[...cited].some(c=>String(c).startsWith(id+'.'));if(!documentMatch&&!cited.has(id)&&!answer.includes('['+id+']'))fail.push('Missing citation '+id);}
+  if(/no payment (?:data|records)|no cash has been recorded/i.test(c.expected_answer_criteria)&&Array.isArray(body.metric_results)&&body.metric_results.some((r:any)=>r.metric_id==='M-01'&&r.computable===true&&Number(r.value)>0))human.push('Fixture assumes no receipts, but the selected edition has computable collected cash. Review the fixture context; do not replace current metric values with the reference answer.');
   const criteria=new Set(extractNumericClaims(c.expected_answer_criteria).map(x=>x.normalizedValue));
   const expectedNumbers=extractNumericClaims(c.reference_answer).filter(x=>criteria.has(x.normalizedValue));
   const actual=extractNumericClaims(answer);

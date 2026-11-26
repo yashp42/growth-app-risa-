@@ -66,3 +66,15 @@ test('[MOCKED] paused case diagnostics survive reporting without scoring an unav
  const state=run(['TEST']);await runEvaluationCases([simple],state,{ask:async()=>({status:503,body:{error:{code:'AI_UNAVAILABLE',message:'Free models unavailable'}}}),snapshot:async()=>'same',cleanup:async()=>true,persist:()=>{}});
  assert.equal(state.paused_case?.test_id,'TEST');assert.equal(state.results.length,0);assert.match(reportMarkdown(state),/AI_UNAVAILABLE/);assert.match(reportMarkdown(state),/Paused case: TEST; HTTP 503/);
 });
+
+test('[MOCKED] document-level KB citations accept a retrieved child chunk while unrelated documents still fail',()=>{
+ const c={...simple,expected_citation:'KB-07'};
+ assert.equal(scoreAnswer(c,{route:'refuse',answer:'Cannot delete',answer_check_passed:true,citations:[{id:'KB-07.3'}]},true,1).status,'PASS');
+ assert.equal(scoreAnswer(c,{route:'refuse',answer:'Cannot delete',answer_check_passed:true,citations:[{id:'KB-08.3'}]},true,1).status,'FAIL');
+});
+test('[MOCKED] receipt-free reference assumptions conflict with populated current demo data and require review',()=>{
+ const c={...simple,route:'hybrid',expected_answer_criteria:'No cash has been recorded as collected (no payment data)',reference_answer:'No recorded cash',expected_tool_or_query:'get_metric(M-01)',expected_citation:'M-01'};
+ const body={route:'hybrid',answer:'Current collected cash is ₹400 [M-01]; forecast is not actual.',answer_check_passed:true,citations:[{id:'M-01'}],tool_calls:[{tool_name:'get_metric',status:'ok'}],metric_results:[{metric_id:'M-01',computable:true,value:400}]};
+ const result=scoreAnswer(c,body,true,1);assert.equal(result.status,'NEEDS_HUMAN');assert.ok(result.reasons.some(r=>r.includes('Fixture assumes no receipts')));
+ const broken=scoreAnswer(c,{...body,answer_check_passed:false},true,1);assert.equal(broken.status,'FAIL');
+});

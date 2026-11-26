@@ -1,3 +1,5 @@
+import { getInventory } from './financialAnswers.ts';
+import { expandedTerms, lexicalRank } from './lexicalSearch.ts';
 import { getProspects } from './prospects.ts';
 import { z } from 'zod';
 import { getDataset, listDatasets } from './referenceData.ts';
@@ -188,6 +190,7 @@ export const GetRegisterArgsSchema = z
       'source',
       'benchmark',
       'prospects',
+      'inventory',
     ]),
     id: z.string().trim().min(1).optional(),
     filters: z.object({ company: z.string().trim().min(1).max(80).optional(), category: z.string().trim().min(1).max(80).optional(), action: z.string().trim().min(1).max(80).optional(), verified_route: z.boolean().optional() }).strict().optional(),
@@ -336,13 +339,13 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
     type: 'function',
     function: {
       name: 'get_register',
-      description: 'Read kpi, rule, experiment, assumption, decision, bet, gate, source, benchmark or prospects. Prospects are external research targets, not pipeline or forecasts; verified routes are not introductions. Use filters for company, category, action or verified_route. Benchmarks are external research: preserve ASK vs ACTUAL vs COST.',
+      description: 'Read kpi, rule, experiment, assumption, decision, bet, gate, source, benchmark, inventory or prospects. Inventory reads commercial inventory and pricing source rows; id may select activation. Prospects are external research targets, not pipeline or forecasts; verified routes are not introductions. Use filters for company, category, action or verified_route. Benchmarks are external research: preserve ASK vs ACTUAL vs COST.',
       parameters: {
         type: 'object',
         properties: {
           kind: {
             type: 'string',
-            enum: ['kpi', 'rule', 'experiment', 'assumption', 'decision', 'bet', 'gate', 'source', 'benchmark', 'prospects'],
+            enum: ['kpi', 'rule', 'experiment', 'assumption', 'decision', 'bet', 'gate', 'source', 'benchmark', 'prospects', 'inventory'],
           },
           id: { type: 'string' },
           filters: { type: 'object', properties: { company: { type: 'string' }, category: { type: 'string' }, action: { type: 'string' }, verified_route: { type: 'boolean' } }, additionalProperties: false },
@@ -498,7 +501,7 @@ function scoreTitleMatch(title: string | null | undefined, queryWords: string[])
  * chunk's document title and section (needs the pg_trgm extension). Chosen by
  * scripts/eval-retrieval.ts; never by the model.
  */
-export type KnowledgeRankMode = 'fts' | 'fts_trgm';
+export type KnowledgeRankMode = 'fts' | 'fts_trgm' | 'fts_enriched';
 
 export async function executeSearchKnowledge(
   pool: QueryablePool,
@@ -508,7 +511,9 @@ export async function executeSearchKnowledge(
   opts: { rankMode?: KnowledgeRankMode } = {}
 ): Promise<Record<string, unknown>> {
   const args = SearchKnowledgeArgsSchema.parse(rawArgs);
-  const trgm = (opts.rankMode ?? getKnowledgeRankMode()) === 'fts_trgm';
+  const rankMode = opts.rankMode ?? getKnowledgeRankMode();
+  const trgm = rankMode === 'fts_trgm';
+  const enriched = rankMode === 'fts_enriched';
   const historyClause = args.include_history
     ? ''
     : `AND retrieval_rule <> 'contradiction_and_history_only'
@@ -547,7 +552,7 @@ export async function executeSearchKnowledge(
        AND (tsv @@ websearch_to_tsquery('english', $${tsQueryParamIndex})
             ${trgm ? `OR similarity(COALESCE(document_title, ''), $${trgmParamIndex}) > 0.12 OR similarity(COALESCE(section, ''), $${trgmParamIndex}) > 0.12` : ''})
      ORDER BY base_rank ${trgm ? '+ GREATEST(similarity(COALESCE(document_title, \'\'), $' + trgmParamIndex + '), similarity(COALESCE(section, \'\'), $' + trgmParamIndex + '))' : ''} DESC, chunk_id ASC
-     LIMIT 12`;
+     LIMIT ${enriched ? 96 : 12}`;
 
   const strictRes = await pool.query<Record<string, unknown>>(
     querySql(1),
@@ -558,8 +563,8 @@ export async function executeSearchKnowledge(
 
   // Special prompt rule: if strict search returns < 2 chunks, retry once with same words joined by OR,
   // and rank chunks whose doc title matches higher.
-  if (rows.length < 2) {
-    const orQuery = buildOrQueryFromStrict(args.query);
+  if (enriched || rows.length < 2) {
+    const orQuery = enriched ? expandedTerms(args.query).join(' OR ') : buildOrQueryFromStrict(args.query);
     if (orQuery) {
       usedOrFallback = true;
       const orParams = [orQuery, ...baseParams.slice(1)];
@@ -598,6 +603,7 @@ export async function executeSearchKnowledge(
     return bScore - aScore;
   });
 
+  if (enriched) rows = lexicalRank(args.query, rows);
   const topChunks = rows.slice(0, 6).map((r) => {
     const decisionStatus = String(r.decision_status ?? '');
     const retrievalRule = String(r.retrieval_rule ?? 'default');
@@ -652,7 +658,7 @@ export async function executeSearchKnowledge(
 
   const payload = {
     source: 'knowledge_chunk_fts',
-    rank_mode: trgm ? 'fts_trgm' : 'fts',
+    rank_mode: rankMode,
     query: args.query,
     include_history: args.include_history,
     used_or_fallback: usedOrFallback,
@@ -907,6 +913,13 @@ export async function executeReadTool(
 
   if (toolName === 'get_register') {
     const args = GetRegisterArgsSchema.parse(rawArgs);
+    if (args.kind === 'inventory') {
+      if(args.filters)throw new Error('Use id to select an inventory asset.');
+      const payload=await getInventory(ctx.pool,args.id,{asOf:ctx.userSeason.asOf,dataVersion});
+      acc.toolResults.push(payload);
+      for(const data of payload.datasets as Record<string,unknown>[]){if(data.available===true){acc.toolResults.push(data);acc.citations.push({type:'reference',id:String(data.dataset_id),title:String(data.title),record_class:String(data.record_class),data_version:dataVersion});}}
+      return payload;
+    }
     if (args.kind === 'prospects') {
       const payload = await getProspects(ctx.pool, args.filters ?? (args.id ? {company:args.id} : {}), {asOf:ctx.userSeason.asOf,dataVersion});
       acc.toolResults.push(payload);

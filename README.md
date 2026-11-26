@@ -84,3 +84,11 @@ The follow-up separates reviewer/evaluator budgets, answers greetings without a 
 The server defaults to `AI_PROVIDER_ORDER=openrouter_first`: both explicitly configured OpenRouter `:free` models, then Groq. Set `AI_PROVIDER_ORDER=groq_first` to restore the previous priority. There is no Gemini integration and no paid/automatic-model routing. All OpenRouter models remain subject to startup zero-price/tool-support checks.
 
 OpenRouter free-request counts are read from `free_model_daily_requests`; USD credit limits are not request counts. Its daily allowance is shared across free model variants, so switching models does not multiply the allowance. Unknown quota is displayed as unknown rather than inferred from a dollar balance. Failed OpenRouter attempts reduce the local conservative estimate.
+
+## Bounded reliability pass
+
+Activation inventory/pricing and forecast-versus-actual queries now have server read plans using visible reference rows, approved scenarios and current M-01. Values and units come from those sources; scenario forecasts are never substituted for receipts. A receipt-free expected answer conflicting with populated demo receipts is flagged for human review, not treated as authority over current metrics. Research introduction caveats require supporting retrieved evidence.
+
+Retrieval evaluation retains the original FTS and optional pg_trgm variants, and adds candidate C: meaningful terms, domain synonyms and chunk-text ranking. It uses no model requests. Candidate C is adopted only if a completed LIVE comparison shows strictly higher mean recall; defaults and tie preferences remain conservative. Render filesystem adoption/checkpoints remain ephemeral.
+
+Validation and remaining LIVE steps are tracked in [the bounded acceptance checklist](docs/reliability-acceptance.md). The original test bank, expected answers, metrics, seeds and approved strategy remain unchanged. No new LIVE score or provider-availability guarantee is claimed.

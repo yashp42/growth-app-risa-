@@ -4,9 +4,12 @@ export function prospectIntent(question:string,hasFilters=false):ProspectIntent|
  if(hasFilters)return null;
  const q=question.trim().replace(/[?!.]+$/,'');
  if(/^(?:which prospects should we pursue first|which prospects should we prioritise|which prospects should we prioritize)$/i.test(q))return {kind:'prioritise'};
+ if (/^who should we prioriti[sz]e for outreach$/i.test(q))return {kind:'prioritise'};
+ const alternate=q.match(/^what is ([\w .&()-]{1,80}) worth and is it in (?:our|the) pipeline$/i);
+ if(alternate)return {kind:'status',company:alternate[1].trim()};
  const status=q.match(/^is ([\w .&()-]{1,80}) in (?:our|the) pipeline,? and what is it worth$/i);
  if(status)return {kind:'status',company:status[1].trim()};
- const routes=q.match(/^which ([\w -]{1,50}) prospects have a verified route(?: to them)?$/i);
+ const routes=q.match(/^which ([\w -]{1,50}) prospects have (?:a )?verified routes?(?: to them)?$/i);
  if(routes)return {kind:'routes',category:routes[1].trim()};
  return null;
 }
@@ -36,6 +39,7 @@ export async function answerProspects(intent:ProspectIntent,read:Read,acc:ToolRu
  if(intent.kind==='prioritise')await read('search_knowledge',{query:'prospect research target status face value not pipeline forecast introductions'});
  const seen=new Set<string>();
  const notes=acc.citations.filter(c=>c.type==='knowledge'&&!c.history&&!seen.has(c.id)&&Boolean(seen.add(c.id)));
+ if(notes.some(n=>/none has (?:a )?(?:confirmed )?introduction|no (?:confirmed |actual |committed )?introductions?|0 committed introductions/i.test(String(n.text??''))))lines.push('In the cited research snapshot, no confirmed introductions were recorded.');
  if(notes.length){lines.push('','Source notes:');for(const note of notes)lines.push('> ['+cell(note.id)+'] '+cell(note.text));}
  else lines.push('Supporting strategy notes were not retrieved; introduction status and forecast assumptions require source review.');
  return lines.join('\n');
