@@ -147,9 +147,7 @@ function MetricCell({
         {formatted}
       </span>
       {ratioDetail ? (
-        <span className="font-mono text-[12px] tabular-nums text-[var(--color-ink-subtle)]">
-          {ratioDetail}
-        </span>
+        <details className="source-details"><summary>Calculation</summary>{ratioDetail}</details>
       ) : null}
     </div>
   );
@@ -494,7 +492,6 @@ export function CampaignPortfolioPage({
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-21'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-21'].inclusion_exclusion}`}
                 />
               </span>
-              <span className="sr-only">M-21</span>
             </div>
             <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-ink)] tabular-nums">
               {formatMetricValue(summary.open_pipeline_metric)}
@@ -510,7 +507,6 @@ export function CampaignPortfolioPage({
                   content={`${CAMPAIGN_METRIC_DICTIONARY['M-02'].formula}. ${CAMPAIGN_METRIC_DICTIONARY['M-02'].inclusion_exclusion}`}
                 />
               </span>
-              <span className="sr-only">M-02</span>
             </div>
             <p className="mt-2 text-[26px] font-semibold tracking-[-0.02em] text-[var(--color-accent)] tabular-nums">
               {formatMetricValue(summary.signed_value_metric)}

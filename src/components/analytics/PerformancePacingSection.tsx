@@ -185,7 +185,7 @@ export function PerformancePacingSection({
           {latestPassedGateWeek ? (
             <div className="rounded border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3 py-1.5 text-right font-mono text-[12px]">
               <span className="text-[var(--color-ink-subtle)]">
-                Latest passed checkpoint ({latestPassedGateWeek.period} ·{' '}
+                Latest checkpoint ({latestPassedGateWeek.period} ·{' '}
                 {latestPassedGateWeek.week_end}):{' '}
               </span>
               <span className="font-semibold text-[var(--color-ink)]">
@@ -250,7 +250,7 @@ export function PerformancePacingSection({
               <div className="mt-4">
                 <EmptyStateNotice
                   title="Weekly pacing data and target gates are unavailable"
-                  description="Connect the metric and gate services to inspect signed-value pacing."
+                  description="Pacing information could not be loaded. Try refreshing the page."
                 />
               </div>
             ) : (
@@ -381,12 +381,12 @@ export function PerformancePacingSection({
                           Actual signed
                         </th>
                         <th className="px-3 py-2 text-right font-medium">
-                          Base gate
+                          Base target
                         </th>
                         <th className="px-3 py-2 text-right font-medium">
-                          Plan gate
+                          Plan target
                         </th>
-                        <th className="px-3 py-2 font-medium">Server status</th>
+                        <th className="px-3 py-2 font-medium">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--color-border-subtle)]">

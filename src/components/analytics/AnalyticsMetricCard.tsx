@@ -72,9 +72,6 @@ export function AnalyticsMetricCard({
             </div>
 
           </div>
-          <span className="sr-only">
-            {metricId}
-          </span>
         </div>
 
         {loading ? (

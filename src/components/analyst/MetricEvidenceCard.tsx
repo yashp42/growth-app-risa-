@@ -50,15 +50,12 @@ export function MetricEvidenceCard({
           >
             {formatAnalyticsMetricValue(metric)}
           </span>
-          {ratio ? (
-            <span className="font-mono text-[13px] text-[var(--color-ink-muted)] tabular-nums">
-              {ratio}
-            </span>
-          ) : null}
+
         </div>
       )}
 
       <details className="mt-2 border-t border-[var(--color-border-subtle)] pt-2 text-[12px] text-[var(--color-ink-subtle)]"><summary>Calculation &amp; source</summary><span>{metric.metric_id}</span>
+        {ratio ? <p>{ratio}</p> : null}
         <div
           className="truncate"
           title={formatAppliedFiltersSummary(metric.applied_filters)}

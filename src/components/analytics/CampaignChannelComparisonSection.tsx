@@ -74,7 +74,7 @@ export function CampaignChannelComparisonSection({
             Campaign and channel comparison
           </h2>
           <p className="text-[13px] text-[var(--color-ink-muted)]">
-            Scoped by channel_group or campaign_id via POST /api/metrics/query ({recordClass} · as of {asOfDate}). When viewing by channel group, a separate ED-2025 &ldquo;2025 synthetic&rdquo; comparison row is displayed underneath each group.
+            Compare campaigns or channels for the selected season. Channel comparisons include a separate historical 2025 baseline.
           </p>
         </div>
 

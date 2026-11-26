@@ -124,9 +124,6 @@ export function CollectionsOverviewSection({
                     content={`${card.id}: ${card.meta.formula}. ${card.meta.inclusion_exclusion}`}
                   />
                 </div>
-                <span className="sr-only">
-                  {card.id}
-                </span>
               </div>
 
               {loading ? (

@@ -430,6 +430,7 @@ export function StrategyPipelineCapacitySection({
                 </p>
               ) : null}
 
+              <details className="source-details"><summary>Capacity assessment details</summary>
               {capacityRules.length > 0 ? (
                 capacityRules.map((r) => (
                   <div
@@ -451,15 +452,14 @@ export function StrategyPipelineCapacitySection({
               ) : (
                 <p className="text-[var(--color-ink-subtle)]">
                   {rulesAvailable
-                    ? 'No K-C-01 threshold rule row returned.'
-                    : 'Threshold rules are unavailable from /api/rules.'}
+                    ? 'No capacity assessment is available.'
+                    : 'Capacity assessments are unavailable.'}
                 </p>
               )}
 
+              </details>
               <p className="text-[var(--color-ink-subtle)]">
-                Hours logs are personal execution data restricted by role. When
-                hours logs are absent (including the 2025 synthetic dataset),
-                Capacity is unavailable when logged hours are missing.
+                Logged hours are restricted by role. Capacity is unavailable when hours have not been recorded, including in the historical 2025 dataset.
               </p>
             </div>
           </div>
@@ -481,16 +481,14 @@ export function StrategyPipelineCapacitySection({
               <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
                 Experiment register (read-only)
               </h3>
-              <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-                /api/reference/experiments
-              </span>
+
             </div>
 
             {experiments.length === 0 ? (
               <div className="mt-4">
                 <EmptyStateNotice
                   title="No experiment register records returned"
-                  description="Experiment records appear here when available from /api/reference/experiments."
+                  description="Experiments will appear here when available."
                 />
               </div>
             ) : (
@@ -581,15 +579,8 @@ export function StrategyPipelineCapacitySection({
         </div>
 
         {/* Model Assumptions */}
-        <div className="rounded-md border border-[var(--color-border)] bg-white p-5">
-          <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] pb-3">
-            <h3 className="text-[14px] font-semibold text-[var(--color-ink)]">
-              Frozen model assumptions (read-only)
-            </h3>
-            <span className="font-mono text-[12px] text-[var(--color-ink-subtle)]">
-              /api/reference/assumptions
-            </span>
-          </div>
+        <details className="rounded-md border border-[var(--color-border)] bg-white p-5">
+          <summary className="text-[14px] font-semibold text-[var(--color-ink)]">Forecast assumptions</summary>
 
           {!assumptionsAvailable || assumptions.length === 0 ? (
             <div className="mt-4">
@@ -632,7 +623,7 @@ export function StrategyPipelineCapacitySection({
               </table>
             </div>
           )}
-        </div>
+        </details>
       </section>
     </div>
   );
