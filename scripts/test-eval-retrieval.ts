@@ -50,7 +50,7 @@ test('[MOCKED] eval-retrieval: variant A keeps the current SQL; variant B adds p
   } as unknown as QueryablePool;
   const acc = () => ({ metricResults: [], toolResults: [], citations: [], knowledgeTexts: [] }) as never;
 
-  const a = (await executeSearchKnowledge(pool, { query: 'handoff leak' }, 1, acc())) as { rank_mode: string; chunks: Array<{ chunk_id: string }> };
+  const a = (await executeSearchKnowledge(pool, { query: 'handoff leak' }, 1, acc(), { rankMode: 'fts' })) as { rank_mode: string; chunks: Array<{ chunk_id: string }> };
   assert.equal(a.rank_mode, 'fts');
   assert.ok(!calls[0].sql.includes('similarity('));
   assert.deepEqual(calls[0].params, ['handoff leak']);

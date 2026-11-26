@@ -1,9 +1,12 @@
 import { readFileSync, mkdirSync, writeFileSync, renameSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+// LIVE 2026-11-26T21:05Z: unchanged C recall .656 vs A .585 on 63 cases.
+// Keep this measured baseline after a restart; unmeasured D is never the default.
+const DEFAULT_MODE = 'fts_enriched' as const;
 const file = fileURLToPath(new URL('../../eval/results/retrieval-ranking.json', import.meta.url));
 export function getKnowledgeRankMode(): 'fts' | 'fts_trgm' | 'fts_enriched' | 'fts_morph' {
-  try { const r=JSON.parse(readFileSync(file,'utf8')); return r.mode === 'fts_trgm' || r.mode === 'fts_enriched' || r.mode === 'fts_morph' ? r.mode : 'fts'; }
-  catch { return 'fts'; }
+  try { const r=JSON.parse(readFileSync(file,'utf8')); return ['fts','fts_trgm','fts_enriched','fts_morph'].includes(r.mode) ? r.mode : DEFAULT_MODE; }
+  catch { return DEFAULT_MODE; }
 }
 /** Adopt only a completed comparison, on the same server/database as the evaluator. */
 export function adoptKnowledgeRanking(recallA: number, recallB: number | null, recallC: number | null = null, recallD: number | null = null): 'fts' | 'fts_trgm' | 'fts_enriched' | 'fts_morph' {

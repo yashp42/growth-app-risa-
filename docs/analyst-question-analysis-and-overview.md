@@ -12,7 +12,7 @@ Observed through Team & Settings on the deployed application, report timestamp `
 | B: trigram | Not run | — | — | — |
 | C: expanded lexical search | 63 | 0.656 | 0.156 | 28 |
 
-`pg_trgm` is not enabled. The existing evaluator adopted C on the running server. No AI requests were used. These are retrieval scores, not end-to-end chatbot accuracy. The new D candidate requires a new LIVE comparison after deployment; the existing C implementation is preserved as a baseline. Evaluation adoption is stored on Render's ephemeral filesystem and must be repeated after restart/deployment.
+`pg_trgm` is not enabled. The existing evaluator adopted C on the running server. No AI requests were used. These are retrieval scores, not end-to-end chatbot accuracy. The new D candidate requires a new LIVE comparison after deployment; the existing C implementation is preserved as a baseline. The unchanged measured C implementation is now the durable startup default. A later runtime winner (such as D) is stored on Render's ephemeral filesystem and must be re-evaluated/pinned after restart/deployment; the service falls back to the measured C baseline rather than strict A.
 
 ## Question-family analysis
 
