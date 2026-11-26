@@ -313,8 +313,8 @@ export function createOpenRouterClient(
 
   const buildChain = (): ChainEntry[] => {
     const entries: ChainEntry[]=[];
-    if(groqKey)for(const model of new Set([groqPrimary,groqFallback].filter(Boolean)))entries.push({provider:'groq',model,baseUrl:GROQ_BASE_URL,apiKey:groqKey});
-    if(config.openrouterApiKey || !groqKey)for(const model of new Set([openrouterPrimaryModel,openrouterFallbackModel].filter(Boolean)))entries.push({provider:'openrouter',model,baseUrl:OPENROUTER_BASE_URL,apiKey:config.openrouterApiKey});
+    if(groqKey)for(const model of new Set([groqPrimary,groqFallback].filter((model): model is string => Boolean(model))))entries.push({provider:'groq',model,baseUrl:GROQ_BASE_URL,apiKey:groqKey});
+    if(config.openrouterApiKey || !groqKey)for(const model of new Set([openrouterPrimaryModel,openrouterFallbackModel].filter((model): model is string => Boolean(model))))entries.push({provider:'openrouter',model,baseUrl:OPENROUTER_BASE_URL,apiKey:config.openrouterApiKey});
     return providerOrder(entries,config.aiProviderOrder??'groq_first');
   };
   const primaryModel = buildChain()[0]?.model ?? null;
