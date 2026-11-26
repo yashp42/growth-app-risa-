@@ -1,5 +1,5 @@
 import { businessText } from '../../lib/businessCopy';
-import { ArrowDown, ArrowUp, ArrowUpDown, Database } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { formatInr, formatInrLakh, formatIstDateTime } from '../../lib/displayFormat';
 import type {
@@ -42,14 +42,8 @@ function formatMetricValue(value: number | null, unit: string | null): string {
   return `${value.toLocaleString('en-IN')}${unit ? ` ${unit}` : ''}`;
 }
 
-function SourceChip({ source, dataVersion }: { source: string; dataVersion: number | string | null }) {
- return <details className="relative text-xs text-[var(--color-ink-subtle)]"><summary className="inline-flex cursor-pointer items-center gap-1"><Database size={12} aria-hidden="true"/>Source</summary><div className="absolute right-0 z-20 mt-2 min-w-48 max-w-80 break-words rounded-lg border bg-white p-3 shadow-lg">{source}{dataVersion!==null&&dataVersion!==undefined?` · data v${String(dataVersion)}`:''}</div></details>;
-}
-
 function BlockFrame({
   title,
-  source,
-  dataVersion,
   children,
 }: {
   title: string;
@@ -61,7 +55,6 @@ function BlockFrame({
     <figure className="rounded-md border border-[var(--color-border)] bg-white p-3.5">
       <figcaption className="mb-2.5 flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-[14px] font-semibold text-[var(--color-ink)]">{businessText(title)}</span>
-        <SourceChip source={source} dataVersion={dataVersion} />
       </figcaption>
       {children}
     </figure>
