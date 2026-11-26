@@ -17,7 +17,7 @@ for(const [metric,questions] of Object.entries(groups))for(const q of questions)
 test('[MOCKED] ambiguous money asks a useful clarification; context resolves a short sponsor follow-up',()=>{
  assert.deepEqual(operationalIntent('Which sponsor is giving us the highest amount of money?'),{kind:'clarify_money'});
  assert.deepEqual(operationalIntent('From where have we got the highest amount of money?',false,'Which sponsor has paid the most?'),{kind:'sponsor_ranking',metric:'M-01'});
- for(const q of ['Which campaign collected the most cash?','Why did sponsor renewals fail?','Create a task for the biggest sponsor','Which sponsor is most likely to sign?','How much cash has Ather collected?','How much cash have we collected from Ather?','Which sponsor made the largest single payment?','Which sponsor paid most in 2025?' ])assert.equal(operationalIntent(q),null);
+ for(const q of ['Which campaign collected the most cash?','Why did sponsor renewals fail?','Create a task for the biggest sponsor','Which sponsor is most likely to sign?','How much cash has Ather collected?','How much cash have we collected from Ather?','Which sponsor made the largest single payment?','Which sponsor paid most in 2025?','Top companies for outreach' ])assert.equal(operationalIntent(q),null);
  assert.equal(operationalIntent('Which sponsor paid the most?',true),null);
 });
 test('[MOCKED] changed source figures, ties and own scope remain grounded without a model',async()=>{

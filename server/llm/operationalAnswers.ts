@@ -5,6 +5,7 @@ export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}
 export function operationalIntent(question:string, hasFilters=false, previousQuestion=''):OperationalIntent|null {
  if(/\b(?:19\d{2}|20\d{2})\b|\b(?:as of|last year|last month|yesterday|between)\b/i.test(question))return null;
  if(/\b(single|individual receipt|individual payment|invoice)\b/i.test(question))return null;
+ if(/\b(prospects?|research|outreach|pursue|targets?|attractiveness|accessibility)\b/i.test(question))return null;
  if(hasFilters||/\b(create|update|delete|move|log|record|confirm|assign|schedule|compare|why|likely|probability|potential|prioritise|prioritize|2025|2024|2023)\b/i.test(question))return null;
  const q=question.toLowerCase();
  const rank=/\b(highest|largest|biggest|maximum|most|top|leading|best[- ]paying)\b|\b(?:by|per) sponsor\b/.test(q);

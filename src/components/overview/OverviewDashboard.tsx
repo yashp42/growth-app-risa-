@@ -282,11 +282,11 @@ export function OverviewDashboard({
       />
       <div className="overview-main-grid">
         <TargetPacingSection pacing={payload.targetPacing} selectedScenario={scenario} onSelectScenario={setScenario} status={status} error={error} onRetry={handleRetry} recordClass={recordClass} asOfDate={asOf}/>
-        <OverviewFunnel stages={payload.funnelStages} cashOutcome={payload.cashOutcome} onSelectStage={setInspectedStage} onInspectCashOutcome={()=>setCashOutcomeDrawerOpen(true)}/>
+        <OverviewFunnel status={status} error={error} onRetry={handleRetry} stages={payload.funnelStages} cashOutcome={payload.cashOutcome} onSelectStage={setInspectedStage} onInspectCashOutcome={()=>setCashOutcomeDrawerOpen(true)}/>
       </div>
       <div className="overview-main-grid overview-lower-grid">
         <NeedsAttentionQueueSection items={payload.attentionItems} status={status} error={error} onRetry={handleRetry} onInspectItem={handleInspectAttentionItem}/>
-        <OverviewCampaignHighlights campaigns={payload.campaigns} onViewAll={()=>onNavigateSection('campaigns')} onOpen={campaign=>{if(campaign.id&&onOpenCampaignDetail){onOpenCampaignDetail(campaign.id);return;}setInspectedCampaign(campaign);setCampaignDrawerOpen(true);}}/>
+        <OverviewCampaignHighlights status={status} error={error} onRetry={handleRetry} campaigns={payload.campaigns} onViewAll={()=>onNavigateSection('campaigns')} onOpen={campaign=>{if(campaign.id&&onOpenCampaignDetail){onOpenCampaignDetail(campaign.id);return;}setInspectedCampaign(campaign);setCampaignDrawerOpen(true);}}/>
       </div>
       <details className="overview-more"><summary>Growth initiatives &amp; team execution</summary><div className="mt-5 space-y-7">
         <StrategicBetsSection bets={payload.strategicBets} status={status} error={error} onRetry={handleRetry} recordClass={recordClass} asOfDate={asOf}/>
