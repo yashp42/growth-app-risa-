@@ -14,6 +14,7 @@ import {
   speakAnswer,
   stopSpeaking,
 } from '../../lib/speech';
+import { MarkdownAnswer } from './MarkdownAnswer';
 import { useEffect, useState } from 'react';
 import {
   formatAiRouteLabel,
@@ -214,7 +215,7 @@ export function ChatMessage({
 
       {/* Main answer prose */}
       <div className="mt-3 text-[13px] leading-relaxed text-[#202824]">
-        <p className="whitespace-pre-wrap">{message.content}</p>
+        <MarkdownAnswer>{message.content}</MarkdownAnswer>
       </div>
 
       {/* Collapsed tool steps accordion */}
