@@ -241,7 +241,7 @@ export function Sidebar({
     <>
       {/* Desktop fixed-width collapsible rail */}
       <aside
-        className={`hidden lg:block shrink-0 border-r border-[var(--color-border)] bg-[#EDF2ED] ${
+        className={`product-navigation hidden lg:block shrink-0 ${
           collapsed ? 'w-[68px]' : 'w-[236px]'
         }`}
       >
@@ -256,7 +256,7 @@ export function Sidebar({
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-          <aside ref={mobileRef} role="dialog" aria-modal="true" aria-label="Workspace navigation" className="relative z-10 h-full w-[280px] border-r border-[var(--color-border)] bg-white shadow-lg">
+          <aside ref={mobileRef} role="dialog" aria-modal="true" aria-label="Workspace navigation" className="product-navigation relative z-10 h-full w-[280px] shadow-lg">
             {renderNavContent(false)}
           </aside>
         </div>

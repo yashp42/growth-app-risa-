@@ -26,6 +26,7 @@ export function NeedsAttentionQueueSection({
   onRetry,
   onInspectItem,
 }: NeedsAttentionQueueSectionProps) {
+  const [showAll, setShowAll] = useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<AttentionCategory>('all');
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
@@ -54,10 +55,10 @@ export function NeedsAttentionQueueSection({
     <section
       id="section-attention"
       aria-label="Needs attention queue"
-      className="space-y-4"
+      className="overview-panel overview-actions space-y-4"
     >
       <SectionHeader
-        title="Needs attention"
+        title="Priority next actions"
         meta={items.length > 0 ? `${filteredItems.length} items` : undefined}
       />
 
@@ -97,7 +98,7 @@ export function NeedsAttentionQueueSection({
         <div className="overflow-hidden rounded-md border border-[var(--color-border)] bg-white">
           {filteredItems.length > 0 ? (
             <ul className="divide-y divide-[var(--color-border-subtle)]">
-              {filteredItems.map((item) => {
+              {(showAll ? filteredItems : filteredItems.slice(0,5)).map((item) => {
                 const isExpanded = Boolean(expandedIds[item.id]);
                 return (
                   <li key={item.id} className="bg-white">
@@ -120,7 +121,7 @@ export function NeedsAttentionQueueSection({
                           />
                         )}
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[var(--color-ink-subtle)]">
+                          <div className="overview-action-meta flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px] text-[var(--color-ink-subtle)]">
                             <span className="font-medium text-[var(--color-accent)]">
                               {item.categoryLabel === 'Threshold rule' ? 'Performance alert' : item.categoryLabel}
                             </span>
@@ -213,6 +214,7 @@ export function NeedsAttentionQueueSection({
           )}
         </div>
       </DataStateWrapper>
+      {filteredItems.length>5?<button type="button" className="overview-panel-link" onClick={()=>setShowAll(v=>!v)}>{showAll?'Show fewer actions':'View all actions'}</button>:null}
     </section>
   );
 }

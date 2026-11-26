@@ -1,0 +1,7 @@
+import { ArrowUpRight } from 'lucide-react';
+import type { FunnelStageRecord, CashOutcomeSummary } from '../../types/overview';
+interface Props {stages:FunnelStageRecord[];onSelectStage:(s:FunnelStageRecord)=>void;cashOutcome:CashOutcomeSummary;onInspectCashOutcome:()=>void;}
+export function OverviewFunnel({stages,onSelectStage,cashOutcome,onInspectCashOutcome}:Props){
+ const max=Math.max(1,...stages.map(s=>s.count??0));
+ return <section className="overview-panel" aria-label="Funnel at a glance"><header className="overview-panel-heading"><div><h2>Funnel at a glance</h2><p>Explore each stage of the sponsorship journey</p></div></header><div className="overview-funnel">{stages.map(s=><button type="button" key={s.key} onClick={()=>onSelectStage(s)}><span className="overview-funnel-fill" style={{width:Math.max(8,(s.count??0)/max*100)+'%'}} aria-hidden="true"/><span className="relative font-medium">{s.label}</span><span className="relative ml-auto flex items-center gap-4 tabular-nums"><span className="text-xs text-[var(--color-ink-muted)]">{s.rateFormatted}</span><strong>{s.count??'—'}</strong><ArrowUpRight size={14}/></span></button>)}</div><button type="button" className="overview-panel-link" onClick={onInspectCashOutcome}>Payment details <span className="ml-auto font-semibold tabular-nums">{cashOutcome.collectedCashFormatted??'Unavailable'}</span><ArrowUpRight size={14}/></button></section>;
+}

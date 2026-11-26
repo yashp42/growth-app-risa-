@@ -3,10 +3,10 @@ import type { SponsorMetricId } from './sponsorMetrics.ts';
 export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}|{kind:'clarify_money'}|{kind:'cash_total'};
 /** Recognises business concepts and paraphrases, not test IDs or fixed expected answers. */
 export function operationalIntent(question:string, hasFilters=false, previousQuestion=''):OperationalIntent|null {
- if(hasFilters||/\b(create|update|delete|move|log|record|confirm|assign|schedule|compare|why|2025|2024|2023)\b/i.test(question))return null;
+ if(hasFilters||/\b(create|update|delete|move|log|record|confirm|assign|schedule|compare|why|likely|probability|potential|prioritise|prioritize|2025|2024|2023)\b/i.test(question))return null;
  const q=question.toLowerCase();
- const rank=/\b(highest|largest|biggest|maximum|most|top|leading|best[- ]paying)\b/.test(q);
- const sponsor=/\b(sponsors?|contributors?|partners?|companies|company|brands?)\b/.test(q)||(/\b(from where|who|which one|them)\b/.test(q)&&/\bsponsors?\b/i.test(previousQuestion));
+ const rank=/\b(highest|largest|biggest|maximum|most|top|leading|best[- ]paying)\b|\b(?:by|per) sponsor\b/.test(q);
+ const sponsor=(/\bwho\b/.test(q)&&/\b(paid|owes?|contributed|gave)\b/.test(q))||/\b(sponsors?|contributors?|donors?|partners?|companies|company|brands?)\b/.test(q)||(/\b(from where|who|which one|them)\b/.test(q)&&/\bsponsors?\b/i.test(previousQuestion));
  const otherGrain=/\b(campaigns?|channels?|renewals?|inbound|cold|warm|premium|bets?)\b/.test(q);
  if(rank&&sponsor&&!otherGrain){
    if(/\b(outstanding|owes?|unpaid|receivable|pending)\b/.test(q))return {kind:'sponsor_ranking',metric:'M-07'};

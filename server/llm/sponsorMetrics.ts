@@ -67,7 +67,11 @@ export async function querySponsorMetrics(ctx: ToolExecutionContext, metric: Spo
      DENSE_RANK() OVER(ORDER BY (${expr}) DESC) AS position
    FROM values_by_sponsor
  )
- SELECT sponsor_id,sponsor_name,value,position,COUNT(*) OVER() AS total_sponsors FROM ranked
- ORDER BY value DESC,sponsor_id ASC LIMIT $7`,[recordClass,editionId,asOf,JSON.stringify(filters),own,ctx.actorMemberId,limit]);
+ SELECT sponsor_id,sponsor_name,value,position,COUNT(*) OVER() AS total_sponsors,
+ SUM(value) OVER() AS breakdown_total,
+ (SELECT value FROM metrics.get_metric($8,$1,$2,$3::date,$4::jsonb) LIMIT 1) AS canonical_total
+ FROM ranked
+ ORDER BY value DESC,sponsor_id ASC LIMIT $7`,[recordClass,editionId,asOf,JSON.stringify(filters),own,ctx.actorMemberId,limit,metric]);
+ if(!own&&result.rows.length&&toNum(result.rows[0].breakdown_total)!==toNum(result.rows[0].canonical_total))throw new Error('Sponsor breakdown does not reconcile with the canonical season metric. No ranking was released.');
  return {computable:true,truncated:Number(result.rows[0]?.total_sponsors??0)>limit,rows:result.rows.map(r=>({sponsor_id:r.sponsor_id,sponsor_name:r.sponsor_name,value:toNum(r.value),position:toNum(r.position)}))};
 }

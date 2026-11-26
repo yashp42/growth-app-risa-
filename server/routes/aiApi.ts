@@ -297,7 +297,7 @@ export function buildSystemPrompt(params: {
     `${datasetNote} edition_id="${params.editionId}", as_of="${params.asOf}"${asOfWeekday ? ` (${asOfWeekday})` : ''}, roles=[${params.roles.join(', ')}].`,
     ...(vcParts.length > 0 ? [`UI context: ${vcParts.join('; ')}.`] : []),
     'Prospects: get_register(kind=prospects). Empty CRM ≠ no research; route ≠ introduction. Research ≠ pipeline/forecast; unapproved ≠ target. Cite status_label/dataset_id; keep ASK/ACTUAL/COST.',
-    'For sponsor financial rankings, use get_sponsor_metrics. A channel/campaign total cannot identify the highest-paying sponsor. If money is ambiguous, ask collected cash vs signed commitment. list_records limit is at most 25. CRM sponsors are list_records(kind=sponsors), not get_register.',
+    'Sponsor ranks: get_sponsor_metrics; clarify cash vs signed. list_records limit<=25. CRM sponsors: list_records, not get_register.',
     'RULES:',
     '1. Grounding: Use ONLY exact tool values. Never invent, estimate or scale numbers.',
     '2. Missing data: If no tool returns the needed data or computable=false, say "I don\'t have that in the data", name the missing data/screen/tool, and never guess. If a named entity lookup returns 0 rows, state "I have no record of <name>" and never invent details.',

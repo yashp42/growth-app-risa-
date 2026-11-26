@@ -1235,22 +1235,6 @@ test('[MOCKED] FIX 1: view_context campaign filter does not leak into season-wid
             {
               message: {
                 role: 'assistant',
-                content: 'Season-wide cash collected is ₹2,72,500 [M-01].',
-              },
-            },
-          ],
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    if (callNum === 2) {
-      return new Response(
-        JSON.stringify({
-          model: DEFAULT_OPENROUTER_MODEL_PRIMARY,
-          choices: [
-            {
-              message: {
-                role: 'assistant',
                 content: '',
                 tool_calls: [
                   {
@@ -1311,6 +1295,7 @@ test('[MOCKED] FIX 1: view_context campaign filter does not leak into season-wid
     const bodySeason = (await rSeason.json()) as Record<string, unknown>;
     assert.ok(String(bodySeason.answer).includes('2,72,500') || String(bodySeason.answer).includes('2.73L'));
     assert.deepEqual(store.metricCalls[0]?.filters, {});
+    assert.equal(callNum, 0, "Season-wide cash total uses source tools without a model request");
 
     // 2. Question explicitly naming campaign_id filter (or via filters param) labels "for <campaign>"
     const rCampaign = await fetch(`${srv.baseUrl}/api/ai/ask`, {
