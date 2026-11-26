@@ -34,6 +34,7 @@ interface GrowthAnalystChatProps {
   initialDraft?: string | null;
   autoStartVoiceNonce?: number;
   toggleVoiceNonce?: number;
+  voiceInputCommand?: {id:number;action:'start'|'stop'};
   onListeningChange?: (listening: boolean) => void;
   onInterimTranscript?: (text: string) => void;
   onSend: (
@@ -72,6 +73,7 @@ export function GrowthAnalystChat({
   initialDraft,
   autoStartVoiceNonce = 0,
   toggleVoiceNonce,
+  voiceInputCommand,
   onListeningChange,
   onInterimTranscript,
   onSend,
@@ -232,6 +234,7 @@ export function GrowthAnalystChat({
           initialDraft={initialDraft}
           autoStartVoiceNonce={autoStartVoiceNonce}
           toggleVoiceNonce={toggleVoiceNonce}
+          voiceInputCommand={voiceInputCommand}
           onListeningChange={onListeningChange}
           onInterimTranscript={onInterimTranscript}
           compact={compact}
@@ -240,4 +243,5 @@ export function GrowthAnalystChat({
     </div>
   );
 }
+
 

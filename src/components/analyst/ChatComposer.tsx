@@ -34,6 +34,7 @@ interface BrowserSpeechRecognition {
   continuous: boolean;
   interimResults: boolean;
   lang: string;
+  onstart: (() => void) | null;
   onresult: ((event: BrowserSpeechRecognitionEvent) => void) | null;
   onerror: ((event: BrowserSpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
@@ -68,6 +69,7 @@ interface ChatComposerProps {
   autoStartVoiceNonce?: number;
   /** Incremented by the orb (space bar) to toggle the mic. */
   toggleVoiceNonce?: number;
+  voiceInputCommand?: {id:number;action:'start'|'stop'};
   /** Real mic on/off, for the orb's listening state. */
   onListeningChange?: (listening: boolean) => void;
   /** Interim transcript, shown under the orb while listening. */
@@ -83,6 +85,7 @@ export function ChatComposer({
   compact = false,
   autoStartVoiceNonce = 0,
   toggleVoiceNonce = 0,
+  voiceInputCommand,
   onListeningChange,
   onInterimTranscript,
 }: ChatComposerProps) {
@@ -125,6 +128,8 @@ export function ChatComposer({
       clearSilenceTimer();
       const rec = recognitionRef.current;
       if (rec) {
+        // Keep an unfinished utterance available in chat when pausing or exiting voice.
+        if(latestSpokenRef.current.trim())setDraft(latestSpokenRef.current.trim());
         recognitionRef.current = null;
         try {
           if (abort) rec.abort();
@@ -147,7 +152,7 @@ export function ChatComposer({
 
   const startVoice = useCallback(() => {
     setVoiceError(null);
-    if (listening || disabled || sending) return;
+    if (recognitionRef.current || listening || disabled || sending) return;
 
     const Ctor = getSpeechRecognitionCtor();
     if (!Ctor) {
@@ -164,7 +169,9 @@ export function ChatComposer({
       finalBufferRef.current = '';
       latestSpokenRef.current = draft.trim();
 
+      rec.onstart=()=>{if(recognitionRef.current===rec)setListening(true);};
       rec.onresult = (event) => {
+        if(recognitionRef.current!==rec)return;
         let interim = '';
         let appendedFinal = '';
         for (let i = event.resultIndex; i < event.results.length; i += 1) {
@@ -216,6 +223,7 @@ export function ChatComposer({
       };
 
       rec.onerror = (event) => {
+        if(recognitionRef.current!==rec)return;
         clearSilenceTimer();
         const code = event?.error ?? '';
         if (code === 'not-allowed' || code === 'service-not-allowed') {
@@ -232,6 +240,7 @@ export function ChatComposer({
       };
 
       rec.onend = () => {
+        if(recognitionRef.current!==rec)return;
         clearSilenceTimer();
         recognitionRef.current = null;
         setListening(false);
@@ -240,7 +249,6 @@ export function ChatComposer({
 
       recognitionRef.current = rec;
       rec.start();
-      setListening(true);
     } catch {
       clearSilenceTimer();
       recognitionRef.current = null;
@@ -306,6 +314,15 @@ export function ChatComposer({
     }
   }, [toggleVoiceNonce, voiceAvailable, disabled, sending]);
 
+  const startVoiceRef=useRef(startVoice);startVoiceRef.current=startVoice;
+  const lastCommandRef=useRef(0);
+  useEffect(()=>{
+    if(!voiceInputCommand||voiceInputCommand.id===lastCommandRef.current)return;
+    lastCommandRef.current=voiceInputCommand.id;
+    if(voiceInputCommand.action==='stop')stopRecognition(true);
+    else if(speechSupported){setMicDenied(false);startVoiceRef.current();}
+  },[voiceInputCommand,speechSupported,stopRecognition]);
+  useEffect(()=>{if(sending||disabled)stopRecognition(true);},[sending,disabled,stopRecognition]);
   useEffect(()=>{window.dispatchEvent(new CustomEvent('analyst:voice-error',{detail:voiceError}));},[voiceError]);
   const displayValue = interimText
     ? `${draft}${draft && !draft.endsWith(' ') ? ' ' : ''}${interimText}`
@@ -426,4 +443,5 @@ export function ChatComposer({
     </form>
   );
 }
+
 
