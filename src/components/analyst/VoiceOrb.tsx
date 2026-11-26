@@ -1,5 +1,12 @@
 import { useId, type CSSProperties } from 'react';
 import type { OrbState } from '../../lib/orbState';
+import { useMicLevel } from '../../hooks/useMicLevel';
+
+/** Meter updates stay inside the orb so long transcripts do not render at audio cadence. */
+export function LiveVoiceOrb({state,paused,active}:{state:OrbState;paused:boolean;active:boolean}) {
+ const level=useMicLevel(active);
+ return <VoiceOrb state={state} paused={paused} level={level}/>;
+}
 
 /** Decorative SVG: only the listening deformation represents measured microphone level.
  * Speech synthesis exposes activity, not a playback amplitude stream. Its ribbons are ambient motion.

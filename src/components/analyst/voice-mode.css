@@ -105,6 +105,7 @@ dialog.voice-dialog {
 @keyframes voice-dot {0%,80%,100%{opacity:.3;}40%{opacity:1;}}
 @keyframes voice-caret {to{opacity:0;}}
 @media(min-width:1700px) {.voice-main{max-width:1530px;}.voice-orb{width:390px;}.voice-conversation{height:min(64dvh,700px);}}
+@media(min-width:1001px) and (max-height:780px) {.voice-main{padding:22px 0 10px;}.voice-orb{width:min(28vw,34dvh,290px);}.voice-stage-copy{margin-top:8px;}.voice-stage-copy h1{font-size:30px;margin-top:12px;}.voice-stage-copy>p{font-size:16px;}.voice-footer{gap:12px;}}
 @media(max-width:1000px) {
  .voice-shell {padding:20px 28px 15px;}
  .voice-main {grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);gap:22px;padding:12px 0 8px;max-width:750px;}

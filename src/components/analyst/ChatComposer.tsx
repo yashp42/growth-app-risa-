@@ -320,8 +320,8 @@ export function ChatComposer({
     if(!voiceInputCommand||voiceInputCommand.id===lastCommandRef.current)return;
     lastCommandRef.current=voiceInputCommand.id;
     if(voiceInputCommand.action==='stop')stopRecognition(true);
-    else if(voiceAvailable)startVoiceRef.current();
-  },[voiceInputCommand,voiceAvailable,stopRecognition]);
+    else if(speechSupported){setMicDenied(false);startVoiceRef.current();}
+  },[voiceInputCommand,speechSupported,stopRecognition]);
   useEffect(()=>{if(sending||disabled)stopRecognition(true);},[sending,disabled,stopRecognition]);
   useEffect(()=>{window.dispatchEvent(new CustomEvent('analyst:voice-error',{detail:voiceError}));},[voiceError]);
   const displayValue = interimText

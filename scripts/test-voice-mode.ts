@@ -11,7 +11,7 @@ test('[MOCKED] voice transcript renders actual ordered conversation and safe ass
  const html=renderToStaticMarkup(React.createElement(VoiceMode,{...base,messages:[{message_id:'one',role:'user',content:'What changed for Acme?',created_at:'2026-11-27T03:00:00Z'},{message_id:'two',role:'assistant',content:'**Acme** is waiting for a response. <script>alert(1)</script>',created_at:'2026-11-27T03:01:00Z'}]}));
  assert.ok(html.indexOf('What changed for Acme?')<html.indexOf('is waiting for a response'));
  assert.match(html,/Voice conversation transcript/);assert.match(html,/dateTime="2026-11-27T03:01:00Z"/i);assert.doesNotMatch(html,/<script>|City Festival|Community Series|61%/);
- assert.match(html,/Back to conversation/);assert.match(html,/Pause voice session/);assert.match(html,/Stop speaking/);assert.match(html,/End voice mode/);
+ assert.match(html,/aria-label="Back to conversation"/);assert.match(html,/Pause voice session/);assert.match(html,/Stop speaking/);assert.match(html,/End voice mode/);
 });
 test('[MOCKED] thinking and confirmation states preserve real progress and human review',()=>{
  const thinking=renderToStaticMarkup(React.createElement(VoiceMode,{...base,state:'thinking',step:'Checking current campaign records'}));

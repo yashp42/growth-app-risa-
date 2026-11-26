@@ -1,10 +1,9 @@
-import { useEffect,useRef,useState } from 'react';
+import { memo,useEffect,useRef,useState } from 'react';
 import { ArrowLeft,AudioLines,ChevronDown,Mic,MicOff,Pause,Play,Square,UserRound,X } from 'lucide-react';
-import { useMicLevel } from '../../hooks/useMicLevel';
 import type { OrbState } from '../../lib/orbState';
 import { voicePresentation,voiceTimestamp } from '../../lib/voicePresentation';
 import type { AiChatMessage } from '../../types/analyst';
-import { VoiceOrb } from './VoiceOrb';
+import { LiveVoiceOrb } from './VoiceOrb';
 import { MarkdownAnswer } from './MarkdownAnswer';
 
 export interface VoiceModeProps {
@@ -13,12 +12,15 @@ export interface VoiceModeProps {
  onToggleMic:()=>void;onTogglePause?:()=>void;onStopSpeaking:()=>void;onClose:()=>void;
 }
 function ActivityBars({active=false}:{active?:boolean}) {return <span className="voice-activity" data-active={active} aria-hidden="true">{[0,1,2,3,4,5,6].map(n=><i key={n} style={{animationDelay:`${n*-0.13}s`}}/>)}</span>;}
+const VoiceHistory=memo(function VoiceHistory({messages}:{messages:AiChatMessage[]}) {
+ return <>{messages.map(m=><article className={`voice-message voice-message-${m.role}`} key={m.message_id}><span className="voice-message-avatar" aria-hidden="true">{m.role==='user'?<UserRound size={19}/>:<AudioLines size={20}/>}</span><div className="voice-message-body"><div className="voice-message-meta"><span>{m.role==='user'?'You':'Growth Analyst'}</span>{voiceTimestamp(m.created_at)?<time dateTime={m.created_at}>{voiceTimestamp(m.created_at)}</time>:null}</div><div className="voice-message-content">{m.role==='assistant'?<MarkdownAnswer>{m.content}</MarkdownAnswer>:<p>{m.content}</p>}</div></div></article>)}</>;
+});
 
 export function VoiceMode(p:VoiceModeProps) {
  const supported=typeof window!=='undefined'&&Boolean((window as unknown as {SpeechRecognition?:unknown;webkitSpeechRecognition?:unknown}).SpeechRecognition||(window as unknown as {webkitSpeechRecognition?:unknown}).webkitSpeechRecognition);
  const dialog=useRef<HTMLDialogElement>(null),scroll=useRef<HTMLDivElement>(null),closeRef=useRef(p.onClose);
  const followsLatest=useRef(true);const [showLatest,setShowLatest]=useState(false);closeRef.current=p.onClose;
- const paused=Boolean(p.paused),level=useMicLevel(p.open&&p.listening&&!paused);
+ const paused=Boolean(p.paused);
  const presentation=voicePresentation(p.state,paused,p.listening,supported,p.error);
  const messages=p.messages??(p.answer?[{message_id:'current-answer',role:'assistant' as const,content:p.answer,created_at:''}]:[]);
  useEffect(()=>{
@@ -39,11 +41,11 @@ export function VoiceMode(p:VoiceModeProps) {
   <div className="voice-shell">
    <header className="voice-header">
     <div className="voice-brand"><span className="voice-brand-mark"><AudioLines size={26}/></span><div><div className="voice-title-row"><h2 id="voice-mode-title">Growth Analyst</h2><span className="voice-mode-badge">Voice</span></div><p id="voice-mode-description">Your sponsorship intelligence partner</p></div></div>
-    <button type="button" className="voice-back" onClick={p.onClose} autoFocus><ArrowLeft size={18}/><span>Back to conversation</span><kbd>Esc</kbd></button>
+    <button type="button" className="voice-back" onClick={p.onClose} aria-label="Back to conversation" title="Back to conversation (Esc)" autoFocus><ArrowLeft size={18}/><span>Back to conversation</span><kbd>Esc</kbd></button>
    </header>
    <main className="voice-main">
     <section className="voice-stage" aria-label="Voice activity">
-     <VoiceOrb state={p.state} level={level} paused={paused}/>
+     <LiveVoiceOrb state={p.state} paused={paused} active={p.open&&p.listening&&!paused}/>
      <div className="voice-stage-copy">
       <span className="voice-status-pill" data-state={paused?'paused':p.state}>{p.listening&&!paused?<Mic size={15}/>:p.state==='speaking'&&!paused?<AudioLines size={15}/>:paused?<Pause size={14}/>:<span className="voice-status-dot"/>}{presentation.label}</span>
       <h1 aria-live="polite" aria-atomic="true">{presentation.title}</h1><p>{presentation.description}</p>
@@ -52,7 +54,7 @@ export function VoiceMode(p:VoiceModeProps) {
     <section className="voice-conversation" aria-labelledby="voice-conversation-title">
      <header className="voice-conversation-header"><div><AudioLines size={20}/><h3 id="voice-conversation-title">Live conversation</h3></div><span>{p.listening&&!paused?'Listening live':'Voice session'}</span></header>
      <div ref={scroll} className="voice-conversation-scroll" role="log" aria-label="Voice conversation transcript" aria-live="polite" aria-relevant="additions" tabIndex={0} onScroll={()=>{const el=scroll.current;if(!el)return;followsLatest.current=el.scrollHeight-el.scrollTop-el.clientHeight<80;setShowLatest(!followsLatest.current);}}>
-      {messages.length?messages.map(m=><article className={`voice-message voice-message-${m.role}`} key={m.message_id}><span className="voice-message-avatar" aria-hidden="true">{m.role==='user'?<UserRound size={19}/>:<AudioLines size={20}/>}</span><div className="voice-message-body"><div className="voice-message-meta"><span>{m.role==='user'?'You':'Growth Analyst'}</span>{voiceTimestamp(m.created_at)?<time dateTime={m.created_at}>{voiceTimestamp(m.created_at)}</time>:null}</div><div className="voice-message-content">{m.role==='assistant'?<MarkdownAnswer>{m.content}</MarkdownAnswer>:<p>{m.content}</p>}</div></div></article>):<div className="voice-empty"><AudioLines size={28}/><h4>A little space to think out loud.</h4><p>Ask about your campaigns, explore a decision, or pick up where you left off. Your conversation will appear here.</p></div>}
+      {messages.length?<VoiceHistory messages={messages}/>:<div className="voice-empty"><AudioLines size={28}/><h4>A little space to think out loud.</h4><p>Ask about your campaigns, explore a decision, or pick up where you left off. Your conversation will appear here.</p></div>}
       {p.listening&&p.transcript&&!paused?<article className="voice-message voice-message-user voice-message-interim" aria-live="off"><span className="voice-message-avatar" aria-hidden="true"><Mic size={19}/></span><div className="voice-message-body"><div className="voice-message-meta"><span>You · live transcript</span><ActivityBars active/></div><div className="voice-message-content"><p>{p.transcript}<span className="voice-transcript-caret" aria-hidden="true"/></p></div></div></article>:null}
       {p.state==='thinking'?<div className="voice-live-status" role="status"><span className="voice-message-avatar"><AudioLines size={20}/></span><p>{p.step||'Looking into your question'}<span className="voice-thinking-dots" aria-hidden="true"><i/><i/><i/></span></p></div>:null}
       {p.state==='speaking'&&!paused?<div className="voice-live-status voice-speaking-status"><span className="voice-message-avatar"><AudioLines size={20}/></span><p>Speaking <ActivityBars active/></p></div>:null}
@@ -70,7 +72,6 @@ export function VoiceMode(p:VoiceModeProps) {
      <div className="voice-control-group"><button type="button" className="voice-control" onClick={p.onStopSpeaking} disabled={p.state!=='speaking'&&!paused} aria-label="Stop speaking"><Square size={20} fill="currentColor"/></button><span>Stop speaking</span></div>
      <div className="voice-control-group voice-end-control"><button type="button" className="voice-control" onClick={p.onClose} aria-label="End voice mode"><X size={23}/></button><span>End voice</span></div>
     </div>
-    <p className="voice-privacy">Browser voice · Your conversation stays in this workspace</p>
    </footer>
   </div>
  </dialog>;
