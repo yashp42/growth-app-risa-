@@ -10,7 +10,7 @@ import { AiViewRenderer } from './AiViewRenderer';
 import { DataContextHeader } from './DataContextHeader';
 import { EvidencePanel } from './EvidencePanel';
 import { GrowthAnalystChat } from './GrowthAnalystChat';
-import { OrbStage } from './OrbStage';
+import { ChatComposer } from './ChatComposer';
 
 interface GrowthAnalystWorkspaceProps {
   session: UseGrowthAnalystSessionResult;
@@ -49,13 +49,12 @@ export function GrowthAnalystWorkspace({
   useEffect(()=>{const listen=(e:Event)=>setMicError((e as CustomEvent<string|null>).detail);window.addEventListener('analyst:voice-error',listen);return()=>window.removeEventListener('analyst:voice-error',listen);},[]);
   useEffect(()=>{session.setVoiceModeActive(voiceMode);return()=>session.setVoiceModeActive(false);},[voiceMode,session.setVoiceModeActive]);
   useEffect(()=>{if(autoStartVoiceNonce>0){setVoicePaused(false);setVoiceMode(true);setMicError(null);}},[autoStartVoiceNonce]);
-  const openVoice=()=>{stopSpeaking();setVoicePaused(false);setVoiceMode(true);setMicError(null);if(!session.voiceListening)commandVoice('start');};
   const closeVoice=()=>{commandVoice('stop');stopSpeaking();setVoicePaused(false);setVoiceMode(false);};
   const togglePause=()=>{
     if(voicePaused){setVoicePaused(false);resumeSpeaking();if(resumeMicRef.current&&!session.sending)commandVoice('start');}
     else{resumeMicRef.current=session.voiceListening;commandVoice('stop');if(!pauseSpeaking()&&session.speaking)stopSpeaking();setVoicePaused(true);}
   };
-  const toggleVoiceMic=()=>{stopSpeaking();setVoicePaused(false);setMicError(null);commandVoice(session.voiceListening?'stop':'start');};
+  const toggleVoiceMic=()=>{stopSpeaking();setVoiceMode(true);setVoicePaused(false);setMicError(null);commandVoice(session.voiceListening?'stop':'start');};
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<'chat' | 'evidence' | 'actions'>(
     'chat'
@@ -72,9 +71,11 @@ export function GrowthAnalystWorkspace({
     setPendingConfirmAction(null);
   };
 
-  return (
-    <div className="analyst-conversation space-y-6">
-      <DataContextHeader
+  const canUse=!(session.permissionProfile.verifiedByServer&&!session.permissionProfile.canUseAnalyst);
+  return <div className="unified-analyst">
+   {!canUse?<div role="alert" className="p-6"><Lock size={20}/>Growth Analyst access is restricted for this account.</div>:<VoiceMode embedded open state={session.orbState} listening={session.voiceListening} transcript={session.interimTranscript} messages={session.messages} paused={voicePaused} answer="" error={micError} step={session.progressSteps.at(-1)}
+    onToggleMic={toggleVoiceMic} onTogglePause={togglePause} onStopSpeaking={stopSpeaking} onEndVoice={closeVoice} onClose={()=>{closeVoice();onOpenAiViewScreen?.('overview');}}
+    headerActions={<><DataContextHeader compact
         filters={session.filters}
         onChangeRecordClass={session.setRecordClass}
         onChangeEdition={(edition_id) =>
@@ -92,83 +93,9 @@ export function GrowthAnalystWorkspace({
         onChangeMobilePanel={setMobilePanel}
         autoReadAloud={session.autoReadAloud}
         readAloudSupported={session.readAloudSupported}
-        onChangeAutoReadAloud={session.setAutoReadAloud}
-      />
-
-      {session.permissionProfile.verifiedByServer &&
-      !session.permissionProfile.canUseAnalyst ? (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-md border border-[var(--color-border)] bg-white p-5"
-        >
-          <Lock
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#9B3B32]"
-            aria-hidden="true"
-          />
-          <div>
-            <h2 className="text-[14px] font-semibold text-[var(--color-ink)]">
-              Growth Analyst access restricted (403)
-            </h2>
-            <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">
-              Your account does not carry a sponsorship operations or viewer
-              role required for Growth Analyst queries.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-5">
-          {/* Main Conversation Area */}
-          <section
-            aria-label="Growth Analyst conversation"
-            className={`${
-              'block'
-            } w-full`}
-          >
-            {!evidenceOpen && session.latestStructured ? (
-              <div className="mb-1 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setEvidenceOpen(true)}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--color-border)] bg-white px-3 text-[13px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
-                >
-                  <PanelRightOpen className="h-3.5 w-3.5 text-[var(--color-ink-muted)]" aria-hidden="true" />
-                  <span>Evidence & sources</span>
-                </button>
-              </div>
-            ) : null}
-
-            <OrbStage
-              state={session.orbState}
-              micOn={session.voiceListening}
-              steps={session.progressSteps}
-              transcript={session.interimTranscript}
-              errorText={session.error?.message ?? null}
-              onToggleMic={openVoice}
-              onVoiceMode={openVoice}
-              onStopSpeaking={stopSpeaking}
-              onActivate={() => {
-                const el = document.querySelector<HTMLTextAreaElement>(
-                  'textarea[aria-label="Growth Analyst question"]'
-                );
-                el?.focus();
-              }}
-              compact={session.messages.length > 0}
-            />
-
-            {session.activeViewSpec ? (
-              <div className="mb-4">
-                <AiViewRenderer
-                  viewSpec={session.activeViewSpec}
-                  isPreview={session.viewPreviewPending}
-                  onKeepView={() => session.keepActiveView()}
-                  onUndoView={session.undoActiveView}
-                  onClearView={session.clearActiveView}
-                  onOpenScreen={onOpenAiViewScreen}
-                />
-              </div>
-            ) : null}
-
-            <GrowthAnalystChat
+        onChangeAutoReadAloud={on=>{if(!on)setVoiceMode(false);session.setAutoReadAloud(on);}}
+      /><button type="button" className="voice-back" aria-expanded={evidenceOpen} onClick={()=>setEvidenceOpen(v=>!v)}><PanelRightOpen size={16}/>Sources</button></>}
+    content={<>{session.activeViewSpec?<AiViewRenderer viewSpec={session.activeViewSpec} isPreview={session.viewPreviewPending} onKeepView={()=>session.keepActiveView()} onUndoView={session.undoActiveView} onClearView={session.clearActiveView} onOpenScreen={onOpenAiViewScreen}/>:null}<GrowthAnalystChat embedded hideComposer
               messages={session.messages}
               actions={session.actions}
               permissionProfile={session.permissionProfile}
@@ -196,18 +123,9 @@ export function GrowthAnalystWorkspace({
               onActivateView={(spec) => session.setActiveViewSpec(spec)}
               onOpenRecord={onOpenRecord}
               onSubmitFeedback={session.submitFeedback}
-            />
-          </section>
-
-          {/* Right Side Workspace: Evidence & Context + Action Workspace */}
-          {evidenceOpen && session.latestStructured ? (
-            <div className="space-y-4">
-              <div
-                className={
-                  'block'
-                }
-              >
-                <EvidencePanel
+            /></>}
+    composer={<ChatComposer onSend={session.sendMessage} sending={session.sending} disabled={!canUse} initialDraft={initialDraft} autoStartVoiceNonce={autoStartVoiceNonce} voiceInputCommand={voiceInputCommand} onListeningChange={session.setVoiceListening} onInterimTranscript={session.setInterimTranscript} placeholder="Type a message, or use the microphone…"/>}
+    sidePanel={evidenceOpen&&session.latestStructured?<aside className="unified-evidence" aria-label="Evidence and sources"><EvidencePanel
                   filters={session.filters}
                   dataVersion={session.dataVersion}
                   latestStructured={session.latestStructured}
@@ -216,15 +134,9 @@ export function GrowthAnalystWorkspace({
                   permissionProfile={session.permissionProfile}
                   onCollapse={() => setEvidenceOpen(false)}
                   onOpenLinkedRecord={onOpenRecord}
-                />
-              </div>
-            </div>
-          ) : null}
-        </div>
-      )}
-
-      <VoiceMode open={voiceMode} state={session.orbState} listening={session.voiceListening} transcript={session.interimTranscript} messages={session.messages} paused={voicePaused} answer={[...session.messages].reverse().find(m=>m.role==='assistant')?.content??''} error={micError??session.error?.message} step={session.progressSteps.at(-1)} onToggleMic={toggleVoiceMic} onTogglePause={togglePause} onStopSpeaking={stopSpeaking} onClose={closeVoice}/>
-      <ActionConfirmationDialog
+                /></aside>:null}
+   />}
+   <ActionConfirmationDialog
         action={pendingConfirmAction}
         processing={
           pendingConfirmAction
@@ -234,8 +146,5 @@ export function GrowthAnalystWorkspace({
         onConfirm={(id) => void handleConfirmSubmit(id)}
         onClose={() => setPendingConfirmAction(null)}
       />
-    </div>
-  );
+  </div>;
 }
-
-

@@ -5,14 +5,16 @@ import type { AiQuotaInfo,AiRecordClass } from '../../types/analyst';
 import { SelectControl } from '../ui/SelectControl';
 import { ReadAloudToggle } from './ReadAloudToggle';
 interface DataContextHeaderProps {
+ compact?:boolean;
  filters:GrowthAnalystSessionFilterState;onChangeRecordClass:(v:AiRecordClass)=>void;onChangeEdition:(v:string)=>void;onChangeAsOf:(v:string)=>void;
  dataVersion:string|number|null;quota:AiQuotaInfo|null;conversationId:string|null;onResetConversation:()=>void;pendingActionCount:number;
  mobilePanel:'chat'|'evidence'|'actions';onChangeMobilePanel:(v:'chat'|'evidence'|'actions')=>void;
  autoReadAloud?:boolean;readAloudSupported?:boolean;onChangeAutoReadAloud?:(v:boolean)=>void;
 }
 export function DataContextHeader(p:DataContextHeaderProps){
- return <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] pb-5">
-  <div><p className="eyebrow mb-2">Intelligence</p><h1 className="page-heading">Growth Analyst</h1><p className="mt-2 text-sm text-[var(--color-ink-muted)]">{formatRecordClassLabel(p.filters.record_class)} · As of {p.filters.as_of}</p></div>
+ const Tag=p.compact?'div':'header';
+ return <Tag className={p.compact?"unified-context-toolbar":"flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-border)] pb-5"}>
+  {!p.compact?<div><p className="eyebrow mb-2">Intelligence</p><h1 className="page-heading">Growth Analyst</h1><p className="mt-2 text-sm text-[var(--color-ink-muted)]">{formatRecordClassLabel(p.filters.record_class)} · As of {p.filters.as_of}</p></div>:null}
   <div className="flex items-center gap-2 pt-1">
    {p.onChangeAutoReadAloud?<ReadAloudToggle on={p.autoReadAloud??false} supported={p.readAloudSupported??false} onChange={p.onChangeAutoReadAloud}/>:null}
    <details className="relative"><summary className="button-secondary list-none"><SlidersHorizontal size={15} aria-hidden="true"/>Context</summary><div className="absolute right-0 z-30 mt-3 w-[min(340px,calc(100vw-32px))] space-y-4 rounded-xl border bg-white p-5 shadow-xl">
@@ -24,5 +26,6 @@ export function DataContextHeader(p:DataContextHeaderProps){
    </div></details>
    <button type="button" className="icon-button" aria-label="New conversation" title="New conversation" onClick={p.onResetConversation}><RotateCcw size={16}/></button>
   </div>
- </header>;
+ </Tag>;
 }
+

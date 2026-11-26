@@ -56,6 +56,8 @@ interface GrowthAnalystChatProps {
     rating: 'up' | 'down'
   ) => Promise<void> | void;
   compact?: boolean;
+  hideComposer?: boolean;
+  embedded?: boolean;
 }
 
 export function GrowthAnalystChat({
@@ -88,6 +90,8 @@ export function GrowthAnalystChat({
   onOpenRecord,
   onSubmitFeedback,
   compact = false,
+  hideComposer=false,
+  embedded=false,
 }: GrowthAnalystChatProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -100,11 +104,12 @@ export function GrowthAnalystChat({
   );
 
   useEffect(() => {
+    if(embedded)return;
     bottomRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth', block: 'end' });
-  }, [messages.length, sending, error]);
+  }, [messages.length, sending, error,embedded]);
 
   return (
-    <div className="flex min-h-[460px] flex-col justify-between gap-4">
+    <div className={embedded?"unified-chat-feed":"flex min-h-[460px] flex-col justify-between gap-4"}>
       <div className="space-y-4">
         {dataVersionChanged ? (
           <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-subtle)] px-3.5 py-2.5 text-[13px] text-[var(--color-ink)]">
@@ -179,7 +184,7 @@ export function GrowthAnalystChat({
           </div>
         )}
 
-        {sending ? (
+        {sending && !embedded ? (
           <div
             aria-live="polite"
             className="rounded-md border border-[var(--color-border)] bg-white px-4 py-3 text-[14px] text-[var(--color-ink-muted)]"
@@ -224,7 +229,7 @@ export function GrowthAnalystChat({
         <div ref={bottomRef} />
       </div>
 
-      <div className="sticky bottom-0 z-10 bg-[var(--color-canvas)]/95 pb-3 pt-4">
+      {!hideComposer?<div className="sticky bottom-0 z-10 bg-[var(--color-canvas)]/95 pb-3 pt-4">
         <ChatComposer
           onSend={onSend}
           sending={sending}
@@ -239,9 +244,10 @@ export function GrowthAnalystChat({
           onInterimTranscript={onInterimTranscript}
           compact={compact}
         />
-      </div>
+      </div>:null}
     </div>
   );
 }
+
 
 
