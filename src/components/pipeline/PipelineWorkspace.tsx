@@ -227,7 +227,7 @@ export function PipelineWorkspace({
   const writableRecordClass: 'simulated' | 'live' =
     filters.record_class === 'live' ? 'live' : 'simulated';
   const writableEditionId =
-    getDefaultPipelineEditionForClass(writableRecordClass);
+    filters.edition_id;
 
   // Load campaigns matching the active record_class/edition for filter & create dropdowns
   useEffect(() => {
@@ -423,4 +423,3 @@ export function PipelineWorkspace({
     </>
   );
 }
-

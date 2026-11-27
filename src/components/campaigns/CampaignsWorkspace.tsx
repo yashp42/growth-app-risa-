@@ -257,7 +257,7 @@ export function CampaignsWorkspace({
         open={formOpen}
         editingCampaign={editingCampaign}
         activeRecordClass={writableRecordClass}
-        activeEditionId={getDefaultEditionForClass(writableRecordClass)}
+        activeEditionId={filters.edition_id}
         onClose={() => {
           setFormOpen(false);
           setEditingCampaign(null);
@@ -274,4 +274,3 @@ export function CampaignsWorkspace({
     </>
   );
 }
-

@@ -1,3 +1,5 @@
+import { currentOutlook } from './outlook.ts';
+import { uploadedDatasetTool } from '../uploadedDatasets.ts';
 import { morphologicalRank, expandedCandidateTerms } from './lexicalSearchCandidate.ts';
 import { querySponsorMetrics, SPONSOR_METRICS } from './sponsorMetrics.ts';
 import { getInventory } from './financialAnswers.ts';
@@ -251,6 +253,9 @@ export const ListDatasetsArgsSchema = z.object({ query: z.string().trim().max(24
 export const SponsorMetricsArgsSchema = z.object({metric_id:z.enum(SPONSOR_METRICS),filters:MetricFiltersSchema,limit:z.number().int().min(1).max(25).default(10),edition_id:z.string().trim().optional(),as_of:z.string().refine(isValidIsoDate).optional()}).strict();
 
 export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
+ {type:'function',function:{name:'get_outlook',description:'Compute an on-read current cash what-if using observed win and collection rates. Not a calibrated or approved forecast; keep approved scenarios separate. Explain the assumptions and missing data.',parameters:{type:'object',properties:{},additionalProperties:false}}},
+ {type:'function',function:{name:'list_uploaded_datasets',description:'List CSV datasets uploaded by the current user to the active edition. Use this before answering questions about imported/custom data.',parameters:{type:'object',properties:{query:{type:'string'}},additionalProperties:false}}},
+ {type:'function',function:{name:'get_uploaded_dataset',description:'Read uploaded CSV rows and server-computed raw column summaries. These are reference data, not canonical operational metrics. Filter column values exactly; inspect matched_count and truncated.',parameters:{type:'object',properties:{dataset_id:{type:'string'},filter:{type:'object',additionalProperties:{type:'string'}},limit:{type:'integer',minimum:1,maximum:25}},required:['dataset_id'],additionalProperties:false}}},
  {type:'function',function:{name:'get_sponsor_metrics',description:'Rank sponsors by database-computed cash collected (M-01), signed total (M-02), signed cash (M-03), in-kind (M-04), or unpaid cash (M-07). Full permitted cohort ranked before limiting. Do not use channel totals to answer sponsor questions.',parameters:{type:'object',properties:{metric_id:{type:'string',enum:[...SPONSOR_METRICS]},limit:{type:'integer',minimum:1,maximum:25},edition_id:{type:'string'},as_of:{type:'string'},filters:{type:'object',properties:{campaign_id:{type:'string'},channel_group:{type:'string',enum:['warm','inbound','cold','renewal','premium']},bet_id:{type:'string'}},additionalProperties:false}},required:['metric_id'],additionalProperties:false}}},
   { type: 'function', function: {
     name: 'list_datasets',
@@ -688,6 +693,14 @@ export async function executeReadTool(
   const dataVersion = await getCurrentDataVersion(ctx.pool);
   const profile = evaluateScopeAndRedaction(ctx.roles);
 
+  if(toolName==='get_outlook'){z.object({}).strict().parse(rawArgs);const out={...await currentOutlook(ctx),data_version:dataVersion};acc.toolResults.push(out);return out;}
+  if (toolName === 'list_uploaded_datasets' || toolName === 'get_uploaded_dataset') {
+    const args=z.object({dataset_id:z.string().max(100).optional(),query:z.string().max(120).optional(),filter:z.record(z.string(),z.string()).optional(),limit:z.number().int().min(1).max(25).optional()}).strict().parse(rawArgs);
+    if(toolName==='get_uploaded_dataset'&&!args.dataset_id)throw Error('dataset_id is required.');
+    const payload=await uploadedDatasetTool(ctx.pool,{actorMemberId:ctx.actorMemberId,editionId:ctx.userSeason.editionId,recordClass:ctx.userSeason.recordClass,dataVersion},args);
+    acc.toolResults.push(payload);
+    return payload;
+  }
   if (toolName === 'get_dataset' || toolName === 'list_datasets') {
     const context = { asOf: ctx.userSeason.asOf, dataVersion };
     const payload = toolName === 'get_dataset'
@@ -1667,4 +1680,3 @@ export async function executeReadTool(
 
   throw new Error(`Unknown read tool "${toolName}".`);
 }
-

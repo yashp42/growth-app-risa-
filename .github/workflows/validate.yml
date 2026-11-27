@@ -28,3 +28,7 @@ jobs:
       - run: npx tsx scripts/render-voice-preview.ts
       - run: npx tsx --test scripts/test*.ts
 
+
+      - name: Verify and prepare explicitly requested reviewer access (LIVE, no inference)
+        if: github.head_ref == 'codex/dynamic-data-analyst'
+        run: npx tsx scripts/smoke-reviewer-live.ts --prepare

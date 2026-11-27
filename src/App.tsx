@@ -170,6 +170,15 @@ function AuthenticatedWorkspace() {
     lastVersionRef.current = nextVersion;
   }, [versionQuery.data, queryClient]);
 
+  useEffect(() => {
+    const refresh = () => {
+      void queryClient.invalidateQueries();
+      setExternalDataNonce(n => n + 1);
+    };
+    window.addEventListener('sgp:data-changed', refresh);
+    return () => window.removeEventListener('sgp:data-changed', refresh);
+  }, [queryClient]);
+
   // Sync navigation + drill-through selection into URL while preserving editionId/asOf/filters
   useEffect(() => {
     writeUrlNavState(
@@ -557,4 +566,3 @@ export default function App() {
     </AuthProvider>
   );
 }
-

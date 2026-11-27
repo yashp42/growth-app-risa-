@@ -378,6 +378,9 @@ export async function apiFetch(
     return retryResponse;
   }
 
+  if (isApiCall && !isAuthLifecycleEndpoint && response.ok && /^(POST|PATCH|PUT|DELETE)$/i.test(init?.method ?? 'GET') && !/\/api\/ai\//.test(path)) {
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('sgp:data-changed'));
+  }
   return response;
 }
 

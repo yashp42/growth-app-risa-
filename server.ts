@@ -1,3 +1,4 @@
+import { createImportApiRouter } from './server/routes/importApi.ts';
 import { randomBytes } from 'node:crypto';
 import { restoreRuntimeRanking } from './server/runtimeCheckpoints.ts';
 import express from 'express';
@@ -64,6 +65,7 @@ async function startServer(): Promise<void> {
     { evaluationToken }
   );
   app.use('/api', createReadApiRouter(config, dbState, authDeps));
+  app.use('/api', createImportApiRouter(config, dbState, authDeps));
   app.use('/api', createWriteApiRouter(config, dbState, authDeps));
   app.use('/api', createFinanceAndTeamApiRouter(config, dbState, authDeps));
   app.use('/api', aiRouter);
@@ -162,4 +164,3 @@ startServer().catch((err: unknown) => {
   console.error(`[server] Fatal startup error (${name})`);
   process.exit(1);
 });
-

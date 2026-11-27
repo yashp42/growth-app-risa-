@@ -1,3 +1,4 @@
+import { fetchTeamRoster, type TeamDirectoryMember } from '../../services/tasksApi';
 import { AlertCircle } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import {
@@ -42,6 +43,7 @@ export function CampaignFormDrawer({
   const isEditing = Boolean(editingCampaign);
   const readOnly = editingCampaign ? isCampaignReadOnly(editingCampaign) : false;
 
+  const [owners, setOwners] = useState<TeamDirectoryMember[]>([]);
   const [name, setName] = useState('');
   const [recordClass, setRecordClass] = useState<'simulated' | 'live'>(
     activeRecordClass
@@ -78,12 +80,8 @@ export function CampaignFormDrawer({
       setPlannedEnd(editingCampaign.planned_end ?? '');
       setObjective(editingCampaign.objective ?? '');
     } else {
-      const defaultEdition =
-        CAMPAIGN_EDITION_BY_CLASS[activeRecordClass].some(
-          (e) => e.value === activeEditionId
-        )
-          ? activeEditionId
-          : getDefaultEditionForClass(activeRecordClass);
+      const defaultEdition = activeEditionId;
+
 
       setName('');
       setRecordClass(activeRecordClass);
@@ -98,11 +96,19 @@ export function CampaignFormDrawer({
     }
   }, [open, editingCampaign, activeRecordClass, activeEditionId]);
 
+  useEffect(() => {
+    if(!open)return;
+    const controller=new AbortController();
+    fetchTeamRoster(editionId,recordClass,controller.signal).then(setOwners).catch(()=>setOwners([]));
+    return ()=>controller.abort();
+  },[open,editionId,recordClass]);
+
   const selectedChannel = CANONICAL_CHANNELS.find(
     (c) => c.channel_id === channelId
   );
   const isColdInactiveChannel = selectedChannel ? !selectedChannel.is_active : false;
-  const editionOptions = CAMPAIGN_EDITION_BY_CLASS[recordClass];
+  const editionOptions = [...CAMPAIGN_EDITION_BY_CLASS[recordClass]];
+  if (!editionOptions.some(e => e.value === editionId)) editionOptions.push({value: editionId, label: editionId});
 
   const handleRecordClassChange = (nextClass: 'simulated' | 'live') => {
     setRecordClass(nextClass);
@@ -217,7 +223,7 @@ export function CampaignFormDrawer({
             </label>
             <select
               id="campaign-record-class"
-              disabled={readOnly || submitting || isEditing}
+              disabled
               value={recordClass}
               onChange={(e) =>
                 handleRecordClassChange(e.target.value as 'simulated' | 'live')
@@ -238,7 +244,7 @@ export function CampaignFormDrawer({
             </label>
             <select
               id="campaign-edition"
-              disabled={readOnly || submitting || isEditing}
+              disabled
               value={editionId}
               onChange={(e) => setEditionId(e.target.value)}
               className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
@@ -310,17 +316,13 @@ export function CampaignFormDrawer({
               htmlFor="campaign-owner"
               className="block text-[13px] font-medium text-[var(--color-ink-muted)]"
             >
-              Owner member ID
+              Owner
             </label>
-            <input
-              id="campaign-owner"
-              type="text"
-              disabled={readOnly || submitting}
-              value={ownerMemberId}
-              onChange={(e) => setOwnerMemberId(e.target.value)}
-              placeholder="e.g. TM-01"
-              className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 font-mono text-[14px] text-[var(--color-ink)] placeholder:font-sans placeholder:text-[var(--color-ink-subtle)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
-            />
+            <select id="campaign-owner" disabled={readOnly || submitting} value={ownerMemberId} onChange={e=>setOwnerMemberId(e.target.value)} className="mt-1 h-9 w-full rounded-md border bg-white px-3 text-sm">
+              <option value="">Assign to me</option>
+              {ownerMemberId&&!owners.some(o=>o.member_id===ownerMemberId)?<option value={ownerMemberId}>{ownerMemberId}</option>:null}
+              {owners.filter(o=>o.is_active!==false).map(o=><option key={o.member_id} value={o.member_id}>{o.full_name} ({o.member_id})</option>)}
+            </select>
           </div>
 
           <div>

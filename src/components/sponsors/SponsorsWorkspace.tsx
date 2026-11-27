@@ -306,7 +306,7 @@ export function SponsorsWorkspace({
         open={formOpen}
         editingSponsor={editingSponsor}
         activeRecordClass={writableRecordClass}
-        activeEditionId={getDefaultSponsorEditionForClass(writableRecordClass)}
+        activeEditionId={filters.edition_id}
         referenceCategories={referenceCategories}
         categoriesAvailable={categoriesAvailable}
         permissions={permissions}
@@ -328,4 +328,3 @@ export function SponsorsWorkspace({
     </>
   );
 }
-

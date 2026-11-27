@@ -1,3 +1,4 @@
+import { DataImportPanel } from './DataImportPanel';
 import { EvaluationPanel } from './EvaluationPanel';
 import { useQueryClient } from '@tanstack/react-query';
 import { AuditLogPanel } from './AuditLogPanel';
@@ -323,6 +324,7 @@ export function TeamSettingsWorkspace() {
 
   return (
     <div className="space-y-6 pb-8">
+      <DataImportPanel />
       <div className="border-b border-[var(--color-border)] pb-5">
         <p className="font-mono text-[12px] text-[var(--color-ink-subtle)]">Workspace</p>
         <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.025em] text-[var(--color-ink)]">
@@ -989,4 +991,3 @@ export function TeamSettingsWorkspace() {
     </div>
   );
 }
-

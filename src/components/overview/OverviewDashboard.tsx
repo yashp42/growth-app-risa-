@@ -1,3 +1,4 @@
+import { CurrentOutlookCard } from './CurrentOutlookCard';
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
@@ -280,6 +281,7 @@ export function OverviewDashboard({
         recordClass={recordClass}
         asOfDate={asOf}
       />
+      <CurrentOutlookCard />
       <div className="overview-main-grid">
         <TargetPacingSection pacing={payload.targetPacing} selectedScenario={scenario} onSelectScenario={setScenario} status={status} error={error} onRetry={handleRetry} recordClass={recordClass} asOfDate={asOf}/>
         <OverviewFunnel status={status} error={error} onRetry={handleRetry} stages={payload.funnelStages} cashOutcome={payload.cashOutcome} onSelectStage={setInspectedStage} onInspectCashOutcome={()=>setCashOutcomeDrawerOpen(true)}/>
@@ -506,4 +508,3 @@ export function OverviewDashboard({
     </div>
   );
 }
-
