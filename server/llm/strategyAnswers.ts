@@ -7,7 +7,7 @@ export function strategyIntents(question:string,hasFilters=false):StrategyIntent
  if(hasFilters)return [];
  const intents:StrategyIntent[]=[];
  if(/\b(?:five|5)\b/i.test(question)&&/\b(?:growth bets?|bets?)\b/i.test(question)&&/\b(?:threshold|D-010|escalation|continue|intervene|evaluate)\b/i.test(question))intents.push('growth_bets');
- if(/\b5 person[- ]weeks?\b/i.test(question)&&/\b(?:capacity|allocate|allocation|deprioritise|deprioritize|compare)\b/i.test(question))intents.push('capacity_allocation');
+ if(/\b(?:person[- ]weeks?|staff[- ]weeks?|team capacity|staffing capacity)\b/i.test(question)&&/\b(?:capacity|allocate|allocation|deprioritise|deprioritize|compare)\b/i.test(question))intents.push('capacity_allocation');
  return intents;
 }
 export function strategyIntent(question:string,hasFilters=false):StrategyIntent|null{return strategyIntents(question,hasFilters)[0]??null;}
@@ -31,7 +31,7 @@ export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRun
   const ss=scenarios.scenarios as Record<string,unknown>[]|undefined;
   if(ss?.length){lines.push('','| Approved scenario | Modelled cash |','|---|---:|');for(const s of ss)lines.push(`| ${cell(s.name)} (${cell(s.scenario_id)}) | ${formatScenarioCash(s.expected_cash)} |`);}
   const capacityTable=withColumnLabels(capacity,['Scenario','Capacity pw','Net effort mean pw','Net effort P90 pw','Buffer mean pw','Buffer %','P(over), cold stopped','P(over), cold kept','Cash, cold stopped (₹L)','Cash, cold kept (₹L)','Cash cost of keeping cold (₹L)']);
-  const rows=capacityTable.rows;
+  const rows=capacityTable.rows.filter(row => Number(row['Capacity pw']) > 0);
   lines.push('','**Approved capacity scenarios**');
   if(rows?.length){
    const cols=capacityTable.columns;
@@ -40,14 +40,14 @@ export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRun
    lines.push('| '+selected.join(' | ')+' |','| '+selected.map(()=> '---').join(' | ')+' |');
    for(const r of rows)lines.push('| '+selected.map(k=>{
     const v=r[k];
-    if(/\(₹L\)/.test(k))return v==null?'—':`₹${Number(v).toFixed(2)}L`;
-    if(/^P\(over\)/.test(k))return v==null?'—':`${(Number(v)*100).toFixed(1)}%`;
+    if(/\(₹L\)/.test(k))return v==null || String(v).trim()==='' || !Number.isFinite(Number(v))?'—':`₹${Number(v).toFixed(2)}L`;
+    if(/^P\(over\)/.test(k))return v==null || String(v).trim()==='' || !Number.isFinite(Number(v))?'—':`${(Number(v)*100).toFixed(1)}%`;
     return cell(v);
    }).join(' | ')+' |');
   }
-  else lines.push('The approved staffing allocation dataset was unavailable or returned no rows; I cannot make a defensible numeric 5 person-week reallocation from capacity evidence.');
+  else lines.push('The approved staffing allocation dataset was unavailable or returned no rows; I cannot make a defensible numeric staffing allocation from capacity evidence.');
   const economicsTable=withColumnLabels(betEconomics,['Bet','Stretch Shapley (₹L)','Fixed pw','Variable / conditional pw','Pre-season pw','Attributable pw','Cash per pw (₹L)','Fixed share','Priority']);
-  const econRows=economicsTable.rows;
+  const econRows=economicsTable.rows.filter(row => Number.isInteger(Number(row.Priority)) && Number(row.Priority) > 0);
   if(econRows?.length){
    const cols=economicsTable.columns;
    const wanted=['Bet','Stretch Shapley (₹L)','Attributable pw','Cash per pw (₹L)','Priority'];
@@ -67,7 +67,7 @@ export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRun
   const rankedNames=rankedBets.map(r=>`${cell(r.Bet)} (priority ${cell(r.Priority)})`);
   const prioritySummary=rankedNames.length?`Retrieved D-010 priority order: ${rankedNames.join(' → ')}.`:'No approved D-010 priority ranking was returned, so I will not invent one.';
   lines.push('','**Allocation recommendation:** '+prioritySummary+' Use the current M-13 and M-21 evidence to reconsider channel access before assigning effort: do not restore cold volume while it has no proposals or open pipeline and the approved scenarios show a cash/over-capacity penalty for keeping it. Keep B3 conditional effort behind its introduction gate, and keep B5 inside the approved pre-season/stretch capacity. These are conditional choices from the returned evidence, not guaranteed revenue.');
-  lines.push('','The available records do not show which owners have five free person-weeks or the marginal cash timing from the next incremental week, so an exact five-week split would be invented. Compare the alternatives above and confirm live workload before committing the split. The approved Base/Plan/Stretch assumptions and values remain unchanged; modelled scenario cash is not guaranteed revenue.');
+  lines.push('','Scenario totals describe the entire season. The incremental return from the requested allocation is unknown. The available records do not show which owners have spare capacity or the marginal cash timing from the next incremental week, so an exact staffing split would be invented. Compare the alternatives above and confirm live workload before committing the split. The approved Base/Plan/Stretch assumptions and values remain unchanged; modelled scenario cash is not guaranteed revenue.');
   if(knowledge.available!==false&&Array.isArray(knowledge.chunks)){
    const ids=(knowledge.chunks as Record<string,unknown>[]).map(c=>cell(c.chunk_id??c.id)).filter(Boolean);
    if(ids.length)lines.push('','Approved decision references: '+[...new Set(ids)].map(id=>`[${id}]`).join(', ')+'.');
@@ -89,7 +89,7 @@ export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRun
    const band=String(r.band??'').toLowerCase();
    const rawStatus=String(r.status_label??'not evaluated').toLowerCase();
    const minN=requiredSampleFloor(r.sample_size);
-   const observedN=Number(r.current_denominator);
+   const observedN=r.current_denominator == null || String(r.current_denominator).trim() === '' ? Number.NaN : Number(r.current_denominator);
    const belowSampleGate=minN!==null&&(!Number.isFinite(observedN)||observedN<minN);
    const unavailable=r.computable!==true||['not_due','unavailable','manual_review'].includes(band)||/not yet due|not computable|restricted|not defined|manual review|insufficient sample|not evaluat/i.test(rawStatus)||belowSampleGate;
    const status=unavailable?'not yet evaluable':band==='keep'||/^keep\b/.test(rawStatus)?'continue':(['change','stop','escalate'].includes(band)||/change|stop|escalat/i.test(rawStatus))?'intervene':'not yet evaluable';
