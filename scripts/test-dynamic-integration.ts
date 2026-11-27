@@ -29,7 +29,7 @@ async function harness(roles=['coordination_lead','admin','finance_collections']
  const config={...loadServerConfig({}),appEnv:'demo',editionIdDefault:'ED-2026-DEMO'};
  let modelCalls=0;const modelInputs:any[]=[];
  const model={fetchQuota:async()=>({exhausted:false}),createChatCompletion:async(input:any)=>{modelCalls++;modelInputs.push(input);return {model:'MOCK-FREE',message:{role:'assistant',content:'Start with a clear audience fit, offer a specific benefit, and agree on a practical next step.'},usage:{prompt_tokens:10,completion_tokens:20,total_tokens:30},requestAttempts:1};},getHealthSnapshot:async()=>({}),stop(){}} as any;
- const app=express();app.use(express.json({limit:'1mb'}));app.use('/api',createImportApiRouter(config,db,auth));app.use('/api',createAiApiRouter(config,db,auth,{openrouter:model}));app.use('/api',apiErrorHandler);
+ const app=express();app.use(express.json({limit:'1mb'}));app.use('/api',createImportApiRouter(config,db,auth));app.use('/api',createAiApiRouter(config,db,auth,{openrouter:model}).router);app.use('/api',apiErrorHandler);
  const server=await new Promise<any>(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
  const url='http://127.0.0.1:'+server.address().port;
  return {queries,audits,modelInputs,get modelCalls(){return modelCalls;},setVersion(v:number){version=v;},post:async(path:string,body:any,token=true)=>{const r=await fetch(url+path,{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer MOCK-TOKEN'}:{})},body:JSON.stringify(body)});return {status:r.status,body:await r.json()};},close:()=>new Promise<void>(r=>server.close(()=>r()))};

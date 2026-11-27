@@ -185,7 +185,7 @@ function tableFromList(r: Record<string, unknown>): TableBlock | null {
       .slice(0, 6)
       .map((k) => ({ key: k, label: k.replace(/_/g, ' '), format: inferFormat(k, rows[0][k]) }));
   }
-  if (r.dataset_id === 'market_research.prospect_register') {
+  if (r.kind === 'prospects') {
     const preferred = ['rank','company','company_name','category','value_track','priority_index','cash_potential_lakh','key_approach','next_action'];
     const keys = preferred.filter(k => rows.some(row=>k in row));
     if(keys.length) columns = keys.map(key=>({key,label:key.replace(/_/g,' '),format:'text' as const}));
