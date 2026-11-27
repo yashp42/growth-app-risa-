@@ -1,6 +1,6 @@
 import type { ToolRunAccumulator } from './tools.ts';
 
-export type BasicAnalyticsIntent = 'signed' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
+export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
 export function basicAnalyticsIntent(question: string, hasFilters = false, previousQuestion = ''): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
   const fullContext = `${question}\n${previousQuestion}`;
@@ -12,6 +12,8 @@ export function basicAnalyticsIntent(question: string, hasFilters = false, previ
   if (/\b(?:campaigns?|channels?)\b/i.test(question) && /\bqualified\s+(?:(?:sponsorship\s+)?(?:leads?|opportunities|prospects?)|brands?)\b/i.test(question) && /\b(?:leak(?:ing|age)?|los(?:e|ing|t)|drop[- ]?off|before\s+(?:they\s+)?(?:become|turn\s+into))\b/i.test(question)) return 'campaign_leakage';
   if (/\b(?:19\d{2}|20(?:0\d|1\d|2[0-4]|[3-9]\d))\b/.test(question)) return null;
   const q = question.trim().replace(/[?!.]+$/, '').toLowerCase();
+  if (/^(?:and )?how much of (?:that|it) was cash(?:[- ]type)?$/.test(q) &&
+      basicAnalyticsIntent(previousQuestion) === 'signed') return 'signed_cash_followup';
   if (/^(?:what(?:'s| is) (?:the |our )?(?:total )?signed sponsorship value|show (?:me )?(?:the |our )?signed total|how much have we signed)(?: (?:in|for) 202[56])?$/.test(q)) return 'signed';
   if (/^(?:compare|show|give me) (?:the )?proposal[- ]to[- ]win conversion (?:across|by|for each) campaigns?$/.test(q)) return 'campaign_conversion';
   if (/^(?:how much sponsorship value did we sign(?: in \d{4})?|(?:what is (?:the |our )?)?(?:signed sponsorship value|signed total|total signed)(?: in \d{4})?)$/.test(q)) return 'signed';
@@ -147,10 +149,16 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       if(channelLeaks.length)lines.push('',`Largest channel loss by count is **${channelLeaks[0].channel}**: ${cell(channelLeaks[0].row?.numerator)} qualified brands did not reach an opportunity (M-17). Treat this as volume, not proof of worse rate; compare the denominators above.`);
       lines.push('', '**What the records prove:** M-17 identifies qualified brands that have no opportunity; M-18 and M-19 show the timely handoff and proposal rates defined by those metrics; M-13 describes proposal-to-win at opportunity grain. These measures have distinct denominators. The largest absolute M-17 loss is not automatically the worst rate or the cause of the loss.', '', '**Recommended actions for this week:**', '- Review the campaign with the highest M-17 loss count with its owner; inspect the affected qualified-brand records and set documented next steps. Measure M-17 numerator and rate at week end.', '- For the lowest comparable M-18 campaign/channel, audit qualification-to-opportunity handoff delays. Measure its numerator ÷ denominator on the next cohort.', '- Review proposals stalled before the M-19 window with owners; measure M-19 numerator ÷ denominator and keep M-13 proposal-to-win separate. These are recommendations only; nothing has been changed.');
     }
-  } else if (intent === 'signed') {
-    lines.push('| Measure | Value | Source |', '|---|---:|---|');
-    for (const [id, label] of [['M-02','Total signed sponsorship value'],['M-03','Cash-type signed value'],['M-04','In-kind signed value'],['M-09','Confirmed partnerships (opportunities)']]) {
-      const result = await read('get_metric', { metric_id: id });
+  } else if (intent === 'signed' || intent === 'signed_cash_followup') {
+    const measures = [['M-02','Total signed sponsorship value'],['M-03','Cash-type signed value'],['M-04','In-kind signed value'],['M-09','Confirmed partnerships (opportunities)']];
+    const requestedMeasures = intent === 'signed_cash_followup' ? measures.slice(1, 3) : measures;
+    const results = await Promise.all(requestedMeasures.map(async ([id, label]) => ({
+      id, label, result: await read('get_metric', { metric_id: id }),
+    })));
+    const historical = results[0]?.result.record_class === 'historical_synthetic';
+    lines.push(historical ? 'Historical synthetic sponsorship records' : 'Signed commitments for the selected edition', '',
+      '| Measure | Value | Source |', '|---|---:|---|');
+    for (const {id, label, result} of results) {
       const row = (result.rows as Record<string, unknown>[] | undefined)?.[0];
       if (!row) throw new Error('Metric source returned no row: ' + id);
       const value = row.computable && row.value !== null ? (id === 'M-09' ? cell(row.value) : money(row.value)) : 'Not computable: ' + cell(row.reason);
@@ -158,6 +166,9 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     }
     lines.push('', 'Signed commitments are distinct from cash collected.');
     await read('search_knowledge', { query: 'signed sponsorship cash type in kind synthetic dataset payment records' });
+    if (historical && acc.citations.some(c => c.id === 'KB-02.1' && !c.history)) {
+      lines.push('The original dataset has no receipts, so actual cash collected cannot be established. [KB-02.1]');
+    }
   } else {
     const campaigns = await read('list_records', { kind: 'campaigns', limit: 25 });
     const rows = campaigns.rows as Record<string, unknown>[] | undefined;
@@ -182,8 +193,9 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
   }
   const chunks = acc.citations.filter(c => c.type === 'knowledge' && !c.history);
   if (chunks.length) {
-    lines.push('', 'Source notes:');
-    for (const c of chunks) lines.push('> [' + cell(c.id) + '] ' + cell(c.text));
+    // Retrieved text can contain SQL and internal tool examples. Keep it in Sources.
+    const ids = [...new Set(chunks.map(c => c.id))].filter(id => /^KB-[\w.-]+$/.test(id));
+    if (ids.length) lines.push('', 'Supporting references: ' + ids.map(id => '[' + id + ']').join(', ') + '.');
   } else lines.push('', 'No matching knowledge note was retrieved; the metric sources above remain authoritative.');
   return lines.join('\n');
 }

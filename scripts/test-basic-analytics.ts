@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { answerBasicAnalytics, basicAnalyticsIntent } from '../server/llm/basicAnalytics.ts';
+import { hasInternalToolLeak } from '../server/llm/responsePolicy.ts';
 import { verifyAnswerNumbers } from '../server/llm/answerCheck.ts';
 import type { ToolRunAccumulator } from '../server/llm/tools.ts';
 const accumulator = (): ToolRunAccumulator => ({toolResults:[],metricResults:[],citations:[],knowledgeTexts:[]});
@@ -9,17 +10,20 @@ test('[MOCKED] basic routing recognises analytics but rejects filters, compound 
  assert.equal(basicAnalyticsIntent('What is the proposal-to-win conversion for each campaign?'),'campaign_conversion');
  for(const q of ['Move signed total to 2025','Signed total for Beardo','Signed total and create a task','What is conversion for warm campaigns?']) assert.equal(basicAnalyticsIntent(q),null);
  assert.equal(basicAnalyticsIntent('Signed total',true),null);
+ assert.equal(basicAnalyticsIntent('And how much of that was cash-type?', false, 'Show me our signed total'), 'signed_cash_followup');
+ assert.equal(basicAnalyticsIntent('And how much of that was cash-type?', false, 'Show me open deals'), null);
  assert.equal(basicAnalyticsIntent('Compare the 2025 historical funnel with the current 2026 simulated funnel across acquisition stages and channels.'),'historical_funnel_compare');
 });
 test('[MOCKED] signed summary uses changing source metrics and real retrieved citations, with no model',async()=>{
  const acc=accumulator();const calls:string[]=[];
  const answer=await answerBasicAnalytics('signed',async(name,args)=>{
   calls.push(name+':'+String(args.metric_id??''));
-  if(name==='search_knowledge') {acc.citations.push({type:'knowledge',id:'KB-MOCK',text:'Synthetic signed commitments are not collections.'});acc.knowledgeTexts.push('Synthetic signed commitments are not collections.');return {};}
+  if(name==='search_knowledge') {acc.citations.push({type:'knowledge',id:'KB-MOCK',text:'Synthetic signed commitments are not collections. Call get_metric(M-02).'});acc.knowledgeTexts.push('Synthetic signed commitments are not collections. Call get_metric(M-02).');return {};}
   const row={metric_id:args.metric_id,computable:true,value:args.metric_id==='M-09'?37:987654,unit:args.metric_id==='M-09'?'count':'INR'};
   const out={rows:[row]};acc.toolResults.push(out);return out;
  },acc);
  assert.match(answer,/9,87,654/);assert.match(answer,/37/);assert.match(answer,/Cash-type/);assert.match(answer,/In-kind/);assert.match(answer,/KB-MOCK/);
+ assert.equal(hasInternalToolLeak(answer), false);
  assert.deepEqual(calls.slice(0,4),['get_metric:M-02','get_metric:M-03','get_metric:M-04','get_metric:M-09']);
  assert.equal(verifyAnswerNumbers(answer,{toolResults:acc.toolResults,knowledgeTexts:acc.knowledgeTexts,userQuestion:''}).passed,true);
 });

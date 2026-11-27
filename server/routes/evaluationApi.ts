@@ -75,13 +75,18 @@ export function createEvaluationApiRouter(config:ServerConfig,dbState:DatabasePo
           const result=await pool().query<{hash:string}>('SELECT md5(COALESCE(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text)::text,\'[]\')) AS hash FROM public.'+table+' t');hashes.push(result.rows[0].hash);
         }return hashes.join(':');
       };
+      const casesById = new Map(cases.map(c => [c.test_id, c]));
       await runEvaluationCases(cases,run,{
         persist,snapshot,
-        ask:async(c,conversation)=>request('/api/ai/ask',{
-          question:c.user_query,conversation_id:conversation,
-          edition_id:caseEdition(c),
-          as_of:caseEdition(c)==='ED-2026-DEMO'?'2026-11-26':'2025-04-20',
-        }),
+        ask:async(c,conversation)=>{
+          const parent = c.follow_up_of && casesById.get(c.follow_up_of);
+          const edition = caseEdition(parent && !/\b202[56]\b/.test(c.user_query) ? parent : c);
+          return request('/api/ai/ask',{
+            question:c.user_query,conversation_id:conversation,
+            edition_id:edition,
+            as_of:edition==='ED-2026-DEMO'?'2026-11-26':'2025-04-20',
+          });
+        },
         cleanup:async(body)=>{
           if(!body.query_id)return !(body.actions??[]).length;
           const proposed=await pool().query<{ai_action_id:string;status:string}>(
