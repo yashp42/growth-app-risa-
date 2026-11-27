@@ -2285,7 +2285,7 @@ test('[MOCKED] Groq primary -> Groq fallback -> OpenRouter :free chain with retr
   client.stop();
 });
 
-test('[MOCKED] 3-model-call cap fallback produces Markdown table & notice; sanitized error never leaks SQL', async () => {
+test('[MOCKED] 3-model-call cap fallback preserves verified evidence and notice; sanitized error never leaks SQL', async () => {
   const store = createMock4bStore();
   let modelCalls = 0;
   const mockFetch: typeof fetch = async (input) => {
@@ -2337,8 +2337,9 @@ test('[MOCKED] 3-model-call cap fallback produces Markdown table & notice; sanit
     assert.equal(rCap.status, 200);
     const bodyCap = (await rCap.json()) as { answer: string };
     assert.equal(modelCalls, 3);
-    assert.match(bodyCap.answer, /\|/);
-    assert.match(bodyCap.answer, /Summary not generated \(AI limit for this question\)/);
+    assert.match(bodyCap.answer, /Signed sponsorship value: ₹9,30,000/);
+    assert.match(bodyCap.answer, /AI explanation is temporarily unavailable|Summary not generated \(AI limit for this question\)/);
+    assert.doesNotMatch(bodyCap.answer, /SELECT\s|FROM\s+public\./i);
   } finally {
     await srv.close();
   }
