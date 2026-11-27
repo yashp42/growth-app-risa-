@@ -6,10 +6,6 @@ A working growth center for the RISA Labs Growth APM assignment, Challenge B: ma
 
 The free host can take about a minute to wake up. Simulated, historical, research and modelled sources are labelled separately. Start with the [reviewer workflow and assignment mapping](docs/chatbot-reliability-and-reviewer-guide.md).
 
-## Submission materials
-
-[Three-slide strategy by Patil Yash Nanasaheb](docs/RISA-growth-strategy.pdf) · [Reviewer walkthrough](docs/chatbot-reliability-and-reviewer-guide.md) · [Live Growth Center](https://sponsorship-growth-platform.onrender.com)
-
 ## Architecture and setup
 
 React 19, TypeScript, Vite and Tailwind provide the interface; TanStack Query manages server state. One Node/Express process serves frontend and API. Supabase supplies authentication/PostgreSQL; `pg` and Zod support queries and argument validation. OpenRouter and optional Groq use server-side keys. Voice uses browser speech APIs; no server transcription service is introduced.

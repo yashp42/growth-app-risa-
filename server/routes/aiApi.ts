@@ -1395,6 +1395,14 @@ export function createAiApiRouter(
     const explicitWriteIntent = isExplicitWriteRequest(question);
     const taskDraftOnly = isReadOnlyTaskDraftRequest(question);
     const explicitViewIntent = isExplicitViewChangeRequest(question);
+    const campaignNameIn = (text: string) => text.match(/\bcampaign\s+(?:(?:named|called)\s+)?["“]([^"”]{1,160})["”]/i)?.[1];
+    const statusLookup = /\b(owner|owns|status)\b/i.test(question);
+    const statusFollowup = /^(?:what(?:'s| is)|who is|who owns)\s+(?:its|that campaign['’]s|it\b)/i.test(question);
+    const campaignLookup = !usesUpload && !parsed.data.filters && statusLookup &&
+      (!explicitWriteIntent || /\bdo not create anything[.!]?$/i.test(question)) &&
+      !/\b(compare|why|recommend|diagnose|update|change|delete|assign)\b/i.test(question)
+      ? campaignNameIn(question) ?? (statusFollowup ? campaignNameIn(String(previousQuestion ?? '')) : undefined)
+      : undefined;
     if (cachedHit) {
       Object.assign(acc,structuredClone(cachedHit.evidence));
       finalAnswer=String(cachedHit.payload.answer);
@@ -1474,7 +1482,7 @@ export function createAiApiRouter(
         generationFallbackReason = err instanceof OpenRouterError && err.code === 'AI_QUOTA_EXHAUSTED' ? 'quota' : 'unavailable';
         finalAnswer = deterministicGeneralAdvice(question);
       }
-    } else if (!flexibleInvestigation && (operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQueries.length)) {
+    } else if (!flexibleInvestigation && (campaignLookup || operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQueries.length)) {
       routeOverride = operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
       usedMetrics = Boolean(basicIntent || financialQuery || strategyQueries.length);
       usedKnowledge = !operationalQuery || financialQuery === 'cash_position' || strategyQueries.length > 0;
@@ -1488,7 +1496,21 @@ export function createAiApiRouter(
         return result;
       };
       try {
-      if (strategyQueries.length) {
+      if (campaignLookup) {
+        routeOverride = 'sql';
+        usedKnowledge = false;
+        const result = await readDeterministic('list_records', {kind:'campaigns', filters:{search:campaignLookup}, limit:25});
+        const matches = ((result.rows ?? []) as Record<string,unknown>[]).filter(row =>
+          String(row.name).toLowerCase() === campaignLookup.toLowerCase());
+        const truncated = ((result.rows ?? []) as unknown[]).length >= 25;
+        if (matches.length === 1 && !truncated) {
+          const campaign = matches[0];
+          finalAnswer = String(campaign.name) + ' — owner: ' + String(campaign.owner_name ?? campaign.owner_member_id ?? 'unrecorded') +
+            ', status: ' + String(campaign.status ?? 'unrecorded') + '. [' + String(campaign.campaign_id) + ']';
+        } else {
+          finalAnswer = matches.length || truncated ? 'Please specify the campaign ID to identify one campaign.' : 'No matching campaign was found in this edition.';
+        }
+      } else if (strategyQueries.length) {
         const sections = await Promise.all(strategyQueries.map((intent) => answerStrategy(intent, readDeterministic, acc)));
         finalAnswer = sections.join('\n\n---\n\n');
       } else if (financialQuery === 'cash_position') {
