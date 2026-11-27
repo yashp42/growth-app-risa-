@@ -40,6 +40,7 @@ try{
    log.push('LIVE: recovered the previously interrupted synthetic opportunity fixture.');
   }catch(e){if(!String((e as Error).message).includes('HTTP 404'))throw e;}
  }
+ if(process.argv.includes('--recover-only')){for(const line of log)console.log(line);console.log('LIVE: interrupted-fixture recovery finished; no new records created.');process.exit(0);}
  // Wait only for the new read endpoint to become available during a Render deploy. Never retry writes.
  let ready=false;
  for(let i=0;i<5;i++){try{await request('/api/outlook'+query());ready=true;break;}catch(e){if(i===4)throw e;await new Promise(r=>setTimeout(r,5000));}}

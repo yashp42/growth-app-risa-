@@ -26,6 +26,9 @@ jobs:
       - run: npm run lint
       - run: npm run build
       - run: npx tsx scripts/render-voice-preview.ts
+      - name: Recover interrupted synthetic fixture
+        if: github.head_ref == 'codex/live-dynamic-acceptance'
+        run: npx tsx scripts/acceptance-dynamic-live.ts --confirm-demo-tests --recover-id=OP-R6LLBDOFTO --recover-only
       - run: npx tsx --test scripts/test*.ts
 
 

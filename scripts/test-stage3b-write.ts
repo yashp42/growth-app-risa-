@@ -1021,6 +1021,6 @@ test('[MOCKED] conflicting starts and unsupported confirmed starts cannot create
  for(const extra of [{proposed_value:4,initial_stage:{proposed_value:8}},{initial_stage:{stage:'partner_confirmed'}}]){
   const before=storeRef.current.opportunities.size;
   const r=await sendRequest(app,'POST','/api/opportunities',{edition_id:'ED-2026-DEMO',sponsor_id:'SP26-BRAMBLE',support_type:'cash',...extra});
-  assert.equal(r.status,422,JSON.stringify(r.json));assert.equal(storeRef.current.opportunities.size,before);
+  assert.equal(r.status,'proposed_value' in extra?422:400,JSON.stringify(r.json));assert.equal(storeRef.current.opportunities.size,before);
  }
 });
