@@ -55,13 +55,14 @@ test('[MOCKED] strategy answer formats D-010 ratios and D-009 lakh units clearly
  const acc=createToolAccumulator();
  const answer=await answerStrategy('growth_bets',async()=>({rules:[{decision_id:'D-010',bet_id:'B2',rule_id:'EX-B2',metric_id:'M-25',kpi_name:'Advance payment rate',current_value:4/9,current_numerator:4,current_denominator:9,current_unit:'ratio',computable:true,band:'escalate',status_label:'escalate (< 0.74)',keep_if:'≥ 85%',change_if:'74–85%',escalate_if:'< 74%',evaluate_at:'10 deals',response:'Escalate'}]}),acc);
  assert.match(answer,/44\.4% \(sample 4\/9\)/);
- const capacity=await answerStrategy('capacity_allocation',async(name)=>{
+ const capacity=await answerStrategy('capacity_allocation',async(name,args)=>{
   if(name==='get_scenario')return {scenarios:[{scenario_id:'SC-01',name:'Base',expected_cash:21.23}]};
-  if(name==='get_dataset')return {columns:['Scenario','Capacity pw','Net effort mean pw','Net effort P90 pw','P(over), cold stopped','P(over), cold kept','Cash, cold stopped (₹L)','Cash, cold kept (₹L)','Cash cost of keeping cold (₹L)'],rows:[{Scenario:'BASE @50','Capacity pw':50,'Net effort mean pw':24.9,'Net effort P90 pw':31.2,'P(over), cold stopped':0,'P(over), cold kept':.021,'Cash, cold stopped (₹L)':21.23,'Cash, cold kept (₹L)':21.06,'Cash cost of keeping cold (₹L)':.17}]};
+  if(name==='get_dataset'&&args.dataset_id==='strategy.resource_allocation.scenario_capacity')return {columns:['Capacity in approved scenarios [C]','col_2','col_3','col_4','col_5','col_6','col_7','col_8','col_9','col_10','col_11'],rows:[{'Capacity in approved scenarios [C]':'BASE @50',col_2:50,col_3:24.9,col_4:31.2,col_5:25.1,col_6:.502,col_7:0,col_8:.021,col_9:21.23,col_10:21.06,col_11:.17}]};
+  if(name==='get_dataset'&&args.dataset_id==='strategy.resource_allocation.bets')return {columns:['Bet effort and cash per person-week [C]','col_2','col_3','col_4','col_5','col_6','col_7','col_8','col_9'],rows:[{'Bet effort and cash per person-week [C]':'B2 Cash discipline',col_2:3.55,col_3:1.5,col_4:0,col_5:0,col_6:1.5,col_7:2.37,col_8:1,col_9:2}]};
   if(name==='get_metric')return {rows:[{computable:false,reason:'Unavailable'}]};
   return {available:false,chunks:[]};
  },acc);
- assert.match(capacity,/₹21\.23L/);assert.match(capacity,/2\.1%/);assert.doesNotMatch(capacity,/Net effort P90 pw \| Buffer mean/);
+ assert.match(capacity,/₹21\.23L/);assert.match(capacity,/2\.1%/);assert.match(capacity,/BASE @50 \| 50 \| 24\.9 \| 31\.2/);assert.match(capacity,/Retrieved D-010 priority order: B2 Cash discipline \(priority 2\)/);assert.doesNotMatch(capacity,/\*\*Approved capacity scenarios\*\* \| \|/);
 });
 
 test('[MOCKED] broad qualified-opportunity wording routes to campaign and channel leakage analysis',()=>{
@@ -85,6 +86,21 @@ test('[MOCKED] combined cash position and due-date request composes both evidenc
  },acc,{includeReceivableDetails:true});
  assert.ok(requested.includes('list_records:receivables'));
  assert.match(answer,/Cash actually collected/);assert.match(answer,/Due-date and urgency evidence/);assert.match(answer,/overdue/);assert.match(answer,/Reconciliation:/);
+});
+test('[MOCKED] as-of date controls overdue classification even when database overdue cache lags',async()=>{
+ const acc=createToolAccumulator();
+ const answer=await answerFinancial('cash_position',async(name,args)=>{
+  if(name==='get_metric'){
+   const id=String(args.metric_id),values:Record<string,number>={'M-02':110,'M-03':100,'M-04':10,'M-01':40,'M-07':60};
+   return {rows:[{metric_id:id,value:values[id],computable:true}]};
+  }
+  if(name==='get_sponsor_metrics')return {rows:[{sponsor_name:'Mosaic Mobility',value:50_000,position:1}]};
+  if(name==='list_records')return {edition_id:'ED-2026-DEMO',as_of:'2026-11-28',rows:[{sponsor_name:'Mosaic Mobility',opportunity_name:'Mosaic 2026',outstanding:50_000,overdue_amount:0,payment_schedule:[{due_date:'2026-11-27',remaining_amount:50_000}]}]};
+  return {};
+ },acc,{includeReceivableDetails:true});
+ assert.match(answer,/Mosaic Mobility \/ Mosaic 2026 \| ₹50,000 \| ₹50,000/);
+ assert.match(answer,/First follow-up:\*\* Mosaic Mobility has the largest documented past-due schedule balance \(₹50,000 as of 2026-11-28\)/);
+ assert.doesNotMatch(answer,/Mosaic Mobility \/ Mosaic 2026[^\n]*₹0 recorded/);
 });
 
 test('[MOCKED] historical funnel derived movement passes grounding without pooling editions',async()=>{

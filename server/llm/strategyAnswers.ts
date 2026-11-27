@@ -13,6 +13,13 @@ export function strategyIntents(question:string,hasFilters=false):StrategyIntent
 export function strategyIntent(question:string,hasFilters=false):StrategyIntent|null{return strategyIntents(question,hasFilters)[0]??null;}
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;
 const cell=(v:unknown)=>String(v??'—').replace(/[|\r\n]/g,' ');
+function withColumnLabels(data:Record<string,unknown>,labels:string[]):{columns:string[];rows:Record<string,unknown>[]} {
+ const columns=(data.columns as string[]|undefined)??[];
+ const rows=(data.rows as Record<string,unknown>[]|undefined)??[];
+ const genericSheet=columns.length>1&&columns.slice(1).every(key=>/^col_\d+$/i.test(key));
+ const mapped=columns.map((key,index)=>genericSheet&&(index===0||/^col_\d+$/i.test(key))?(labels[index]??key):key);
+ return {columns:mapped,rows:rows.map(row=>Object.fromEntries(columns.map((key,index)=>[mapped[index]??key,row[key]])))};
+}
 export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRunAccumulator):Promise<string>{
  if(intent==='capacity_allocation'){
   const [scenarios,capacity,betEconomics,knowledge]=await Promise.all([
@@ -23,10 +30,11 @@ export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRun
   const lines=['I will keep the approved D-009/D-010 assumptions unchanged. Base, Plan and Stretch are distinct approved scenarios; scenario contribution is modelled, not guaranteed revenue.'];
   const ss=scenarios.scenarios as Record<string,unknown>[]|undefined;
   if(ss?.length){lines.push('','| Approved scenario | Modelled cash |','|---|---:|');for(const s of ss)lines.push(`| ${cell(s.name)} (${cell(s.scenario_id)}) | ${formatScenarioCash(s.expected_cash)} |`);}
-  const rows=capacity.rows as Record<string,unknown>[]|undefined;
+  const capacityTable=withColumnLabels(capacity,['Scenario','Capacity pw','Net effort mean pw','Net effort P90 pw','Buffer mean pw','Buffer %','P(over), cold stopped','P(over), cold kept','Cash, cold stopped (₹L)','Cash, cold kept (₹L)','Cash cost of keeping cold (₹L)']);
+  const rows=capacityTable.rows;
   lines.push('','**Approved capacity scenarios**');
   if(rows?.length){
-   const cols=capacity.columns as string[];
+   const cols=capacityTable.columns;
    const wanted=['Scenario','Capacity pw','Net effort mean pw','Net effort P90 pw','P(over), cold stopped','P(over), cold kept','Cash, cold stopped (₹L)','Cash, cold kept (₹L)','Cash cost of keeping cold (₹L)'];
    const selected=wanted.filter(k=>cols.includes(k));
    lines.push('| '+selected.join(' | ')+' |','| '+selected.map(()=> '---').join(' | ')+' |');
@@ -38,9 +46,10 @@ export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRun
    }).join(' | ')+' |');
   }
   else lines.push('The approved staffing allocation dataset was unavailable or returned no rows; I cannot make a defensible numeric 5 person-week reallocation from capacity evidence.');
-  const econRows=betEconomics.rows as Record<string,unknown>[]|undefined;
+  const economicsTable=withColumnLabels(betEconomics,['Bet','Stretch Shapley (₹L)','Fixed pw','Variable / conditional pw','Pre-season pw','Attributable pw','Cash per pw (₹L)','Fixed share','Priority']);
+  const econRows=economicsTable.rows;
   if(econRows?.length){
-   const cols=betEconomics.columns as string[];
+   const cols=economicsTable.columns;
    const wanted=['Bet','Stretch Shapley (₹L)','Attributable pw','Cash per pw (₹L)','Priority'];
    const selected=wanted.filter(k=>cols.includes(k));
    lines.push('','**Approved D-010 bet economics (modelled, not guaranteed)**','| '+selected.join(' | ')+' |','| '+selected.map(()=> '---').join(' | ')+' |');

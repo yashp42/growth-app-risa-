@@ -2,6 +2,7 @@ import type { QueryablePool, ToolRunAccumulator } from './tools.ts';
 import { getDataset, type ReferenceContext } from './referenceData.ts';
 import { formatScenarioCash } from './responsePolicy.ts';
 import { isExplicitWriteRequest } from './actionIntent.ts';
+import { compareReceivableUrgency, documentedOverdueAmount } from './receivableTiming.ts';
 const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)+'|').replace(/[\r\n]/g,' ');
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
 export type FinancialIntent='activation_inventory'|'forecast_actual'|'collection_status'|'cash_position';
@@ -86,15 +87,16 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
      const receivables=await read('list_records',{kind:'receivables',limit:25});
      const records=(receivables.rows as Record<string,unknown>[]|undefined)??[];
      const asOf=String(receivables.as_of??'the selected as-of date');
-     const active=records.filter(r=>Number(r.outstanding)>0).sort((a,b)=>Number(b.overdue_amount??0)-Number(a.overdue_amount??0)||Number(b.outstanding??0)-Number(a.outstanding??0));
-     lines.push('',`**Due-date and urgency evidence (as of ${asOf}):**`,'| Sponsor / opportunity | Balance | Recorded overdue | Due-date evidence |','|---|---:|---:|---|');
+     const active=records.filter(r=>Number(r.outstanding)>0).sort((a,b)=>compareReceivableUrgency(a,b,asOf));
+     lines.push('',`**Due-date and urgency evidence (as of ${asOf}):**`,'| Sponsor / opportunity | Balance | Past due by schedule | Due-date evidence |','|---|---:|---:|---|');
      for(const r of active){
       const schedules=Array.isArray(r.payment_schedule)?r.payment_schedule as Record<string,unknown>[]:[];
       const dues=schedules.filter(s=>Number(s.remaining_amount)>0&&s.due_date).map(s=>{const date=String(s.due_date);return `${date}: ${money(s.remaining_amount)} remaining (${date<asOf?'overdue':date===asOf?'due today':'not yet due'})`;});
-      lines.push(`| ${cell(r.sponsor_name)} / ${cell(r.opportunity_name)} | ${money(r.outstanding)} | ${Number(r.overdue_amount)>0?money(r.overdue_amount):'₹0 recorded'} | ${cell(dues.join('; ')||'No unpaid schedule due date returned')} |`);
+      const overdue=documentedOverdueAmount(r,asOf);
+      lines.push(`| ${cell(r.sponsor_name)} / ${cell(r.opportunity_name)} | ${money(r.outstanding)} | ${overdue===null?'Not rankable':money(overdue)} | ${cell(dues.join('; ')||'No unpaid schedule due date returned')} |`);
      }
-     const urgent=active.filter(r=>Number(r.overdue_amount)>0)[0];
-     lines.push('',urgent?`**First follow-up:** ${cell(urgent.sponsor_name)} has the largest recorded overdue amount (${money(urgent.overdue_amount)}); confirm receipt allocation and contact the owner.`:'**Urgency:** no positive overdue balance was returned. Use amount to order a balance check, but do not label undated balances late.');
+     const urgent=active.find(r=>(documentedOverdueAmount(r,asOf)??0)>0);
+     lines.push('',urgent?`**First follow-up:** ${cell(urgent.sponsor_name)} has the largest documented past-due schedule balance (${money(documentedOverdueAmount(urgent,asOf))} as of ${asOf}); confirm receipt allocation and contact the owner.`:'**Urgency:** no positive past-due schedule balance was found as of this edition date. Use amount to order a balance check, but do not label undated balances late.');
      if(active.length>=25)lines.push('The receivable list is capped at 25; the table may not be exhaustive.');
     }else lines.push('', 'Follow up first on the highest positive outstanding balances above, validating due dates and receipt allocation with the account owner. This is a priority order from the outstanding ledger, not proof that an amount is late.');
    }else lines.push('', 'Sponsor follow-up ranking is unavailable because outstanding cash cannot be reconciled for this edition. Do not treat signed or invoiced value as collected cash.');

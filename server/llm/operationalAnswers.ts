@@ -1,5 +1,6 @@
 import type { ToolRunAccumulator } from './tools.ts';
 import type { SponsorMetricId } from './sponsorMetrics.ts';
+import { compareReceivableUrgency, documentedOverdueAmount } from './receivableTiming.ts';
 export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}|{kind:'sponsor_receivables'}|{kind:'receivable_followup'}|{kind:'clarify_money'}|{kind:'cash_total'};
 /** Recognises business concepts and paraphrases, not test IDs or fixed expected answers. */
 export function operationalIntent(question:string, hasFilters=false, previousQuestion=''):OperationalIntent|null {
@@ -34,8 +35,8 @@ export async function answerOperational(intent:OperationalIntent,read:Read,acc:T
   const asOf=String(result.as_of??'the selected as-of date');
   const total=(metric.rows as Record<string,unknown>[]|undefined)?.[0];
   if(!rows.length)return `No receivable records were returned for ${String(result.edition_id??'the selected edition')}; due dates and urgency cannot be assessed from the available records.`;
-  const active=rows.filter(r=>Number(r.outstanding)>0).sort((a,b)=>Number(b.overdue_amount??0)-Number(a.overdue_amount??0)||Number(b.outstanding??0)-Number(a.outstanding??0));
-  const lines=[`Receivable follow-up evidence for ${String(result.edition_id??'the selected edition')} as of ${asOf}. Priority is ordered by recorded overdue amount, then remaining balance; a positive balance alone does not mean late.`];
+  const active=rows.filter(r=>Number(r.outstanding)>0).sort((a,b)=>compareReceivableUrgency(a,b,asOf));
+  const lines=[`Receivable follow-up evidence for ${String(result.edition_id??'the selected edition')} as of ${asOf}. Priority uses unpaid schedule dates against this edition date, then remaining balance; a positive balance alone does not mean late.`];
   if(total?.computable&&total.value!=null)lines.push('',`Canonical outstanding total: ${money(total.value)} [M-07].`);
   lines.push('','| Sponsor / opportunity | Outstanding | Recorded overdue | Due-date evidence |','|---|---:|---:|---|');
   for(const row of active){
@@ -45,11 +46,12 @@ export async function answerOperational(intent:OperationalIntent,read:Read,acc:T
     const date=String(s.due_date),amount=money(s.remaining_amount);
     return `${date}: ${amount} remaining (${date<asOf?'overdue as of '+asOf:date===asOf?'due on '+asOf:'not yet due'})`;
    }).join('; '):'No unpaid schedule due date returned';
-   lines.push(`| ${cell(row.sponsor_name)} / ${cell(row.opportunity_name)} | ${money(row.outstanding)} | ${Number(row.overdue_amount)>0?money(row.overdue_amount):'₹0'} | ${cell(dueEvidence)} |`);
+   const overdue=documentedOverdueAmount(row,asOf);
+   lines.push(`| ${cell(row.sponsor_name)} / ${cell(row.opportunity_name)} | ${money(row.outstanding)} | ${overdue===null?'Not rankable':money(overdue)} | ${cell(dueEvidence)} |`);
   }
   if(!active.length)lines.push('| No positive outstanding balances in the returned records | ₹0 | ₹0 | No follow-up balance identified |');
-  const overdue=active.filter(r=>Number(r.overdue_amount)>0);
-  lines.push('',overdue.length?`**First follow-up:** ${cell(overdue[0].sponsor_name)} has the largest recorded overdue amount (${money(overdue[0].overdue_amount)}); use the schedule dates above and confirm receipt allocation with the owner.`:'**Urgency:** no positive overdue amount was returned. Prioritize the largest outstanding amount for a balance check, but do not label it late without overdue schedule evidence.');
+  const overdue=active.find(r=>(documentedOverdueAmount(r,asOf)??0)>0);
+  lines.push('',overdue?`**First follow-up:** ${cell(overdue.sponsor_name)} has the largest documented past-due schedule balance (${money(documentedOverdueAmount(overdue,asOf))}); use the schedule dates above and confirm receipt allocation with the owner.`:'**Urgency:** no positive past-due schedule amount was found for this edition date. Prioritize the largest outstanding amount for a balance check, but do not label balances late without due-date evidence.');
   if(active.length>=25)lines.push('The receivable list is bounded to 25 contracts, so this is not a complete ranking if additional records exist.');
   lines.push('','If a contract has no unpaid schedule due date, its amount can be ranked by size only; its urgency cannot be established from these records.');
   return lines.join('\n');

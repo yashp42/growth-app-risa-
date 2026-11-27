@@ -2575,6 +2575,20 @@ test('[MOCKED] 4D blocks: per-campaign metric results become a bar chart; view w
   const bar = chart[0] as { series: Array<{ label: string; value: number | null }>; data_version: unknown };
   assert.deepEqual(bar.series.map((s) => [s.label, s.value]), [['C26-WARM', 150000], ['C26-B3', 122500]]);
   assert.equal(bar.data_version, 61);
+  const unlabeledDuplicate = buildAnswerBlocks({
+    toolResults: [],
+    metricResults: [m('warm-2025', 0.85), m('warm-2026', 0.82)],
+    choice: 'auto',
+    answerHasMarkdownTable: true,
+  });
+  assert.deepEqual(unlabeledDuplicate, [], 'auto chart must not duplicate a labelled comparison table');
+  const explicitlyRequestedChart = buildAnswerBlocks({
+    toolResults: [],
+    metricResults: [m('C26-WARM', 150000), m('C26-B3', 122500)],
+    choice: 'chart',
+    answerHasMarkdownTable: true,
+  });
+  assert.equal(explicitlyRequestedChart[0].type, 'bar');
 
   const fromView = buildAnswerBlocks({
     toolResults: [],
