@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseCsv, suggestMapping, mappedRows, resolveImportReferences } from '../src/lib/csvImport.ts';
+import { parseCsv, serialiseCsv, suggestMapping, mappedRows, resolveImportReferences, tabularRowsToData } from '../src/lib/csvImport.ts';
 import { deterministicGeneralAdvice, isGeneralAdvice } from '../server/llm/advice.ts';
 import { uploadedDatasetTool, readUploads } from '../server/uploadedDatasets.ts';
 import { answerTextForSpeech } from '../src/lib/speech.ts';
@@ -13,6 +13,12 @@ test('[MOCKED] voice reads the answer and rationale without hidden source-note a
 test('[MOCKED] CSV parses BOM, CRLF, quoted commas, escaped quotes and multiline cells',()=>{
  const d=parseCsv('\uFEFFBrand,Notes,Amount\r\n"Acme, Ltd","Say ""hello""\nnext",1200\r\n');
  assert.deepEqual(d.columns,['Brand','Notes','Amount']);assert.equal(d.rows[0].Brand,'Acme, Ltd');assert.equal(d.rows[0].Notes,'Say "hello"\nnext');
+});
+test('[MOCKED] an Excel worksheet uses the same column and size validation as CSV',()=>{
+ const data=tabularRowsToData([['Brand Name','Industry','Notes'],['Acme','Education','Priority, follow up'],['Beta','Food and beverage','']], 'Brands');
+ assert.deepEqual(data.rows[0],{ 'Brand Name':'Acme', Industry:'Education', Notes:'Priority, follow up' });
+ assert.deepEqual(parseCsv(serialiseCsv(data)),data);
+ assert.throws(()=>tabularRowsToData([['Name'],['A'],['B'],['C']].concat(Array.from({length:499},()=>['x'])),'Brands'),/500/);
 });
 for(const [name,input] of Object.entries({empty:'',headers:'a,b',duplicate:'A,a\n1,2',short:'a,b\n1',long:'a\n1,2',quote:'a\n"bad',quoteTail:'a\n"ok"bad',prototype:'__proto__\nx',blankHeader:'a,\nx,y'}))test('[MOCKED] invalid CSV fails before writes: '+name,()=>assert.throws(()=>parseCsv(input)));
 test('[MOCKED] CSV resource bounds and literal spreadsheet formulas',()=>{

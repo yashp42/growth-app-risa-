@@ -25,6 +25,7 @@ import type { PreviewStateMode } from '../overview/OverviewHeaderFilters';
 import { SponsorDetailView } from './SponsorDetailView';
 import { SponsorDirectoryPage } from './SponsorDirectoryPage';
 import { SponsorFormDrawer } from './SponsorFormDrawer';
+import { ContextualImport } from '../settings/ContextualImport';
 
 interface SponsorsWorkspaceProps {
   showDevControls: boolean;
@@ -259,6 +260,8 @@ export function SponsorsWorkspace({
           onInvalidateDirectory={invalidateAll}
         />
       ) : (
+        <>
+        <ContextualImport destination="sponsors" label="sponsor research targets" onImported={invalidateAll} />
         <SponsorDirectoryPage
           filters={filters}
           onChangeFilters={handleChangeFilters}
@@ -300,6 +303,7 @@ export function SponsorsWorkspace({
           previewMode={previewMode}
           onChangePreviewMode={setPreviewMode}
         />
+        </>
       )}
 
       <SponsorFormDrawer

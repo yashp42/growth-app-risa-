@@ -31,6 +31,7 @@ import { OpportunityDetailView } from './OpportunityDetailView';
 import { OpportunityFormDrawer } from './OpportunityFormDrawer';
 import { OpportunityStageDrawer } from './OpportunityStageDrawer';
 import { PipelineDirectoryPage } from './PipelineDirectoryPage';
+import { ContextualImport } from '../settings/ContextualImport';
 
 interface PipelineWorkspaceProps {
   showDevControls: boolean;
@@ -332,6 +333,8 @@ export function PipelineWorkspace({
           onInvalidatePipeline={invalidateAll}
         />
       ) : (
+        <>
+        <ContextualImport destination="opportunities" label="pipeline opportunities" onImported={invalidateAll} />
         <PipelineDirectoryPage
           filters={filters}
           onChangeFilters={handleChangeFilters}
@@ -363,6 +366,7 @@ export function PipelineWorkspace({
           previewMode={previewMode}
           onChangePreviewMode={setPreviewMode}
         />
+        </>
       )}
 
       <OpportunityFormDrawer

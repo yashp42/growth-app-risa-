@@ -28,12 +28,23 @@ export function parseCsv(input:string):CsvData {
   if(cell.length>4000)throw Error('A cell exceeds 4,000 characters.');
  }
  if(quoted)throw Error('Unclosed quoted cell.');if(cell||row.length||closed)end();
- if(records.length<2)throw Error('CSV needs a header and at least one data row.');
- const columns=records.shift()!.map(c=>c.trim());
+ return tabularRowsToData(records,'CSV');
+}
+/** Validate rows originating from an XLSX worksheet with the same safeguards as CSV. */
+export function tabularRowsToData(records:unknown[][],source='worksheet'):CsvData {
+ if(records.length<2)throw Error(`${source} needs a header and at least one data row.`);
+ if(records.length>501)throw Error('Maximum 500 data rows per import.');
+ const columns=(records[0]??[]).map(c=>String(c??'').trim());
+ if(columns.length>60)throw Error('Maximum 60 columns.');
  if(columns.some(c=>!c||c.length>100||['__proto__','constructor','prototype'].includes(c)))throw Error('Invalid column header.');
  if(new Set(columns.map(normal)).size!==columns.length)throw Error('Duplicate column headers.');
- const rows=records.map((r,i)=>{if(r.length!==columns.length)throw Error(`Row ${i+2} has ${r.length} cells; expected ${columns.length}.`);return Object.fromEntries(columns.map((c,j)=>[c,r[j].trim()]));});
+ const rows=records.slice(1).map((r,i)=>{if(r.length!==columns.length)throw Error(`Row ${i+2} has ${r.length} cells; expected ${columns.length}.`);return Object.fromEntries(columns.map((c,j)=>{const value=String(r[j]??'').trim();if(value.length>4000)throw Error('A cell exceeds 4,000 characters.');return [c,value];}));});
  return {columns,rows};
+}
+/** Canonical CSV sent to the server for both CSV and XLSX imports. */
+export function serialiseCsv(data:CsvData):string {
+ const quote=(value:string)=>/[,"\r\n]/.test(value)?`"${value.replace(/"/g,'""')}"`:value;
+ return [data.columns,...data.rows.map(row=>data.columns.map(column=>quote(row[column]??'')).join(','))].join('\n');
 }
 export function mappedRows(data:CsvData,destination:ImportDestination,mapping:Record<string,string>):Record<string,string>[] {
  if(destination==='dataset')return data.rows;

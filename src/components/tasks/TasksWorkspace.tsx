@@ -28,6 +28,7 @@ import type { PreviewStateMode } from '../overview/OverviewHeaderFilters';
 import { TaskDetailView } from './TaskDetailView';
 import { TaskFormDrawer } from './TaskFormDrawer';
 import { TasksDirectoryPage } from './TasksDirectoryPage';
+import { ContextualImport } from '../settings/ContextualImport';
 
 interface TasksWorkspaceProps {
   showDevControls: boolean;
@@ -294,6 +295,8 @@ export function TasksWorkspace({
           }}
         />
       ) : (
+        <>
+        <ContextualImport destination="tasks" label="tasks" onImported={invalidateAll} />
         <TasksDirectoryPage
           filters={filters}
           onChangeFilters={handleChangeFilters}
@@ -326,6 +329,7 @@ export function TasksWorkspace({
           previewMode={previewMode}
           onChangePreviewMode={setPreviewMode}
         />
+        </>
       )}
 
       <TaskFormDrawer

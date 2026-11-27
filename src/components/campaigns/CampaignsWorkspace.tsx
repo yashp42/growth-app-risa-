@@ -22,6 +22,7 @@ import type { PreviewStateMode } from '../overview/OverviewHeaderFilters';
 import { CampaignDetailView } from './CampaignDetailView';
 import { CampaignFormDrawer } from './CampaignFormDrawer';
 import { CampaignPortfolioPage } from './CampaignPortfolioPage';
+import { ContextualImport } from '../settings/ContextualImport';
 
 interface CampaignsWorkspaceProps {
   showDevControls: boolean;
@@ -223,6 +224,8 @@ export function CampaignsWorkspace({
           onOpenSponsor={onOpenSponsor}
         />
       ) : (
+        <>
+        <ContextualImport destination="campaigns" label="campaigns" onImported={invalidateAll} />
         <CampaignPortfolioPage
           filters={filters}
           onChangeFilters={handleChangeFilters}
@@ -251,6 +254,7 @@ export function CampaignsWorkspace({
           previewMode={previewMode}
           onChangePreviewMode={setPreviewMode}
         />
+        </>
       )}
 
       <CampaignFormDrawer
