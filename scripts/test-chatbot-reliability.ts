@@ -6,6 +6,7 @@ import { verifyScopedAnswer, verifiedFactsFallback } from '../server/llm/claimGr
 import { isGeneralAdvice, deterministicGeneralAdvice } from '../server/llm/advice.ts';
 import { basicAnalyticsIntent } from '../server/llm/basicAnalytics.ts';
 import { financialIntent } from '../server/llm/financialAnswers.ts';
+import { hasInternalToolLeak } from '../server/llm/responsePolicy.ts';
 const scope={editionId:'ED-2026-DEMO',recordClass:'simulated',asOf:'2026-11-27'};
 const bundle=(results:unknown[],question='')=>({toolResults:results,knowledgeTexts:[],userQuestion:question});
 const metric=(id:string,value:number)=>({source:'metrics.get_metric',edition_id:scope.editionId,record_class:scope.recordClass,as_of:scope.asOf,rows:[{metric_id:id,value,unit:'INR',computable:true}]});
@@ -34,6 +35,13 @@ test('[MOCKED] operating-review advice is useful without provider or database ac
 test('[MOCKED] natural campaign and historical-cash wording has deterministic evidence routes',()=>{
  assert.equal(basicAnalyticsIntent('In the current simulated edition, which campaign has the weakest proposal-to-win conversion? Compare the proposals and confirmed wins.'),'campaign_conversion');
  assert.equal(financialIntent('For the 2025 edition, which sponsors paid late and what was the actual cash collection rate?'),'collection_status');
+});
+test('[MOCKED] budget shorthand uses the verified cash-position route, not an internal tool instruction',()=>{
+ assert.equal(financialIntent('budget?'),'cash_position');
+ assert.equal(financialIntent("What's our current sponsorship budget?"),'cash_position');
+ assert.equal(financialIntent('What is the approved budget target?'),null);
+ assert.equal(hasInternalToolLeak('Run get_sponsor_metrics to see the budget.'),true);
+ assert.equal(hasInternalToolLeak('Current signed value is ₹9,90,000 [M-02].'),false);
 });
 test('[MOCKED] follow-up retrieves prior task wording without importing old numeric evidence',()=>{
  const p=planQuestion('What about their verified routes?','Which prospects should we pursue first?');assert.equal(p.task,'prospects');assert.match(p.retrievalQuery,/prospects.*routes/);

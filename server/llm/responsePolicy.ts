@@ -8,6 +8,12 @@ export function answerOnlyMessages(messages: OpenRouterChatMessage[]): OpenRoute
 export function hasRawToolCall(text: string): boolean {
   return /<\/?(?:tool_call|function|parameter)(?:[\s=>/]|$)|\b(?:functions\.)?(?:get_metric|search_knowledge|get_dataset|list_records)\s*\([^)]*\)\s*$/i.test(text);
 }
+/** Internal retrieval/query APIs must never be presented as instructions for the user. */
+export function hasInternalToolLeak(text: string): boolean {
+  return /\b(?:get_[a-z0-9_]+|list_records|search_knowledge|set_view|propose_changes)\b/i.test(text)
+    || /\b(?:run|execute|call)\s+(?:the\s+)?(?:internal\s+|database\s+|sql\s+)?(?:query|tool|function|api)\b/i.test(text)
+    || /\byou(?:'ll| will| need to)\s+(?:need to\s+)?(?:run|execute|call)\b[^\n]{0,100}\b(?:query|tool|function|api)\b/i.test(text);
+}
 /** scenario_reference monetary fields are stored in lakh, not individual INR. */
 export function formatScenarioCash(value: unknown): string {
   if(value===null||value===undefined||value==='')return '—';

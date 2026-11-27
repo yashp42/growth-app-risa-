@@ -5,6 +5,10 @@ const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)
 export type FinancialIntent='activation_inventory'|'forecast_actual'|'collection_status'|'cash_position';
 export function financialIntent(question:string,hasFilters=false):FinancialIntent|null {
  if(hasFilters||/\b(create|update|delete|change|log|assign|move|mark|confirm|schedule)\b/i.test(question))return null;
+ // A short "budget?" question from the Analyst means the current sponsorship
+ // money snapshot. Route it to the same verified metrics as an explicit cash
+ // position request instead of asking the model to expose internal tools.
+ if(/\bbudget\b/i.test(question)&&! /\b(?:spend|expenses?|operating costs?|budget target|approved target)\b/i.test(question)&&(/\b(?:sponsorship|sponsor|our|current|season|202[56])\b/i.test(question)||/^\s*(?:what(?:'s| is)\s+)?budget\s*[?.!]*\s*$/i.test(question)))return 'cash_position';
  if(/\bactivations?\b/i.test(question)&&/\b(slots?|price|prices|pricing|cost|costs|inventory|how many)\b/i.test(question))return 'activation_inventory';
  if(/\b(forecast|expected|stretch|projection|projected)\b/i.test(question)&&/\b(collected|received|receipts|actual|already paid)\b/i.test(question))return 'forecast_actual';
  if(/\b(complete picture|cash position|how much is signed|cash-type signed|remains outstanding|largest outstanding balances)\b/i.test(question)||(/\b(signed|commitments?)\b/i.test(question)&&/\b(collected|cash collected|received)\b/i.test(question)&&/\b(compare|distinction|difference|separate)\b/i.test(question)))return 'cash_position';
