@@ -14,7 +14,10 @@ services:
     plan: free
     region: singapore # closest Render region to the Supabase project (Mumbai)
     branch: main
-    buildCommand: npm ci && npm run build
+    # The package lock includes native optional packages for more than one OS.
+    # Render's Linux builder can otherwise reject a lock created on Windows
+    # before it gets to the production build.
+    buildCommand: npm install --include=dev --no-audit --no-fund && npm run build
     startCommand: npm start # node server.ts; Node >= 22.18 strips TypeScript types natively
     healthCheckPath: /api/health
     autoDeploy: true
