@@ -708,7 +708,7 @@ export function createOpenRouterClient(
       // This is a cost guard as well as an answer-quality guard.
       // Leave enough room for a complete evidence-backed answer, while keeping
       // small product-help replies economical.
-      max_tokens: tools && tools.length > 0 ? 1_000 : 550,
+      max_tokens: tools && tools.length > 0 ? 1_600 : 900,
     };
 
     if (tools && tools.length > 0) {

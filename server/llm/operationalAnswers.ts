@@ -1,6 +1,6 @@
 import type { ToolRunAccumulator } from './tools.ts';
 import type { SponsorMetricId } from './sponsorMetrics.ts';
-export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}|{kind:'clarify_money'}|{kind:'cash_total'};
+export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}|{kind:'sponsor_receivables'}|{kind:'clarify_money'}|{kind:'cash_total'};
 /** Recognises business concepts and paraphrases, not test IDs or fixed expected answers. */
 export function operationalIntent(question:string, hasFilters=false, previousQuestion=''):OperationalIntent|null {
  if(/\b(?:19\d{2}|20\d{2})\b|\b(?:as of|last year|last month|yesterday|between)\b/i.test(question))return null;
@@ -8,6 +8,7 @@ export function operationalIntent(question:string, hasFilters=false, previousQue
  if(/\b(prospects?|research|outreach|pursue|targets?|attractiveness|accessibility)\b/i.test(question))return null;
  if(hasFilters||/\b(create|update|delete|move|log|record|confirm|assign|schedule|compare|why|likely|probability|potential|prioritise|prioritize|2025|2024|2023)\b/i.test(question))return null;
  const q=question.toLowerCase();
+ if(!/\b(highest|largest|biggest|top|most)\b/.test(q)&&/\b(?:signed partnerships?|sponsors?|deals?)\b/.test(q)&&/\b(?:still|with|have|has)\b/.test(q)&&/\b(?:outstanding|unpaid|owing|receivable)\b/.test(q)&&/\b(?:which|who|show|list)\b/.test(q))return {kind:'sponsor_receivables'};
  const rank=/\b(highest|largest|biggest|maximum|most|top|leading|best[- ]paying)\b|\b(?:by|per) sponsor\b/.test(q);
  const sponsor=(/\bwho\b/.test(q)&&/\b(paid|owes?|contributed|gave)\b/.test(q))||/\b(sponsors?|contributors?|donors?|partners?|companies|company|brands?)\b/.test(q)||(/\b(from where|who|which one|them)\b/.test(q)&&/\bsponsors?\b/i.test(previousQuestion));
  const otherGrain=/\b(campaigns?|channels?|renewals?|inbound|cold|warm|premium|bets?)\b/.test(q);
@@ -23,7 +24,22 @@ export function operationalIntent(question:string, hasFilters=false, previousQue
 }
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
+const cell=(v:unknown)=>String(v??'—').replace(/[|\r\n]/g,' ');
 export async function answerOperational(intent:OperationalIntent,read:Read,acc:ToolRunAccumulator):Promise<string>{
+ if(intent.kind==='sponsor_receivables'){
+  const [result,metric]=await Promise.all([read('list_records',{kind:'receivables',limit:25}),read('get_metric',{metric_id:'M-07'})]);
+  const metricRow=(metric.rows as Record<string,unknown>[]|undefined)?.[0];
+  if(metricRow?.computable===false)return String(metricRow.reason??'Outstanding cash is not computable for this edition.');
+  const rows=result.rows as Record<string,unknown>[]|undefined;
+  if(!rows?.length)return 'No positive outstanding cash balances were returned for sponsors in your permitted scope. [M-07]';
+  const visible=rows.filter(r=>Number(r.outstanding)>0);
+  const lines=[`Outstanding cash by sponsor for ${String(result.edition_id??'the selected edition')}, ranked from the permitted records [M-07].`, '', '| Rank | Sponsor | Outstanding cash |','|---:|---|---:|'];
+  for(const [index,r] of visible.entries())lines.push(`| ${index+1} | ${cell(r.sponsor_name)} | ${money(Number(r.outstanding))} |`);
+  if(rows.length>=25)lines.push('', 'The list is bounded to 25 receivable records; more may be available.');
+  if(metricRow?.computable&&metricRow.value!=null)lines.push('',`Canonical outstanding cash total: ${money(Number(metricRow.value))} [M-07].`);
+  lines.push('', 'Outstanding is a cash-balance measure, not proof that an invoice is overdue. Confirm due dates and receipt allocation with the owner before follow-up.');
+  return lines.join('\n')+'\n[[blocks: table]]';
+ }
  if(intent.kind==='clarify_money')return 'Do you mean the sponsor with the most cash actually collected, the largest signed commitment, or the largest unpaid balance? These can be different sponsors.';
  if(intent.kind==='cash_total'){
   const p=await read('get_metric',{metric_id:'M-01'}),r=(p.rows as Record<string,unknown>[]|undefined)?.[0];

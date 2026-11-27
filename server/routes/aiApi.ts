@@ -8,6 +8,7 @@ import { operationalIntent, answerOperational } from '../llm/operationalAnswers.
 import { financialIntent, answerFinancial } from '../llm/financialAnswers.ts';
 import { prospectIntent, answerProspects } from '../llm/prospectAnswers.ts';
 import { basicAnalyticsIntent, answerBasicAnalytics } from '../llm/basicAnalytics.ts';
+import { answerStrategy, strategyIntent } from '../llm/strategyAnswers.ts';
 import { isGreeting, requestBudget } from '../llm/requestBudget.ts';
 import { formatScenarioCash, hasRawToolCall } from '../llm/responsePolicy.ts';
 import crypto from 'node:crypto';
@@ -797,6 +798,18 @@ function matchDeterministicIntent(params: {
   return null;
 }
 
+/**
+ * A provider-free route for the common, explicitly confirmation-gated task
+ * request. It is intentionally narrow: extracting an arbitrary write from
+ * prose remains model-assisted, but this phrase has all required intent.
+ */
+function followUpTaskTarget(question: string): string | null {
+  const match = /\b(?:prepare|create|add)\s+(?:a\s+)?(?:follow[- ]?up\s+)?task\s+for\s+(?:the\s+)?owner\s+of\s+(.+?)(?=\s*(?:,|\bdue\b|\blinked\b|\bbut\b|$))/i.exec(question);
+  if (!match || !/\b(?:wait|confirmation|confirm)\b/i.test(question)) return null;
+  const target = match[1].trim();
+  return target.length >= 2 && target.length <= 200 ? target : null;
+}
+
 export function createAiApiRouter(
   config: ServerConfig,
   dbState: DatabasePoolState,
@@ -1334,11 +1347,13 @@ export function createAiApiRouter(
       return turnReads.get(key)!;
     };
     const questionPlan = planQuestion(question,typeof previousQuestion==='string'?previousQuestion:'');
+    const directFollowUpTarget = followUpTaskTarget(question);
     const adviceOnly = isGeneralAdvice(question);
     const usesUpload = usesUploadedContext(question,typeof previousQuestion==='string'?previousQuestion:'',uploads.map(f=>String(f.after.name??'')));
     const operationalQuery = usesUpload ? null : operationalIntent(question,Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)),typeof previousQuestion==='string'?previousQuestion:'');
-    const basicIntent = usesUpload ? null : basicAnalyticsIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
+    const basicIntent = usesUpload ? null : basicAnalyticsIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)), typeof previousQuestion==='string'?previousQuestion:'');
     const financialQuery = usesUpload ? null : financialIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
+    const strategyQuery = usesUpload ? null : strategyIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
     const prospectQuery = usesUpload ? null : prospectIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)),typeof previousQuestion==='string'?previousQuestion:'');
     if (cachedHit) {
       Object.assign(acc,structuredClone(cachedHit.evidence));
@@ -1350,6 +1365,37 @@ export function createAiApiRouter(
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
+    } else if (directFollowUpTarget) {
+      reportStep('Resolving the open opportunity and owner.');
+      const candidates = await pool.query<{
+        opportunity_id:string; opportunity_name:string|null; sponsor_name:string;
+        owner_member_id:string|null; owner_name:string|null;
+      }>(`SELECT o.opportunity_id, o.name AS opportunity_name, sp.display_name AS sponsor_name,
+                   sv.owner_member_id, tm.full_name AS owner_name
+              FROM public.opportunity o
+              JOIN public.sponsor sp ON sp.sponsor_id=o.sponsor_id
+              LEFT JOIN LATERAL (
+                SELECT owner_member_id, stage FROM public.opportunity_stage_version
+                 WHERE opportunity_id=o.opportunity_id AND NOT is_deleted
+                 ORDER BY valid_from DESC, history_id DESC LIMIT 1
+              ) sv ON true
+              LEFT JOIN public.team_member tm ON tm.member_id=sv.owner_member_id AND NOT tm.is_deleted
+             WHERE o.edition_id=$1 AND o.record_class=$2 AND NOT o.is_deleted
+               AND LOWER(sp.display_name) LIKE LOWER($3)
+               AND COALESCE(sv.stage,'prospecting') IN ('prospecting','contacted','proposal_sent','negotiating')
+             ORDER BY o.opportunity_id ASC LIMIT 2`,[editionId,recordClass,`%${directFollowUpTarget}%`]);
+      if(candidates.rows.length!==1){
+        finalAnswer=candidates.rows.length===0
+          ? `I could not find one eligible open opportunity for “${directFollowUpTarget}” in ${editionId}. No task was proposed. Check the sponsor name or select the open opportunity first.`
+          : `I found more than one open opportunity for “${directFollowUpTarget}”. Please name the opportunity or campaign so I can prepare one unambiguous task proposal.`;
+      }else if(!candidates.rows[0].owner_member_id){
+        finalAnswer=`${candidates.rows[0].sponsor_name} has an open opportunity, but it has no assigned owner. No task was proposed; assign an opportunity owner first so the follow-up is accountable.`;
+      }else{
+        const row=candidates.rows[0];
+        const prep=await prepareProposeChanges({actions:[{type:'create_task',payload:{title:`Follow up with ${row.sponsor_name}`,task_type:'follow_up',owner_member_id:row.owner_member_id,due_at:'in 2 days',status:'open',linked_type:'opportunity',linked_id:row.opportunity_id},summary:`Follow up with ${row.sponsor_name}'s open proposal`}],reason:'Requested follow-up for the owner of the named sponsor’s open proposal.'},{actorMemberId:actor.memberId,roles,editionId,recordClass,asOf,queryId,pool,question});
+        finalAnswer=prep.answer;collectedActions.push(...prep.actions);pendingActionInserts.push(...prep.pendingInserts);routeOverride='action';
+        toolTrace.push({tool_call_id:'direct-follow-up',tool_name:'propose_changes',status:'ok',summary:`Resolved ${row.sponsor_name} → ${row.owner_name??row.owner_member_id}`,record_class:recordClass,data_version:dataVersion});
+      }
     } else if (adviceOnly) {
       reportStep('Preparing practical advice.');
       try {
@@ -1364,10 +1410,10 @@ export function createAiApiRouter(
         generationFallbackReason = err instanceof OpenRouterError && err.code === 'AI_QUOTA_EXHAUSTED' ? 'quota' : 'unavailable';
         finalAnswer = deterministicGeneralAdvice(question);
       }
-    } else if (operationalQuery || basicIntent || prospectQuery || financialQuery) {
+    } else if (operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQuery) {
       routeOverride = operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
-      usedMetrics = Boolean(basicIntent) || financialQuery === 'forecast_actual';
-      usedKnowledge = !operationalQuery;
+      usedMetrics = Boolean(basicIntent || financialQuery || strategyQuery);
+      usedKnowledge = !operationalQuery || financialQuery === 'cash_position' || Boolean(strategyQuery);
       const readDeterministic = async (name: string, args: Record<string, unknown>) => {
         reportStep(describeToolStep(name, args));
         const result = await readTool(name, args, {
@@ -1378,7 +1424,7 @@ export function createAiApiRouter(
         return result;
       };
       try {
-      finalAnswer = operationalQuery ? await answerOperational(operationalQuery, readDeterministic, acc) : basicIntent ? await answerBasicAnalytics(basicIntent, readDeterministic, acc) : financialQuery ? await answerFinancial(financialQuery, readDeterministic, acc) : await answerProspects(prospectQuery!, readDeterministic, acc);
+      finalAnswer = strategyQuery ? await answerStrategy(strategyQuery, readDeterministic, acc) : financialQuery === 'cash_position' ? await answerFinancial(financialQuery, readDeterministic, acc) : operationalQuery ? await answerOperational(operationalQuery, readDeterministic, acc) : basicIntent ? await answerBasicAnalytics(basicIntent, readDeterministic, acc) : financialQuery ? await answerFinancial(financialQuery, readDeterministic, acc) : await answerProspects(prospectQuery!, readDeterministic, acc);
       } catch { finalAnswer = fallbackFromTools(acc, 'unavailable'); } 
       const check = verifyScopedAnswer(finalAnswer, { toolResults: acc.toolResults, knowledgeTexts: acc.knowledgeTexts, userQuestion: question }, {editionId,recordClass,asOf});
       answerCheckPassed = check.passed;

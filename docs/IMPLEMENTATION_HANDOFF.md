@@ -113,3 +113,18 @@ The following requested work is **not complete yet**:
 - `server/llm/actions.ts` — confirmed human/AI operational write workflows.
 - `server/llm/questionPlan.ts` and `server/routes/aiApi.ts` — tool routing/safety.
 - `scripts/test-dynamic-data.ts` and `scripts/test-dynamic-integration.ts` — current regression coverage.
+
+## Analyst acceptance follow-up (Tests 11–15)
+
+The 2026-11-27 continuation added scoped deterministic routes and regression coverage for the reviewer questions:
+
+- **Test 11:** `basicAnalyticsIntent` recognizes a 2025-vs-2026 funnel comparison. The answer queries M-11/M-12/M-13 independently for `ED-2025` and `ED-2026-DEMO`, includes source numerator/denominator, and labels the distinct brand/opportunity grains. Uncomputable historical observations remain unavailable; the routes do not merge editions.
+- **Test 12:** broad cash-position questions take precedence over the overlapping sponsor-ranking intent. The answer separately reads M-02/M-03/M-01/M-07 and ranks receivables only when M-07 is computable. A separate “which signed partnerships still have outstanding cash” route uses RBAC-scoped receivables plus the M-07 total. It distinguishes due-date evidence from a positive balance and never treats signed/invoiced value as collected cash.
+- **Test 13:** the D-010 route reads current threshold rules and evaluated metric snapshots, reports keep/change/escalation thresholds, groups B4a/B4b under the approved B4 strategy, and labels missing/restricted/not-due metrics as not evaluable.
+- **Test 14:** the route reads current M-13/M-21 by warm/inbound/cold, approved scenario values, approved capacity and bet-economics datasets, plus D-010 knowledge. It provides the approved priority order and explicitly avoids inventing fractional effort shares because current owner workload and marginal cash timing are not measured. It does not edit D-009/D-010.
+- **Test 15:** three-turn routing preserves context: it ranks current channels from M-13, separates measured rates from causal hypotheses on “why”, and gives three evidence-linked, unexecuted recommendations on the follow-up. Automated tests exercise all three routes; live voice/provider proof remains outstanding.
+- OpenRouter catalog validation on 2026-11-27 showed the configured `inclusionai/ling-3.2-flash:free` fallback was no longer listed. Replaced it with `google/gemma-4-31b-it:free`, which was listed with zero prompt/completion pricing and tool support. Increased output limits to 1,600 tokens with tools and 900 without tools.
+
+Files added/changed for this acceptance work include `server/llm/strategyAnswers.ts`, `server/llm/basicAnalytics.ts`, `server/llm/financialAnswers.ts`, `server/llm/operationalAnswers.ts`, `server/routes/aiApi.ts`, and tests under `scripts/test-analyst-acceptance-11-15.ts`, `scripts/test-basic-analytics.ts`, and `scripts/test-stage4b.ts`.
+
+Acceptance caveat: deterministic/mock regression tests establish routing, source selection, math-field preservation, and uncertainty handling. They do not prove current production database contents, authenticated browser behavior, or OpenRouter availability. Complete those live checks in an authenticated environment before declaring all reviewer tests passed.

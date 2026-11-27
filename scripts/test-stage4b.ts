@@ -2361,7 +2361,7 @@ async function askOnce(
   }
 }
 
-test('[MOCKED] §B: "Which signed partnerships still have outstanding cash?" is pre-routed to receivables + M-07 and costs 1 model request', async () => {
+test('[MOCKED] §B: signed partnerships with outstanding cash are answered from scoped M-07 without model dependency', async () => {
   const store = createMock4bStore();
   let modelCalls = 0;
   let sawToolsInRequest = false;
@@ -2392,16 +2392,16 @@ test('[MOCKED] §B: "Which signed partnerships still have outstanding cash?" is 
   };
   const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
   assert.equal(status, 200, JSON.stringify(body));
-  assert.equal(modelCalls, 1, 'one model request: the router picked the tools');
-  assert.equal(sawToolsInRequest, false, 'the phrasing request carries no tool schemas');
-  assert.ok(firstRequestToolNames.some((n) => n.startsWith('list_records:') && n.includes('"receivables"')));
-  assert.ok(firstRequestToolNames.some((n) => n.startsWith('get_metric:') && n.includes('M-07')));
+  assert.equal(modelCalls, 0, 'the deterministic route does not depend on provider availability');
+  assert.equal(sawToolsInRequest, false);
+  assert.match(String(body.answer),/M-07/);
+  assert.match(String(body.answer),/Outstanding cash by sponsor/);
   const usage = body.token_usage as { model_requests: number; prompt_tokens: number };
-  assert.equal(usage.model_requests, 1);
-  assert.equal(usage.prompt_tokens, 900);
+  assert.equal(usage.model_requests, 0);
+  assert.equal(usage.prompt_tokens, 0);
 });
 
-test('[MOCKED] §B: every provider failing still returns the found data as a table, never a dead end or raw error', async () => {
+test('[MOCKED] §B: receivables answer stays complete when providers are unavailable', async () => {
   const store = createMock4bStore();
   let modelCalls = 0;
   const mockFetch: typeof fetch = async (input) => {
@@ -2417,10 +2417,9 @@ test('[MOCKED] §B: every provider failing still returns the found data as a tab
   };
   const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
   assert.equal(status, 200, JSON.stringify(body));
-  assert.ok(modelCalls >= 1);
+  assert.equal(modelCalls, 0);
   const answer = String(body.answer);
-  assert.match(answer, /\|/, 'a table built from the tool results');
-  assert.match(answer, /Summary not generated \(AI unavailable right now\); figures are from /);
+  assert.match(answer, /\| Rank \| Sponsor \| Outstanding cash \|/);
   assert.match(answer, /M-07/);
   assert.ok(!/upstream exploded|SELECT|column/i.test(answer), 'no raw provider or SQL error text');
 });
@@ -2445,20 +2444,16 @@ test('[MOCKED] §C: tool results handed to the model stay valid JSON within the 
   assert.ok(out2.length <= 9800);
 });
 
-test('[MOCKED] signed-versus-collected explanation preloads cash-only outstanding and needs one synthesis', async () => {
+test('[MOCKED] signed-versus-collected question reads the full cash reconciliation without synthesis', async () => {
   let calls=0;
   const mockFetch:typeof fetch=async(input,init)=>{
     if(!String(input).endsWith('/chat/completions'))return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,remaining:45}}}),{status:200});
     calls++;
-    const payload=JSON.parse(String(init?.body));
-    assert.equal(payload.tools,undefined);
-    const evidence=payload.messages.filter((m:any)=>m.role==='tool').map((m:any)=>m.content).join(' ');
-    for(const id of ['M-01','M-02','M-03','M-07'])assert.ok(evidence.includes(id),id);
-    assert.match(payload.messages[0].content,/Outstanding is M-07, never M-02 minus M-01/);
-    return new Response(JSON.stringify({choices:[{message:{role:'assistant',content:'Signed commitments are distinct from cash collected. Review outstanding cash before prioritising collections.'}}]}),{status:200});
+    return new Response(JSON.stringify({choices:[{message:{role:'assistant',content:'unexpected model request'}}]}),{status:200});
   };
   const {status,body}=await askOnce(createMock4bStore(),mockFetch,'Compare signed sponsorship value and cash collected, explain the distinction and suggest the next operational step.');
-  assert.equal(status,200);assert.equal(calls,1);assert.equal((body.token_usage as {model_requests:number}).model_requests,1);
+  assert.equal(status,200);assert.equal(calls,0);assert.equal((body.token_usage as {model_requests:number}).model_requests,0);
+  for(const id of ['M-01','M-02','M-03','M-07'])assert.match(String(body.answer),new RegExp(id));
 });
 
 test('[MOCKED] §C: system prompt stays within ~600 tokens and every model call uses temperature 0', async () => {
@@ -2528,7 +2523,7 @@ test('[MOCKED] §D6: a deal for an entity that does not exist gets "no record of
   assert.match(answer, /could not be verified/i, 'the invented ₹5,00,000 is flagged by the answer check');
 });
 
-test('[MOCKED] 4D blocks: receivables question returns a server-built table block; the model supplies no numbers', async () => {
+test('[MOCKED] receivables question returns an evidence-backed markdown table without model-supplied numbers', async () => {
   const store = createMock4bStore();
   const mockFetch: typeof fetch = async (input) => {
     if (String(input).endsWith('/chat/completions')) {
@@ -2545,13 +2540,11 @@ test('[MOCKED] 4D blocks: receivables question returns a server-built table bloc
   const { status, body } = await askOnce(store, mockFetch, 'Which signed partnerships still have outstanding cash?');
   assert.equal(status, 200, JSON.stringify(body));
   assert.ok(!String(body.answer).includes('[[blocks'), 'directive stripped from the answer');
-  const blocks = body.blocks as Array<{ type: string; columns?: Array<{ key: string; format: string }>; source?: string; rows?: unknown[] }>;
-  assert.ok(Array.isArray(blocks));
-  const table = blocks.find((b) => b.type === 'table');
-  assert.ok(table, JSON.stringify(blocks));
-  assert.equal(table!.source, 'list_receivables');
-  assert.ok(table!.columns!.some((c) => c.key === 'outstanding' && c.format === 'inr'));
-  assert.ok(!blocks.some((b) => b.type === 'kpi'), 'choice "table" shows only tables');
+  const answer=String(body.answer);
+  assert.match(answer,/\| Rank \| Sponsor \| Outstanding cash \|/);
+  assert.match(answer,/Bramble Active/);
+  assert.match(answer,/₹60,000/);
+  assert.match(answer,/Canonical outstanding cash total: ₹2,72,500 \[M-07\]/);
 });
 
 test('[MOCKED] 4D blocks: per-campaign metric results become a bar chart; view widgets become charts; choice none hides all', () => {
@@ -2594,7 +2587,7 @@ test('[MOCKED] 4D blocks: per-campaign metric results become a bar chart; view w
   assert.deepEqual(extractBlockChoice('No tag here.'), { answer: 'No tag here.', choice: 'auto' });
 });
 
-test('[MOCKED] 4D progress: real tool steps are readable while /api/ai/ask is in flight, only by the asker', async () => {
+test('[MOCKED] 4D progress: deterministic receivable route completes without opening a provider request', async () => {
   const store = createMock4bStore();
   let seenDuringModelCall: string[] = [];
   let otherUserView: unknown = null;
@@ -2635,8 +2628,8 @@ test('[MOCKED] 4D progress: real tool steps are readable while /api/ai/ask is in
       }),
     });
     assert.equal(r.status, 200);
-    assert.deepEqual(seenDuringModelCall, ['Listing receivables…', 'Looking up M-07…', 'Writing the answer…']);
-    assert.deepEqual(otherUserView, { steps: [], done: false, known: false });
+    assert.deepEqual(seenDuringModelCall, []);
+    assert.equal(otherUserView, null);
     const after = await fetch(`${srv.baseUrl}/api/ai/progress/${requestId}`, { headers: { Authorization: 'Bearer test-token' } });
     assert.equal(((await after.json()) as { done: boolean }).done, true);
   } finally {
@@ -3356,12 +3349,13 @@ for (const actionType of ALLOWED_AI_ACTION_TYPES) {
 }
 
 
-test('[MOCKED] raw model tool-call text becomes an uncached degraded fallback with no executable action', async () => {
+test('[MOCKED] deterministic receivables path is provider-independent and emits no executable action', async () => {
   const store=createMock4bStore();
   const mockFetch:typeof fetch=async(input)=>String(input).includes('/chat/completions')
     ?new Response(JSON.stringify({model:DEFAULT_GROQ_MODEL_PRIMARY,choices:[{message:{role:'assistant',content:'<tool_call><function=search_knowledge><parameter=query>presenting ratio</parameter></tool_call>'}}]}),{status:200})
     :new Response(JSON.stringify({data:{limit:50,free_model_daily_requests: { limit: 50, remaining: 45 }}}),{status:200});
   const response=await askOnce(store,mockFetch,'Which signed partnerships still have outstanding cash?');
   assert.equal(response.status,200);assert.doesNotMatch(String(response.body.answer),/<tool_call>|<function=/);
-  assert.equal(response.body.generation_fallback_reason,'unavailable');assert.deepEqual(response.body.actions,[]);
+  assert.equal(response.body.generation_fallback_reason,null);assert.deepEqual(response.body.actions,[]);
+  assert.match(String(response.body.answer),/M-07/);
 });
