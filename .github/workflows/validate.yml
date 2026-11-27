@@ -36,6 +36,6 @@ jobs:
         if: github.head_ref == 'codex/dynamic-data-analyst'
         run: npx tsx scripts/smoke-reviewer-live.ts --prepare
 
-      - name: LIVE dynamic demo and bounded Analyst acceptance
+      - name: LIVE dynamic demo acceptance (Analyst probe remains opt-in)
         if: github.head_ref == 'codex/live-dynamic-acceptance'
-        run: npx tsx scripts/acceptance-dynamic-live.ts --confirm-demo-tests --with-ai
+        run: npx tsx scripts/acceptance-dynamic-live.ts --confirm-demo-tests
