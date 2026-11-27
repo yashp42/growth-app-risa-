@@ -829,6 +829,12 @@ export function followUpChannelTarget(question: string, prior: OpenRouterChatMes
   return null;
 }
 
+export function isReadOnlyTaskDraftRequest(question: string): boolean {
+  return /\b(?:prepare|draft)\b/i.test(question) && /\btask\b/i.test(question) &&
+    /\b(?:do not|don't|wait for|without)\b.{0,35}\b(?:create|confirmation|confirm)\b/i.test(question) &&
+    !isExplicitWriteRequest(question);
+}
+
 export function createAiApiRouter(
   config: ServerConfig,
   dbState: DatabasePoolState,
@@ -1387,6 +1393,7 @@ export function createAiApiRouter(
     });
     const {operational:operationalQuery,analytics:basicIntent,financial:financialQuery,strategy:strategyQueries,prospect:prospectQuery}=evidencePlan.facets;
     const explicitWriteIntent = isExplicitWriteRequest(question);
+    const taskDraftOnly = isReadOnlyTaskDraftRequest(question);
     const explicitViewIntent = isExplicitViewChangeRequest(question);
     if (cachedHit) {
       Object.assign(acc,structuredClone(cachedHit.evidence));
@@ -1398,7 +1405,7 @@ export function createAiApiRouter(
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
-    } else if (explicitWriteIntent && (directFollowUpTarget || directFollowUpChannel)) {
+    } else if ((explicitWriteIntent || taskDraftOnly) && (directFollowUpTarget || directFollowUpChannel)) {
       reportStep('Resolving the open opportunity and owner.');
       const queryText = `SELECT o.opportunity_id, o.name AS opportunity_name, sp.display_name AS sponsor_name,
                    sv.owner_member_id, tm.full_name AS owner_name, sv.stage, sv.proposed_value
@@ -1438,6 +1445,12 @@ export function createAiApiRouter(
           : directFollowUpChannel ? `Several ${directFollowUpChannel} opportunities share the highest priority by current stage and proposed value. Please choose one before I prepare a task; no task was proposed.` : `I found more than one open opportunity for “${directFollowUpTarget}”. Please name the opportunity or campaign so I can prepare one unambiguous task proposal.`;
       }else if(!eligible[0].owner_member_id){
         finalAnswer=`${eligible[0].sponsor_name} has an open opportunity, but it has no assigned owner. No task was proposed; assign an opportunity owner first so the follow-up is accountable.`;
+      }else if(taskDraftOnly){
+        const row=eligible[0];
+        const due=requestedTaskDeadline??'Not specified in the request or available record';
+        const description=`Follow up with ${row.sponsor_name} about ${row.opportunity_name??row.opportunity_id} (${row.stage}) and confirm the next step.`;
+        finalAnswer=`Draft only — no task has been created.\n\nHighest-priority open ${directFollowUpChannel??'matching'} opportunity (ranked by stage maturity, then proposed value): ${row.sponsor_name} — ${row.opportunity_name??row.opportunity_id} (${row.stage}; ${row.proposed_value==null?'value not recorded':'₹'+Number(row.proposed_value).toLocaleString('en-IN')}).\n\n- Owner: ${row.owner_name??'name unavailable'} (${row.owner_member_id})\n- Due date: ${due}\n- Description: ${description}\n- Linked record: opportunity ${row.opportunity_id}\n\nThe due date was not supplied; choose one before creating the task.`;
+        routeOverride='sql';
       }else if(!requestedTaskDeadline){
         const row=eligible[0];
         finalAnswer=`I found the highest-ranked open ${directFollowUpChannel??'matching'} opportunity: ${row.sponsor_name} — ${row.opportunity_name??row.opportunity_id}, ${row.stage}, ${row.proposed_value==null?'value not recorded':'₹'+Number(row.proposed_value).toLocaleString('en-IN')}. Owner: ${row.owner_name??'name unavailable'} (${row.owner_member_id}). Linked record: opportunity ${row.opportunity_id}. No due date was supplied or returned by this lookup, so I have not prepared a dated task. Tell me the deadline to use.`;

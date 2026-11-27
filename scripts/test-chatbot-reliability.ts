@@ -53,6 +53,13 @@ test('[MOCKED] a number present under another sponsor cannot support the named s
  assert.equal(verifyScopedAnswer('Alpha Works collected ₹92,000.',bundle([p]),scope).passed,false);
  assert.equal(verifyScopedAnswer('Alpha Works collected ₹71,000.',bundle([p]),scope).passed,true);
 });
+test('[MOCKED] overdue installment is not confused with a sponsor total receivable',()=>{
+ const p={kind:'sponsor_metrics',metric_id:'M-07',rows:[{sponsor_name:'Kaveri Threads',value:60000}]};
+ const schedule={kind:'receivables',rows:[{sponsor_name:'Kaveri Threads',overdue_amount:30000}]};
+ const answer='Kaveri Threads has ₹30,000 overdue on a scheduled installment.';
+ assert.equal(verifyScopedAnswer(answer,bundle([p,schedule]),scope).passed,true);
+ assert.equal(verifyScopedAnswer('Kaveri Threads outstanding cash is ₹30,000 [sponsor_metrics:M-07].',bundle([p,schedule]),scope).passed,false);
+});
 test('[MOCKED] metric, edition and date mismatch fail even when the number exists somewhere',()=>{
  const m=metric('M-01',71000),signed=metric('M-02',92000);
  assert.equal(verifyScopedAnswer('Cash collected: ₹92,000 [M-01]',bundle([m,signed]),scope).passed,false);

@@ -23,7 +23,7 @@ import {
   evaluateScopeAndRedaction,
   sanitizeMetricFilters,
 } from '../server/routes/readApi.ts';
-import { evaluateRuleBand } from '../server/ruleBands.ts';
+import { evaluateRuleBand, requiredSampleFloor } from '../server/ruleBands.ts';
 
 function createTestConfig(): ServerConfig {
   return {
@@ -539,6 +539,9 @@ test('gates.ts computes IST week-end dates and evaluates gate statuses across al
 });
 
 test('ruleBands.ts evaluates canonical D-010 threshold bands and unmetricized rules', () => {
+  assert.equal(requiredSampleFloor('10 deals'), 10);
+  assert.equal(requiredSampleFloor('decision at n ≥ 12'), 12);
+  assert.equal(requiredSampleFloor('Count of committed introductions'), null);
   // EX-B1a (M-19)
   assert.equal(
     evaluateRuleBand('EX-B1a', { metric_id: 'M-19', value: 0.8, computable: true, reason: null }).band,

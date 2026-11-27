@@ -27,7 +27,19 @@ export function verifyScopedAnswer(answer: string, bundle: GroundingSourceBundle
     for(const p of results.filter(r=>r.kind==='sponsor_metrics' && Array.isArray(r.rows))) {
       const rows=(p.rows as unknown[]).filter(object);
       const named=rows.filter(r=>typeof r.sponsor_name==='string' && label(sentence).includes(label(r.sponsor_name)));
-      if(named.length===1 && extractNumericClaims(sentence).some(c=>c.kind==='currency') && !verifyAnswerNumbers(sentence,{toolResults:[{value:named[0].value}],knowledgeTexts:[],userQuestion:''}).passed) failures.push('Amount does not match its named sponsor');
+      const metricId=String(p.metric_id??'');
+      // A sponsor can have multiple distinct money facts in the same answer.
+      // In particular, an overdue installment is not the sponsor's total M-07
+      // receivable. Only compare amounts when the sentence asserts the metric
+      // represented by this ranking (or when legacy payloads omit metric_id).
+      const overdueDetail=/\b(overdue|past[- ]due|late installment|due[- ]date schedule)\b/i.test(sentence);
+      const semanticMatch = metricId==='M-01' ? /\b(collected|received|paid)\b/i.test(sentence)
+        : metricId==='M-02' ? /\b(signed|commitment|sponsorship value|total value)\b/i.test(sentence)
+        : metricId==='M-03' ? /\b(signed cash|cash commitment)\b/i.test(sentence)
+        : metricId==='M-04' ? /\b(in[- ]kind|non[- ]cash)\b/i.test(sentence)
+        : metricId==='M-07' ? /\b(outstanding|unpaid|receivable|owes|balance)\b/i.test(sentence) && !overdueDetail
+        : !overdueDetail;
+      if(named.length===1 && semanticMatch && extractNumericClaims(sentence).some(c=>c.kind==='currency') && !verifyAnswerNumbers(sentence,{toolResults:[{value:named[0].value}],knowledgeTexts:[],userQuestion:''}).passed) failures.push('Amount does not match its named sponsor');
     }
   }
   return failures.length ? {...numeric,passed:false,warningMessage:[numeric.warningMessage,...new Set(failures)].filter(Boolean).join('; ')} : numeric;

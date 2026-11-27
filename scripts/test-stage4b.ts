@@ -26,7 +26,7 @@ import {
 import { createOpenRouterClient } from '../server/llm/openrouter.ts';
 import { executeSetView } from '../server/llm/views.ts';
 import type { CanonicalRole } from '../server/permissions.ts';
-import { buildSystemPrompt, createAiApiRouter, followUpChannelTarget, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
+import { buildSystemPrompt, createAiApiRouter, followUpChannelTarget, isHumanOnlyWriteRequest, isReadOnlyTaskDraftRequest } from '../server/routes/aiApi.ts';
 import { trimToolResultForModel } from '../server/llm/tools.ts';
 import { createWriteApiRouter } from '../server/routes/writeApi.ts';
 import { createReadApiRouter } from '../server/routes/readApi.ts';
@@ -2012,6 +2012,8 @@ test('[MOCKED] 2.2: human-only finance writes are refused and name the Collectio
   assert.equal(followUpChannelTarget('Based on that diagnosis, prepare one follow-up task for the owner of the highest-priority open opportunity in that channel. Do not create the task yet; wait for my confirmation.', [
     { role: 'assistant', content: 'Highest observed proposal-to-win rate: **warm** (3 wins from 5 proposals).' },
   ]), 'warm');
+  assert.equal(isReadOnlyTaskDraftRequest('Based on that diagnosis, prepare one follow-up task for the owner of the highest-priority open opportunity in that channel. Do not create the task yet; wait for my confirmation.'), true);
+  assert.equal(isReadOnlyTaskDraftRequest('Create a follow-up task for Voltyatra due tomorrow.'), false);
   const refused: Array<[string, RegExp]> = [
     ["Mark Bramble's invoice as paid", /Collections → Invoices/],
     ['Record a receipt of ₹50,000 from Bramble', /Collections → Receipts/],
