@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseCsv, serialiseCsv, suggestMapping, mappedRows, resolveImportReferences, tabularRowsToData } from '../src/lib/csvImport.ts';
+import { detectOriginalRisaPreset, parseCsv, serialiseCsv, suggestMapping, mappedRows, resolveImportReferences, tabularRowsToData } from '../src/lib/csvImport.ts';
 import { deterministicGeneralAdvice, isGeneralAdvice } from '../server/llm/advice.ts';
 import { uploadedDatasetTool, readUploads } from '../server/uploadedDatasets.ts';
 import { answerTextForSpeech } from '../src/lib/speech.ts';
@@ -33,6 +33,12 @@ test('[MOCKED] unfamiliar columns map only to explicit supported fields',()=>{
  assert.deepEqual(mappedRows(d,'sponsors',map),[{display_name:'Acme',city:'Pune'}]);
  assert.deepEqual(mappedRows(d,'dataset',{}),d.rows);
  assert.throws(()=>mappedRows(d,'campaigns',{}),/required/);
+});
+test('[MOCKED] original RISA headers are recognised without treating payments as cash',()=>{
+ assert.equal(detectOriginalRisaPreset(['Brand','Opportunity Value INR','Stage','Amount Paid','Payment Date']),true);
+ const mapping=suggestMapping(['Brand','Opportunity Value INR','Stage','Amount Paid'],'opportunities');
+ assert.equal(mapping.proposed_value,'Opportunity Value INR');assert.equal(mapping.sponsor_id,'Brand');
+ assert.equal(Object.values(mapping).includes('Amount Paid'),false);
 });
 test('[MOCKED] CSV reference names resolve exactly; unknown and ambiguous identities block writes',()=>{
  const rows=[{name:'Outreach',channel_id:'Warm referrals',owner_member_id:'Riya'}];

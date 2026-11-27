@@ -1,5 +1,12 @@
 export interface CsvData { columns: string[]; rows: Record<string,string>[] }
 export type ImportDestination = 'dataset'|'sponsors'|'campaigns'|'tasks'|'opportunities';
+/** Known supplied RISA sponsorship headers. Financial and stage labels remain
+ * reference-only until a reviewer explicitly maps them to a governed flow. */
+export const ORIGINAL_RISA_PRESET={
+ id:'risa-sponsorship-v1',label:'Original RISA sponsorship export',
+ known_headers:['Brand','Opportunity Value INR','Stage','Campaign','Category','Amount Paid','Payment Date'],
+ reference_only:['Stage','Amount Paid','Payment Date','Category'],
+} as const;
 export const IMPORT_FIELDS: Record<Exclude<ImportDestination,'dataset'>, string[]> = {
  sponsors:['display_name','legal_name','category_id','city','website','first_source'],
  campaigns:['name','channel_id','owner_member_id','status','planned_start','planned_end','objective'],
@@ -7,10 +14,14 @@ export const IMPORT_FIELDS: Record<Exclude<ImportDestination,'dataset'>, string[
  opportunities:['sponsor_id','name','support_type','proposed_value','owner_member_id','originating_campaign_id'],
 };
 const normal=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
-const aliases:Record<string,string[]>={display_name:['brand','brandname','company','companyname','sponsor','sponsorname'],name:['campaign','campaignname','opportunity','opportunityname'],proposed_value:['dealvalue','dealvalueinr','amount','value','proposedvalueinr'],channel_id:['channel','channelid'],category_id:['category','industry','sector'],owner_member_id:['owner','memberid','ownermemberid'],due_at:['duedate','deadline'],title:['task','taskname'],support_type:['supporttype'],sponsor_id:['sponsorid','brandid','sponsor','brand','company','sponsorname','brandname'],originating_campaign_id:['campaignid','campaign','campaignname']};
+const aliases:Record<string,string[]>={display_name:['brand','brandname','company','companyname','sponsor','sponsorname'],name:['campaign','campaignname','opportunity','opportunityname'],proposed_value:['dealvalue','dealvalueinr','opportunityvalue','opportunityvalueinr','amount','value','proposedvalueinr'],channel_id:['channel','channelid'],category_id:['category','industry','sector'],owner_member_id:['owner','memberid','ownermemberid'],due_at:['duedate','deadline'],title:['task','taskname'],support_type:['supporttype'],sponsor_id:['sponsorid','brandid','sponsor','brand','company','sponsorname','brandname'],originating_campaign_id:['campaignid','campaign','campaignname']};
 export function suggestMapping(columns:string[],destination:ImportDestination):Record<string,string>{
  if(destination==='dataset')return {};
  return Object.fromEntries(IMPORT_FIELDS[destination].map(field=>[field,columns.find(c=>normal(c)===normal(field)||aliases[field]?.includes(normal(c)))??'']));
+}
+export function detectOriginalRisaPreset(columns:string[]):boolean{
+ const headers=new Set(columns.map(normal));
+ return ['brand','opportunityvalueinr','stage'].every(header=>headers.has(header));
 }
 /** RFC-style CSV, bounded before allocation. Cells remain plain text; no formulas execute. */
 export function parseCsv(input:string):CsvData {

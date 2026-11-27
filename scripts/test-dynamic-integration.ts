@@ -52,6 +52,20 @@ test('[MOCKED] invalid CSV, historical scope, unauthenticated and viewer uploads
   [['coordination_lead'],{edition_id:'ED-2026-DEMO',record_class:'simulated',name:'Bad',csv:'a\n1'},false,401],
  ] as const){const h=await harness([...roles]);try{assert.equal((await h.post('/api/imports/dataset',body,token)).status,expected);assert.equal(h.audits.length,0);}finally{await h.close();}}
 });
+test('[MOCKED] operational import is a single auditable batch and rejects a bad relationship before inserts',async()=>{
+ const good={edition_id:'ED-2026-DEMO',record_class:'simulated',name:'Sponsors.csv',destination:'sponsors',source_hash:'a'.repeat(64),mapping_hash:'c'.repeat(64),mapping_version:'csv-operational-v1',rows:[{display_name:'Batch Sponsor',first_source:'research'}]};
+ const h=await harness();try{
+  const ok=await h.post('/api/imports/operational',good);assert.equal(ok.status,201);assert.equal(ok.body.row_count,1);assert.match(ok.body.batch_id,/^IB-FILE-/);
+  assert.ok(h.queries.some(q=>q.sql.includes("batch_type,record_class,source_file,source_sha256")));
+  assert.ok(h.queries.some(q=>q.sql.includes("'ui:operational_import'")));
+ }finally{await h.close();}
+ const bad={...good,source_hash:'b'.repeat(64),rows:[{display_name:'Bad category',category_id:'CAT-MISSING'}]};
+ const blocked=await harness();try{
+  const fail=await blocked.post('/api/imports/operational',bad);assert.equal(fail.status,422);
+  assert.equal(blocked.queries.some(q=>q.sql.includes('INSERT INTO public.sponsor')),false);
+  assert.ok(blocked.queries.some(q=>q.sql==='ROLLBACK'));
+ }finally{await blocked.close();}
+});
 test('[MOCKED] general how-to answer makes one completion without tools or business retrieval',async()=>{
  const h=await harness();try{const r=await h.post('/api/ai/chat',{message:'How do I approach a sponsor?',edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:'2026-11-27'});
   assert.equal(r.status,200);assert.match(r.body.answer,/audience fit/);assert.equal(h.modelCalls,1);assert.equal(h.modelInputs[0].tools,undefined);

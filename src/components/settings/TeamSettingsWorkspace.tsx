@@ -324,7 +324,6 @@ export function TeamSettingsWorkspace() {
 
   return (
     <div className="space-y-6 pb-8">
-      <DataImportPanel />
       <div className="border-b border-[var(--color-border)] pb-5">
         <p className="font-mono text-[12px] text-[var(--color-ink-subtle)]">Workspace</p>
         <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.025em] text-[var(--color-ink)]">
@@ -335,6 +334,12 @@ export function TeamSettingsWorkspace() {
           parity verification.
         </p>
       </div>
+
+      <section id="import-data" aria-labelledby="import-data-heading" className="rounded-md border border-[var(--color-accent)]/25 bg-[var(--color-accent-soft)]/30 p-4">
+        <h2 id="import-data-heading" className="text-[16px] font-semibold text-[var(--color-ink)]">Import data</h2>
+        <p className="mt-1 text-[14px] text-[var(--color-ink-muted)]">Upload a CSV or Excel sheet to a separate Analyst dataset, or map vetted records into this selected workspace. Operational imports are all-or-nothing and historical data remains read-only.</p>
+        <div className="mt-4"><DataImportPanel /></div>
+      </section>
 
       {/* Signed-in identity from GET /api/me */}
       <section
