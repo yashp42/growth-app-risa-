@@ -185,6 +185,11 @@ function tableFromList(r: Record<string, unknown>): TableBlock | null {
       .slice(0, 6)
       .map((k) => ({ key: k, label: k.replace(/_/g, ' '), format: inferFormat(k, rows[0][k]) }));
   }
+  if (r.kind === 'prospects') {
+    const preferred = ['rank','company','company_name','category','value_track','priority_index','cash_potential_lakh','key_approach','next_action'];
+    const keys = preferred.filter(k => rows.some(row=>k in row));
+    if(keys.length) columns = keys.map(key=>({key,label:key.replace(/_/g,' '),format:'text' as const}));
+  }
   const state = typeof r.state === 'string' ? r.state : undefined;
   return {
     type: 'table',
@@ -334,7 +339,7 @@ export function buildAnswerBlocks(params: {
   for (const raw of params.toolResults) {
     if (!raw || typeof raw !== 'object') continue;
     const r = raw as Record<string, unknown>;
-    if (typeof r.source === 'string' && (r.source.startsWith('list_') || r.source === 'ref.dataset_row' || r.source === 'benchmark' || r.source === 'source_register')) {
+    if (typeof r.source === 'string' && (r.source.startsWith('list_') || r.source === 'ref.dataset_row' || r.source === 'benchmark' || r.source === 'source_register' || r.source === 'uploaded_dataset')) {
       const t = tableFromList(r);
       if (t) tables.push(t);
     } else if (r.source === 'metrics.get_metric_series') {

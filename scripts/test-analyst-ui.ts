@@ -140,7 +140,7 @@ test('[MOCKED] Change card: before → after with ₹ grouping and contract line
 import { AnswerBlocks } from '../src/components/analyst/AnswerBlocks.tsx';
 import type { AnswerBlock } from '../src/types/answerBlocks.ts';
 
-test('[MOCKED] 4D blocks render: sortable table, bar, line and KPI, each with its source chip and data version', () => {
+test('[MOCKED] 4D blocks render: sortable table, bar, line and KPI, without repeated source chips', () => {
   const blocks: AnswerBlock[] = [
     {
       type: 'table',
@@ -188,7 +188,7 @@ test('[MOCKED] 4D blocks render: sortable table, bar, line and KPI, each with it
   assert.match(html, /Bramble Active/);
   assert.match(html, /₹60,000/);
   assert.match(html, /aria-sort="none"/, 'sortable headers');
-  assert.match(html, /list_receivables · data v61/);
+  assert.doesNotMatch(html, /list_receivables · data v61/);
   assert.match(html, /aria-label="Cash collected by campaign bar chart"/);
   assert.match(html, /₹1,50,000/);
   assert.match(html, /Total: <span[^>]*>₹2,72,500/);

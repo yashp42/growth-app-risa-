@@ -244,9 +244,6 @@ export function KpiBlockView({ block }: { block: AnswerKpiBlock }) {
         <p className="font-mono text-[12px] text-[var(--color-ink-subtle)]">{formatInr(block.value)}</p>
       ) : null}
       {!block.computable && block.reason ? <p className="mt-0.5 text-[12px] text-[var(--color-ink-muted)]">{block.reason}</p> : null}
-      <div className="mt-1.5">
-        <SourceChip source={block.source} dataVersion={block.data_version} />
-      </div>
     </div>
   );
 }
@@ -276,5 +273,3 @@ export function AnswerBlocks({ blocks }: { blocks: AnswerBlock[] }) {
     </div>
   );
 }
-
-

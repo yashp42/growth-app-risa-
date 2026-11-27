@@ -23,7 +23,7 @@ export function planQuestion(question: string, previous = ''): QuestionPlan {
 
 export function relevantToolNames(plan: QuestionPlan): Set<string> | null {
   if (plan.task === 'action' || plan.task === 'general') return null;
-  const shared = ['search_knowledge','get_dataset','list_datasets'];
+  const shared = ['search_knowledge','get_dataset','list_datasets','list_uploaded_datasets','get_uploaded_dataset','get_outlook','get_campaign_performance'];
   if(plan.task === 'prospects') return new Set([...shared,'get_register','list_records']);
   if(plan.task === 'knowledge') return new Set([...shared,'get_register','get_scenario']);
   return new Set([...shared,'get_metric','get_series','get_sponsor_metrics','get_register','get_scenario','list_records','set_view']);

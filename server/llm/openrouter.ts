@@ -702,7 +702,7 @@ export function createOpenRouterClient(
       model: entry.model,
       messages: tools?.length ? messages : answerOnlyMessages(messages),
       temperature,
-      max_tokens: 1600,
+      max_tokens: tools && tools.length > 0 ? 1200 : 650,
     };
 
     if (tools && tools.length > 0) {
@@ -989,4 +989,3 @@ export function createOpenRouterClient(
     },
   };
 }
-

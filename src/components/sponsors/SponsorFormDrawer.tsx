@@ -94,11 +94,8 @@ export function SponsorFormDrawer({
         editingSponsor.edition_id || getDefaultSponsorEditionForClass(nextClass)
       );
     } else {
-      const defaultEdition = SPONSOR_EDITION_BY_CLASS[activeRecordClass].some(
-        (e) => e.value === activeEditionId
-      )
-        ? activeEditionId
-        : getDefaultSponsorEditionForClass(activeRecordClass);
+      const defaultEdition = activeEditionId;
+
 
       setDisplayName('');
       setLegalName('');
@@ -278,7 +275,7 @@ export function SponsorFormDrawer({
             </label>
             <select
               id="sponsor-record-class"
-              disabled={readOnly || submitting || isEditing}
+              disabled
               value={recordClass}
               onChange={(e) => {
                 const nextClass = e.target.value as 'simulated' | 'live';
@@ -301,12 +298,12 @@ export function SponsorFormDrawer({
             </label>
             <select
               id="sponsor-edition"
-              disabled={readOnly || submitting || isEditing}
+              disabled
               value={editionId}
               onChange={(e) => setEditionId(e.target.value)}
               className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
-              {SPONSOR_EDITION_BY_CLASS[recordClass].map((opt) => (
+              {[...SPONSOR_EDITION_BY_CLASS[recordClass], ...(!SPONSOR_EDITION_BY_CLASS[recordClass].some(e=>e.value===editionId)?[{value:editionId,label:editionId}]:[])].map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
