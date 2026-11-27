@@ -204,6 +204,7 @@ Remaining acceptance work: deploy this revision, then rerun all five broad promp
 ### PR and clean-install check (2026-11-27)
 
 - Opened PR #19, `Improve Analyst evidence planning and synthesis`, from `codex/analyst-evidence-architecture`; it contains the 13 intended implementation/test/handoff files and excludes the pre-existing `work/` directory. The branch comparison is 400 additions / 61 deletions, without line-ending churn.
-- GitHub Actions initially failed before tests because `npm ci` found the lock file missing optional `@emnapi` entries required by the existing Rolldown WASI binding. `package-lock.json` has now been regenerated with npm so those entries are present.
-- A local `npm ci --dry-run` could not finish because Windows denied unlinking `node_modules/.package-lock.json` (EPERM). Wait for the PR workflow on the updated head to confirm the clean install before merge.
+- GitHub Actions initially failed before tests because `npm ci` found the lock file missing optional `@emnapi` entries required by the existing Rolldown and Tailwind WASI bindings. `package-lock.json` was regenerated using npm 10.9.3, matching CI.
+- Clean-install validation passed in an isolated temporary directory with `npx npm@10.9.3 ci --ignore-scripts --no-audit` (280 packages added). In-place npm operations against the existing `node_modules` were blocked by Windows EPERM, so the isolated result is the useful validation.
+- The regenerated lock update is being added to PR #19; wait for the fresh hosted workflow to pass before merge.
 - PR is open, not merged. Do not deploy until the updated clean CI passes; after merge, verify Render and run the authenticated acceptance prompts. The earlier red workflow run is on the prior PR head and does not validate the lock-file correction.
