@@ -7,7 +7,7 @@ interface ReadAloudToggleProps {
   compact?: boolean;
 }
 
-/** Speaker toggle: when on, each new answer is read aloud in the browser (en-IN). */
+/** Speaker toggle: when on, each new answer is read aloud in the browser. */
 export function ReadAloudToggle({ on, supported, onChange, compact = false }: ReadAloudToggleProps) {
   if (!supported) return null;
   const label = on ? 'Stop reading answers aloud' : 'Read new answers aloud';
@@ -17,7 +17,7 @@ export function ReadAloudToggle({ on, supported, onChange, compact = false }: Re
       onClick={() => onChange(!on)}
       aria-pressed={on}
       aria-label={label}
-      title={`${label} (browser voice, en-IN; tables are not read)`}
+      title={`${label} (English browser voice; tables are not read)`}
       className={
         compact
           ? `flex h-8 w-8 items-center justify-center rounded transition-colors duration-150 ${

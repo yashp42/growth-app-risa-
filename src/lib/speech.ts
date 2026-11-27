@@ -1,5 +1,5 @@
 /**
- * Browser-only read-aloud helpers (speechSynthesis, en-IN). Nothing here talks
+ * Browser-only read-aloud helpers (speechSynthesis). Nothing here talks
  * to the server; tables and code blocks are never read out.
  */
 
@@ -37,7 +37,20 @@ export const SPEECH_ACTIVITY_EVENT = 'analyst:speech-activity';
 let activeUtterance:SpeechSynthesisUtterance|null=null;
 let finishActive:(()=>void)|null=null;
 function reportSpeech(speaking:boolean){if(typeof window!=='undefined' && typeof window.dispatchEvent==='function')window.dispatchEvent(new CustomEvent(SPEECH_ACTIVITY_EVENT,{detail:{speaking}}));}
-/** Speak text in en-IN, replacing anything currently being read. */
+function preferredEnglishVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | undefined {
+  const english = voices.filter(voice => /^en(?:-|$)/i.test(voice.lang));
+  const natural = (voice: SpeechSynthesisVoice) => /\b(?:natural|neural|enhanced|premium)\b/i.test(voice.name);
+  return english.find(voice => /^en-IN$/i.test(voice.lang) && natural(voice))
+    ?? english.find(natural)
+    ?? english.find(voice => /^Google UK English Female$/i.test(voice.name))
+    ?? english.find(voice => /^Google US English$/i.test(voice.name))
+    ?? english.find(voice => /^Samantha$/i.test(voice.name))
+    ?? english.find(voice => voice.default)
+    ?? english.find(voice => /^en-IN$/i.test(voice.lang))
+    ?? english[0];
+}
+
+/** Speak text in English, replacing anything currently being read. */
 export function speakAnswer(
   raw: string,
   handlers: { onEnd?: () => void; onStart?: () => void } = {}
@@ -47,7 +60,10 @@ export function speakAnswer(
   if (!text) return false;
   stopSpeaking();
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-IN';
+  const voice = preferredEnglishVoice(window.speechSynthesis.getVoices());
+  if (voice) utterance.voice = voice;
+  utterance.lang = voice?.lang ?? 'en-IN';
+  utterance.rate = 0.94;
   activeUtterance=utterance;
   let finished=false;
   const finish=()=>{if(finished)return;finished=true;if(activeUtterance===utterance){activeUtterance=null;finishActive=null;reportSpeech(false);}handlers.onEnd?.();};

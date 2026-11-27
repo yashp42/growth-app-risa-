@@ -182,7 +182,7 @@ export interface UseGrowthAnalystSessionResult {
   setVoiceListening: (on: boolean) => void;
   interimTranscript: string;
   setInterimTranscript: (text: string) => void;
-  /** Speaker toggle: read each new answer aloud (en-IN, answer text only). */
+  /** Speaker toggle: read each new answer aloud (English, answer text only). */
   speaking: boolean;
   voiceModeActive: boolean;
   voiceModePaused: boolean;
