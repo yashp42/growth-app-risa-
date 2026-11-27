@@ -41,7 +41,8 @@ export async function answerProspects(intent:ProspectIntent,read:Read,acc:ToolRu
   if(!Array.isArray(opportunities.rows)||!Array.isArray(sponsors.rows))throw new Error('Operational lookup returned no readable result.');
   lines.push(opportunities.rows.length||sponsors.rows.length?'Matching operational records were returned; inspect their stages and scope below.':'No matching opportunities or sponsors were returned for the selected edition. This does not establish a signed value or cash forecast.');
  }
- if(intent.kind==='status' && rows[0]) lines.push('Research fields (source units, not a forecast): '+Object.entries(rows[0]).filter(([key])=>/cash|value|potential|currency|unit/i.test(key)).slice(0,5).map(([key,v])=>cell(key)+': '+cell(v)).join('; '));
+ if(intent.kind==='status' && rows[0]) lines.push(cell(intent.company)+' research fields (source units, not a forecast): '+Object.entries(rows[0]).filter(([key])=>/cash|value|potential|currency|unit/i.test(key)).slice(0,5).map(([key,v])=>cell(key)+': '+cell(v)).join('; '));
+ if(intent.kind==='routes'&&rows.length)lines.push('Matching researched prospects: '+rows.slice(0,5).map(row=>cell(row.company??row.company_name??row.brand??row.sponsor)).join(', ')+'. Verify the named contact before treating a route as an introduction.');
  if(!rows.length)lines.push('No matching research prospects were returned.');
  lines.push('', '[market_research.prospect_register]');
  await read('search_knowledge',{query:intent.kind==='routes'?'prospect verified route introductions attractiveness accessibility':intent.kind==='status'?intent.company+' prospect research target face value forecast introductions':'prospect prioritisation pursue now attractiveness accessibility cash in kind introductions'});

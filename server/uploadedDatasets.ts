@@ -5,13 +5,14 @@ export async function readUploads(pool:QueryablePool,scope:UploadScope,id?:strin
   `SELECT * FROM (SELECT DISTINCT ON (entity_id) entity_id, "after", created_at FROM public.audit_event
    WHERE entity='uploaded_dataset' AND actor_id=$1 AND record_class=$2 AND NOT is_deleted
    AND "after"->>'edition_id'=$3 AND ($4::text IS NULL OR entity_id=$4)
-   ORDER BY entity_id, created_at DESC) latest ORDER BY created_at DESC LIMIT 25`,[scope.actorMemberId,scope.recordClass,scope.editionId,id??null]);
- return result.rows.filter(r=>!query||String(r.after.name??'').toLowerCase().includes(query.toLowerCase()));
+   AND ($5::text='' OR strpos(lower(COALESCE("after"->>'name','')),lower($5))>0)
+   ORDER BY entity_id, created_at DESC) latest ORDER BY created_at DESC LIMIT 25`,[scope.actorMemberId,scope.recordClass,scope.editionId,id??null,query]);
+ return result.rows;
 }
 export async function uploadedDatasetTool(pool:QueryablePool,scope:UploadScope,args:{dataset_id?:string;query?:string;filter?:Record<string,string>;limit?:number}) : Promise<Record<string,unknown>> {
  const files=await readUploads(pool,scope,args.dataset_id,args.query);
  const base={source:'uploaded_dataset',record_class:scope.recordClass,edition_id:scope.editionId,data_version:scope.dataVersion,status_label:'User-uploaded data; separate from operational records',as_of:null};
- if(!args.dataset_id)return {...base,kind:'uploaded_datasets',rows:files.map(f=>({dataset_id:f.entity_id,name:f.after.name,row_count:f.after.row_count,columns:f.after.columns})),available:true};
+ if(!args.dataset_id)return {...base,kind:'uploaded_datasets',truncated:files.length===25,rows:files.map(f=>({dataset_id:f.entity_id,name:f.after.name,row_count:f.after.row_count,columns:f.after.columns})),available:true};
  const file=files[0];if(!file)return {...base,available:false,reason:'No uploaded dataset is available to this user in this edition.'};
  const columns=file.after.columns as string[];let rows=file.after.rows as Record<string,string>[];
  const filters=Object.entries(args.filter??{});for(const [key] of filters)if(!columns.includes(key))throw Error('Unknown dataset filter column.');
