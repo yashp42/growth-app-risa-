@@ -692,7 +692,7 @@ export async function createOpportunity(
     }
   >(OVERVIEW_API_ENDPOINTS.opportunities, {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({...payload, proposed_value: payload.initial_stage.proposed_value, owner_member_id: payload.initial_stage.owner_member_id}),
   });
   const opportunity = res.opportunity
     ? normalizeOpportunity(res.opportunity)

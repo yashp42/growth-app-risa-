@@ -32,6 +32,14 @@ try{
  const auth=await request('/api/auth/demo','POST',{});token=auth.access_token;assert.ok(token);
  const me=await request('/api/me?edition_id=ED-2026-DEMO');assert.equal(me.member_id,'SIM-LEAD');assert.equal(me.verified_by_server,true);
  for(const role of ['coordination_lead','admin','finance_collections'])assert.ok(me.roles.includes(role));
+ const recovery=process.argv.find(a=>a.startsWith('--recover-id='))?.split('=')[1];
+ if(recovery){
+  try{const found=await request('/api/opportunities/'+encodeURIComponent(recovery)+query());const row=found.opportunity;
+   assert.ok(String(row?.name??'').startsWith('LIVE-ACCEPTANCE-'),'Recovery is restricted to labelled acceptance fixtures.');
+   await request('/api/opportunities/'+encodeURIComponent(recovery)+query(),'PATCH',{is_deleted:true});
+   log.push('LIVE: recovered the previously interrupted synthetic opportunity fixture.');
+  }catch(e){if(!String((e as Error).message).includes('HTTP 404'))throw e;}
+ }
  // Wait only for the new read endpoint to become available during a Render deploy. Never retry writes.
  let ready=false;
  for(let i=0;i<5;i++){try{await request('/api/outlook'+query());ready=true;break;}catch(e){if(i===4)throw e;await new Promise(r=>setTimeout(r,5000));}}
@@ -87,7 +95,7 @@ try{
    if(!cleanup.some(x=>x.kind===kind&&x.id===id))cleanup.push({kind,id});
   }}catch(e){failures.push('Recovery read '+kind+': '+(e as Error).message);}
  }
- for(const kind of ['tasks','opportunities','sponsors','campaigns'])for(const row of cleanup.filter(r=>r.kind===kind))try{await request('/api/'+row.kind+'/'+row.id,'PATCH',{...scope,is_deleted:true});}catch(e){failures.push(row.kind+'/'+row.id+': '+(e as Error).message);}
+ for(const kind of ['tasks','opportunities','sponsors','campaigns'])for(const row of cleanup.filter(r=>r.kind===kind))try{await request('/api/'+row.kind+'/'+row.id+query(),'PATCH',{is_deleted:true});}catch(e){failures.push(row.kind+'/'+row.id+': '+(e as Error).message);}
  if(baseline!==null&&token)try{assert.equal(await metric(),baseline);log.push('LIVE: cleanup restored the original pipeline total.');}catch(e){failures.push('Pipeline restoration: '+(e as Error).message);}
  for(const line of log)console.log(line);
  console.log('LIVE model request attempts:',aiAttempts);

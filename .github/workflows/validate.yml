@@ -35,4 +35,4 @@ jobs:
 
       - name: LIVE dynamic demo acceptance (synthetic fixtures, no inference)
         if: github.head_ref == 'codex/live-dynamic-acceptance'
-        run: npx tsx scripts/acceptance-dynamic-live.ts --confirm-demo-tests
+        run: npx tsx scripts/acceptance-dynamic-live.ts --confirm-demo-tests --recover-id=OP-R6LLBDOFTO
