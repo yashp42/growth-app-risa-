@@ -292,8 +292,14 @@ export function loadServerConfig(
   }
 
   const rawFallbackModel = normalizeEnvValue(env.OPENROUTER_MODEL_FALLBACK);
+  // Render may retain an explicit environment override after a model leaves
+  // OpenRouter's catalog. Migrate the known retired free slug to the current
+  // free, tool-capable fallback so a code deploy repairs the effective config.
+  const effectiveFallbackModel = rawFallbackModel === 'inclusionai/ling-3.2-flash:free'
+    ? DEFAULT_OPENROUTER_MODEL_FALLBACK
+    : rawFallbackModel;
   let openrouterModelFallback: string | null =
-    rawFallbackModel ?? DEFAULT_OPENROUTER_MODEL_FALLBACK;
+    effectiveFallbackModel ?? DEFAULT_OPENROUTER_MODEL_FALLBACK;
   let openrouterFallbackValid = false;
   if (!isVerifiedFreeOpenRouterModel(openrouterModelFallback)) {
     validationErrors.push(

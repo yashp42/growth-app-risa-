@@ -552,6 +552,12 @@ test('[MOCKED] Startup rejects non-:free model or openrouter/auto and reports in
       /policy/i
     );
     client.stop();
+
+    process.env.OPENROUTER_MODEL = DEFAULT_OPENROUTER_MODEL_PRIMARY;
+    process.env.OPENROUTER_MODEL_FALLBACK = 'inclusionai/ling-3.2-flash:free';
+    const migrated = loadServerConfig();
+    assert.equal(migrated.openrouterModelFallback, DEFAULT_OPENROUTER_MODEL_FALLBACK);
+    assert.equal(migrated.readiness.openrouterFallbackValid, true);
   } finally {
     if (origPrimary === undefined) delete process.env.OPENROUTER_MODEL;
     else process.env.OPENROUTER_MODEL = origPrimary;
