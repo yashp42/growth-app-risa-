@@ -376,6 +376,11 @@ export function buildAnswerBlocks(params: {
     case 'kpi':
       return kpis;
     default:
+      // Deterministic answers often include a full, edition/stage-labelled
+      // markdown table. An automatic chart from the raw metric rows can lose
+      // those labels (especially when multiple editions are present), so do
+      // not append an unlabeled duplicate unless a chart was explicitly asked for.
+      if (params.answerHasMarkdownTable) return [];
       if (tableBlocks.length > 0 || charts.length > 0) return [...charts, ...tableBlocks];
       return kpis.length > 1 ? kpis : [];
   }
