@@ -37,7 +37,7 @@ export function requiredSampleFloor(sampleSize: unknown): number | null {
   const text = String(sampleSize ?? '').toLowerCase();
   const token = '(\\d+|one|two|three|four|five|six|seven|eight|nine|ten)';
   const match = new RegExp(`(?:decision at\\s+)?n\\s*[≥>=]+\\s*${token}|[≥>=]\\s*${token}\\s+(?:decided\\s+)?(?:recovered\\s+)?(?:proposals?|introductions?)|first\\s+${token}\\s+(?:signings?|deals?)`, 'i').exec(text)
-    ?? new RegExp(`${token}\\s+(?:calls|pitches)`, 'i').exec(text);
+    ?? new RegExp(`${token}\\s+(?:calls|pitches|deals?|signings?|proposals?|introductions?)`, 'i').exec(text);
   const sample = match?.slice(1).find(Boolean)?.toLowerCase();
   if (!sample) return null;
   const words: Record<string, number> = { one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10 };

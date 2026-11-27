@@ -51,6 +51,18 @@ test('[MOCKED] capacity request recognises the approved 5 person-week plan',()=>
  const compound='Using the approved D-010 thresholds evaluate all five growth bets, then compare where the next 5 person-weeks could go. Do not change the approved D-009 or D-010 assumptions.';
  assert.deepEqual(strategyIntents(compound),['growth_bets','capacity_allocation']);
 });
+test('[MOCKED] strategy answer formats D-010 ratios and D-009 lakh units clearly',async()=>{
+ const acc=createToolAccumulator();
+ const answer=await answerStrategy('growth_bets',async()=>({rules:[{decision_id:'D-010',bet_id:'B2',rule_id:'EX-B2',metric_id:'M-25',kpi_name:'Advance payment rate',current_value:4/9,current_numerator:4,current_denominator:9,current_unit:'ratio',computable:true,band:'escalate',status_label:'escalate (< 0.74)',keep_if:'≥ 85%',change_if:'74–85%',escalate_if:'< 74%',evaluate_at:'10 deals',response:'Escalate'}]}),acc);
+ assert.match(answer,/44\.4% \(sample 4\/9\)/);
+ const capacity=await answerStrategy('capacity_allocation',async(name)=>{
+  if(name==='get_scenario')return {scenarios:[{scenario_id:'SC-01',name:'Base',expected_cash:21.23}]};
+  if(name==='get_dataset')return {columns:['Scenario','Capacity pw','Net effort mean pw','Net effort P90 pw','P(over), cold stopped','P(over), cold kept','Cash, cold stopped (₹L)','Cash, cold kept (₹L)','Cash cost of keeping cold (₹L)'],rows:[{Scenario:'BASE @50','Capacity pw':50,'Net effort mean pw':24.9,'Net effort P90 pw':31.2,'P(over), cold stopped':0,'P(over), cold kept':.021,'Cash, cold stopped (₹L)':21.23,'Cash, cold kept (₹L)':21.06,'Cash cost of keeping cold (₹L)':.17}]};
+  if(name==='get_metric')return {rows:[{computable:false,reason:'Unavailable'}]};
+  return {available:false,chunks:[]};
+ },acc);
+ assert.match(capacity,/₹21\.23L/);assert.match(capacity,/2\.1%/);assert.doesNotMatch(capacity,/Net effort P90 pw \| Buffer mean/);
+});
 
 test('[MOCKED] broad qualified-opportunity wording routes to campaign and channel leakage analysis',()=>{
  const q='Which campaigns and acquisition channels are losing the most qualified sponsorship opportunities before they become confirmed wins? Compare the stages using the correct counts and denominators, show the conversion rate for each comparable group, and identify where the largest number of qualified opportunities is being lost.';
