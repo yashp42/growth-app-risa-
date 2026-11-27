@@ -69,6 +69,13 @@ try{
  if(outlookBefore.available&&outlookAfter.available){assert.equal(outlookAfter.open_cash,outlookBefore.open_cash+2468);assert.ok(outlookAfter.indicative_total_cash>=outlookBefore.indicative_total_cash);}
  const afterVersion=await request('/api/version');assert.ok(Number(afterVersion.data_version??afterVersion.version)>Number(version.data_version??version.version));
  log.push('LIVE: pipeline value changed by exactly the new then edited amount; version and outlook inputs refreshed.');
+ const csvInput={...scope,name:prefix+' synthetic reference CSV',csv:'Brand,Opportunity Value INR,Stage\nSynthetic Alpha,100,proposal_sent\nSynthetic Beta,200,contacted'};
+ const upload=await request('/api/imports/dataset','POST',csvInput);
+ assert.equal(upload.row_count,2);assert.equal(upload.duplicate,false);
+ const repeatUpload=await request('/api/imports/dataset','POST',csvInput);
+ assert.equal(repeatUpload.dataset_id,upload.dataset_id);assert.equal(repeatUpload.duplicate,true);
+ assert.equal(await metric(),baseline+2468,'Reference upload changed operational cash/pipeline metrics.');
+ log.push('LIVE: custom CSV persisted, identical re-upload reused the same dataset, and reference values stayed out of operational totals. Its labelled synthetic audit snapshot is retained.');
  if(process.argv.includes('--with-ai')){
   const answer=await ask(`Find the campaign named "${prefix} edited campaign" and tell me its owner and status. Do not create anything.`);
   assert.match(JSON.stringify([answer.answer,answer.blocks]),new RegExp(prefix));
