@@ -1,8 +1,21 @@
+import { isValidIsoDate } from '../gates.ts';
 import type { ToolRunAccumulator } from './tools.ts';
 
-export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
+export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'target_pacing' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
+const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+export function historicalPacingDate(question: string): string | undefined {
+  if (!/\b(?:against|versus|vs|progress|pacing|on track)\b/i.test(question) ||
+      !/\b(?:target|goal|plan)s?\b/i.test(question) ||
+      /\b(?:change|update|create|delete|move|set|approve|compare)\b/i.test(question)) return;
+  const iso = question.match(/\b2025-\d{2}-\d{2}\b/)?.[0];
+  const named = question.match(/\b(\d{1,2})(?:st|nd|rd|th)?[ -]([a-z]{3,9})[, ]+2025\b/i);
+  const month = named ? months.findIndex(m => m === named[2].toLowerCase() || m.slice(0,3) === named[2].toLowerCase()) + 1 : 0;
+  const date = iso ?? (named && month ? `2025-${String(month).padStart(2,'0')}-${named[1].padStart(2,'0')}` : '');
+  if (isValidIsoDate(date)) return date;
+}
 export function basicAnalyticsIntent(question: string, hasFilters = false, previousQuestion = ''): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
+  if (historicalPacingDate(question)) return 'target_pacing';
   const fullContext = `${question}\n${previousQuestion}`;
   if (/\b(?:three|3)\b/.test(question.toLowerCase()) && /\bactions?\b/i.test(question) && /\b(?:based on|that diagnosis|this diagnosis)\b/i.test(question) && /\bchannel\b/i.test(previousQuestion) && /\bwhy\b/i.test(previousQuestion)) return 'channel_actions';
   if (/\bwhy\b/i.test(question) && /\bchannel\b/i.test(question) && /\b(?:strongest|better|performing)\b/i.test(question) && /\bchannel\b/i.test(previousQuestion)) return 'channel_why';
@@ -154,6 +167,22 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       if(channelLeaks.length)lines.push('',`Largest channel loss by count is **${channelLeaks[0].channel}**: ${cell(channelLeaks[0].row?.numerator)} qualified brands did not reach an opportunity (M-17). Treat this as volume, not proof of worse rate; compare the denominators above.`);
       lines.push('', '**What the records prove:** M-17 identifies qualified brands that have no opportunity; M-18 and M-19 show the timely handoff and proposal rates defined by those metrics; M-13 describes proposal-to-win at opportunity grain. These measures have distinct denominators. The largest absolute M-17 loss is not automatically the worst rate or the cause of the loss.', '', '**Recommended actions for this week:**', '- Review the campaign with the highest M-17 loss count with its owner; inspect the affected qualified-brand records and set documented next steps. Measure M-17 numerator and rate at week end.', '- For the lowest comparable M-18 campaign/channel, audit qualification-to-opportunity handoff delays. Measure its numerator ÷ denominator on the next cohort.', '- Review proposals stalled before the M-19 window with owners; measure M-19 numerator ÷ denominator and keep M-13 proposal-to-win separate. These are recommendations only; nothing has been changed.');
     }
+  } else if (intent === 'target_pacing') {
+    const [qualifiedResult, confirmedResult, gate] = await Promise.all([
+      read('get_metric',{metric_id:'M-10'}), read('get_metric',{metric_id:'M-24'}), read('get_register',{kind:'gate'}),
+    ]);
+    const qualified = firstRow(qualifiedResult);
+    const confirmed = firstRow(confirmedResult);
+    lines.push('Point-in-time results for the historical synthetic edition. The cutoff is the end of the selected date in IST. Targets use the version in force at that cutoff.');
+    if (qualified?.computable) {
+      const qualifierTarget = gate.historical_qualified_goal;
+      lines.push(`Qualified brands: **${cell(qualified.value)}**${qualifierTarget == null ? '' : ` versus a goal of ${cell(qualifierTarget)}`}. [M-10]`);
+    } else lines.push('Qualified brands: unavailable. [M-10]');
+    if (confirmed?.computable && confirmed.value != null) {
+      lines.push(`Confirmed partnerships: **${cell(confirmed.numerator)} of ${cell(confirmed.denominator)}** (${Math.round(Number(confirmed.value)*100)}% of goal). [M-24]`);
+    } else lines.push('Confirmed-partnerships pacing is unavailable for this date. [M-24]');
+    lines.push('These targets are counts. Cash collection requires separate receipt evidence.');
+    await read('search_knowledge',{query:'historical 2025 target versions March revised plan qualified brands confirmed partnerships point in time'});
   } else if (intent === 'partnership_counts' || intent === 'deal_size') {
     const summarize = (confirmed: boolean) => read('list_records', {
       kind: 'opportunities', summarize: 'opportunity_cohort',
@@ -177,7 +206,7 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
         if (confirmed?.min_signed_value != null && confirmed.max_signed_value != null) {
           lines.push(`Signed values span ${money(confirmed.min_signed_value)} to ${money(confirmed.max_signed_value)} across ${cell(confirmed.opportunities)} confirmed deals in scope.`);
         }
-        lines.push('Deal sizes measure signed value. Cash receipts are tracked separately.');
+        lines.push('Deal sizes cover one season and measure signed value. Cash receipts are tracked separately.');
       } else {
         lines.push('A signed deal size could not be computed for this scope. ' + cell(median?.reason ?? mean?.reason));
       }
@@ -207,6 +236,7 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     const campaigns = await read('list_records', { kind: 'campaigns', limit: 25 });
     const rows = campaigns.rows as Record<string, unknown>[] | undefined;
     if (!rows || rows.length >= 25) throw new Error('Campaign listing may be truncated; narrow the scope before comparing campaigns.');
+    if (campaigns.record_class === 'historical_synthetic') lines.push('Historical synthetic data.', '');
     const conversions:Array<{name:string;wins:unknown;proposals:unknown;value:number}>=[];
     lines.push('| Campaign | Wins (numerator) | Proposals (denominator) | Conversion (source value) | Source |', '|---|---:|---:|---:|---|');
     for (const campaign of rows) {

@@ -9,7 +9,7 @@ import { verifyScopedAnswer, verifiedFactsFallback } from '../llm/claimGrounding
 import { answerOperational } from '../llm/operationalAnswers.ts';
 import { answerFinancial } from '../llm/financialAnswers.ts';
 import { answerProspects } from '../llm/prospectAnswers.ts';
-import { answerBasicAnalytics } from '../llm/basicAnalytics.ts';
+import { answerBasicAnalytics, historicalPacingDate } from '../llm/basicAnalytics.ts';
 import { answerStrategy } from '../llm/strategyAnswers.ts';
 import { missingPlannedSections, planAnalystEvidence } from '../llm/analystPlan.ts';
 import { isGreeting, requestBudget } from '../llm/requestBudget.ts';
@@ -1169,8 +1169,9 @@ export function createAiApiRouter(
     }
 
     const pool = ensurePool();
+    const historicalDate = historicalPacingDate(parsed.data.message);
     const requestedEditionId =
-      parsed.data.edition_id ??
+      (historicalDate ? 'ED-2025' : undefined) ?? parsed.data.edition_id ??
       (parsed.data.record_class === 'historical_synthetic'
         ? 'ED-2025'
         : parsed.data.record_class === 'live'
@@ -1198,12 +1199,12 @@ export function createAiApiRouter(
 
     const editionId = edRow.edition_id;
     const recordClass = edRow.record_class;
-    const asOf =
+    const asOf = historicalDate ?? (
       parsed.data.as_of && isValidIsoDate(parsed.data.as_of)
         ? parsed.data.as_of
         : editionId === 'ED-2025'
           ? '2025-04-20'
-          : getTodayIstIso();
+          : getTodayIstIso());
 
     // Determine writable operational edition/class for ai_* audit/chat tables (never 'historical_synthetic')
     const logEditionId =
@@ -1414,26 +1415,33 @@ export function createAiApiRouter(
     } else if (refusalCheck.refuse) {
       finalAnswer = refusalCheck.reason!;
     } else if ((explicitWriteIntent || taskDraftOnly) && (directFollowUpTarget || directFollowUpChannel)) {
+      if (profile.opportunitiesScope === 'none' || (directFollowUpChannel && profile.redactFinancials)) {
+        throw new AppApiError(403,'FORBIDDEN','Your role does not have access to the opportunity evidence needed for this follow-up.');
+      }
       reportStep('Resolving the open opportunity and owner.');
       const queryText = `SELECT o.opportunity_id, o.name AS opportunity_name, sp.display_name AS sponsor_name,
-                   sv.owner_member_id, tm.full_name AS owner_name, sv.stage, sv.proposed_value
+                   sv.owner_member_id, tm.full_name AS owner_name, sv.stage,
+                   ${profile.redactFinancials ? 'NULL::numeric' : 'sv.proposed_value'} AS proposed_value
               FROM public.opportunity o
               JOIN public.sponsor sp ON sp.sponsor_id=o.sponsor_id
               LEFT JOIN LATERAL (
                 SELECT owner_member_id, stage, proposed_value FROM public.opportunity_stage_version
                  WHERE opportunity_id=o.opportunity_id AND NOT is_deleted
+                   AND valid_from < (($4::date + 1)::timestamp AT TIME ZONE 'Asia/Kolkata')
                  ORDER BY valid_from DESC, history_id DESC LIMIT 1
               ) sv ON true
               LEFT JOIN public.team_member tm ON tm.member_id=sv.owner_member_id AND NOT tm.is_deleted
               LEFT JOIN public.campaign c ON c.campaign_id=o.originating_campaign_id AND NOT c.is_deleted
               LEFT JOIN public.channel ch ON ch.channel_id=c.channel_id
              WHERE o.edition_id=$1 AND o.record_class=$2 AND NOT o.is_deleted
-               AND COALESCE(sv.stage,'prospecting') IN ('prospecting','contacted','proposal_sent','negotiating')
+               AND sv.stage IN ('prospecting','contacted','proposal_sent','negotiating')
                AND ${directFollowUpChannel ? "ch.channel_group=$3" : "LOWER(sp.display_name) LIKE LOWER($3)"}
+               ${profile.opportunitiesScope === 'own' ? 'AND sv.owner_member_id=$5' : ''}
              ORDER BY CASE sv.stage WHEN 'negotiating' THEN 1 WHEN 'proposal_sent' THEN 2 WHEN 'contacted' THEN 3 ELSE 4 END,
                       sv.proposed_value DESC NULLS LAST, o.opportunity_id ASC
              LIMIT ${directFollowUpChannel ? 25 : 2}`;
-      const queryValues=[editionId,recordClass,directFollowUpChannel??`%${directFollowUpTarget}%`];
+      const queryValues=[editionId,recordClass,directFollowUpChannel??`%${directFollowUpTarget}%`,asOf];
+      if (profile.opportunitiesScope === 'own') queryValues.push(actor.memberId);
       const candidates = await pool.query<{
         opportunity_id:string; opportunity_name:string|null; sponsor_name:string;
         owner_member_id:string|null; owner_name:string|null; stage:string; proposed_value:number|null;
@@ -1457,7 +1465,7 @@ export function createAiApiRouter(
         const row=eligible[0];
         const due=requestedTaskDeadline??'Not specified in the request or available record';
         const description=`Follow up with ${row.sponsor_name} about ${row.opportunity_name??row.opportunity_id} (${row.stage}) and confirm the next step.`;
-        finalAnswer=`Draft only — no task has been created.\n\nHighest-priority open ${directFollowUpChannel??'matching'} opportunity (ranked by stage maturity, then proposed value): ${row.sponsor_name} — ${row.opportunity_name??row.opportunity_id} (${row.stage}; ${row.proposed_value==null?'value not recorded':'₹'+Number(row.proposed_value).toLocaleString('en-IN')}).\n\n- Owner: ${row.owner_name??'name unavailable'} (${row.owner_member_id})\n- Due date: ${due}\n- Description: ${description}\n- Linked record: opportunity ${row.opportunity_id}\n\nThe due date was not supplied; choose one before creating the task.`;
+        finalAnswer=`Draft only — no task has been created.\n\nHighest-priority open ${directFollowUpChannel??'matching'} opportunity (ranked by stage maturity, then proposed value): ${row.sponsor_name} — ${row.opportunity_name??row.opportunity_id} (${row.stage}; ${row.proposed_value==null?'value not recorded':'₹'+Number(row.proposed_value).toLocaleString('en-IN')}).\n\n- Owner: ${row.owner_name??'name unavailable'} (${row.owner_member_id})\n- Due date: ${due}\n- Description: ${description}\n- Linked record: opportunity ${row.opportunity_id}\n\n${requestedTaskDeadline ? 'Confirm the draft details before creating the task.' : 'The due date was not supplied; choose one before creating the task.'}`;
         routeOverride='sql';
       }else if(!requestedTaskDeadline){
         const row=eligible[0];

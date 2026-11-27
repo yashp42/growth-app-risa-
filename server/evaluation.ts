@@ -119,15 +119,17 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
       const cleaned=await deps.cleanup(res.body);
       const safe=cleaned&&(await deps.snapshot())===before;
       if(!safe)throw new Error('Operational snapshot changed or proposal cleanup failed; evaluation stopped');
+      const errorCode = typeof res.body.code === 'string' ? res.body.code : undefined;
       const err = res.body.error && typeof res.body.error === 'object' ? res.body.error : {};
       const pauseDetail = { test_id: c.test_id, response_status: res.status,
         reason: String(res.body.generation_fallback_reason ?? (res.status === 429 ? 'rate_limit' : 'provider_error')),
-        code: typeof err.code === 'string' ? err.code.slice(0,120) : undefined,
-        message: typeof err.message === 'string' ? err.message.slice(0,500) : undefined };
+        code: typeof err.code === 'string' ? err.code.slice(0,120) : errorCode,
+        message: typeof err.message === 'string' ? err.message.slice(0,500) : typeof res.body.message === 'string' ? res.body.message.slice(0,500) : undefined };
       if(res.status===429||res.body.route==='quota_exhausted'||String(res.body.answer??'').includes("Today's free AI quota is used up")){
         run.paused_case=pauseDetail;run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';await save();break;
       }
-      if (run.set === 'full' && res.status === 200 && res.body.generation_fallback_reason === 'unavailable') {
+      if (run.set === 'full' && ((res.status === 200 && res.body.generation_fallback_reason === 'unavailable') ||
+          (res.status === 502 && /^(?:OPENROUTER_|AI_)/.test(pauseDetail.code ?? '')))) {
         // Some supported questions only need the database. Continue to those
         // while retaining the unavailable response as pending, with no score.
         (run.deferred_cases ??= {})[c.test_id] = pauseDetail;

@@ -746,7 +746,7 @@ export async function executeReadTool(
     const asOf =
       args.as_of && isValidIsoDate(args.as_of)
         ? args.as_of
-        : ed.edition_id === 'ED-2025'
+        : ed.edition_id === 'ED-2025' && ed.edition_id !== ctx.userSeason.editionId
           ? '2025-04-20'
           : ctx.userSeason.asOf;
 
@@ -990,7 +990,7 @@ export async function executeReadTool(
     const asOf =
       args.as_of && isValidIsoDate(args.as_of)
         ? args.as_of
-        : ed.edition_id === 'ED-2025'
+        : ed.edition_id === 'ED-2025' && ed.edition_id !== ctx.userSeason.editionId
           ? '2025-04-20'
           : ctx.userSeason.asOf;
 
@@ -1002,9 +1002,11 @@ export async function executeReadTool(
            FROM public.target_version tv
            LEFT JOIN public.kpi_definition kd ON kd.kpi_id = tv.kpi_id AND NOT kd.is_deleted
            LEFT JOIN public.scenario_reference sr ON sr.scenario_id = tv.scenario_id AND NOT sr.is_deleted
-          WHERE tv.edition_id = $1 AND tv.valid_to IS NULL AND NOT tv.is_deleted
+          WHERE tv.edition_id = $1 AND NOT tv.is_deleted
+            AND tv.valid_from < (($2::date + 1)::timestamp AT TIME ZONE 'Asia/Kolkata')
+            AND (tv.valid_to IS NULL OR tv.valid_to >= (($2::date + 1)::timestamp AT TIME ZONE 'Asia/Kolkata'))
           ORDER BY tv.kpi_id, tv.period, tv.scenario_id NULLS LAST`,
-        [ed.edition_id]
+        [ed.edition_id, asOf]
       );
 
       const weekSchedule = ed.season_start
@@ -1115,6 +1117,7 @@ export async function executeReadTool(
         as_of: asOf,
         data_version: dataVersion,
         weekly_pacing: weeklyEvaluation,
+        historical_qualified_goal: isHistorical ? toNum(targetsRes.rows.find(r=>r.kpi_id==='K-H-01')?.target_value) : null,
         cash_gate: {
           kpi_id: 'K-G-02',
           metric_id: 'M-06',
