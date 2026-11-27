@@ -32,3 +32,7 @@ jobs:
       - name: Verify and prepare explicitly requested reviewer access (LIVE, no inference)
         if: github.head_ref == 'codex/dynamic-data-analyst'
         run: npx tsx scripts/smoke-reviewer-live.ts --prepare
+
+      - name: LIVE dynamic demo acceptance (synthetic fixtures, no inference)
+        if: github.head_ref == 'codex/live-dynamic-acceptance'
+        run: npx tsx scripts/acceptance-dynamic-live.ts --confirm-demo-tests
