@@ -2,6 +2,7 @@ import type { QueryablePool, ToolRunAccumulator } from './tools.ts';
 import { getDataset, type ReferenceContext } from './referenceData.ts';
 import { formatScenarioCash } from './responsePolicy.ts';
 const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)+'|').replace(/[\r\n]/g,' ');
+const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
 export type FinancialIntent='activation_inventory'|'forecast_actual'|'collection_status'|'cash_position';
 export function financialIntent(question:string,hasFilters=false):FinancialIntent|null {
  if(hasFilters||/\b(create|update|delete|change|log|assign|move|mark|confirm|schedule)\b/i.test(question))return null;
@@ -11,7 +12,7 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  if(/\bbudget\b/i.test(question)&&! /\b(?:spend|expenses?|operating costs?|budget target|approved target)\b/i.test(question)&&(/\b(?:sponsorship|sponsor|our|current|season|202[56])\b/i.test(question)||/^\s*(?:what(?:'s| is)\s+)?budget\s*[?.!]*\s*$/i.test(question)))return 'cash_position';
  if(/\bactivations?\b/i.test(question)&&/\b(slots?|price|prices|pricing|cost|costs|inventory|how many)\b/i.test(question))return 'activation_inventory';
  if(/\b(forecast|expected|stretch|projection|projected)\b/i.test(question)&&/\b(collected|received|receipts|actual|already paid)\b/i.test(question))return 'forecast_actual';
- if(/\b(complete picture|cash position|how much is signed|cash-type signed|remains outstanding|largest outstanding balances)\b/i.test(question)||(/\b(signed|commitments?)\b/i.test(question)&&/\b(collected|cash collected|received)\b/i.test(question)&&/\b(compare|distinction|difference|separate)\b/i.test(question)))return 'cash_position';
+ if(/\b(complete picture|cash position|how much is signed|cash-type signed|remains outstanding|largest outstanding balances)\b/i.test(question)||(/\b(signed|commitments?)\b/i.test(question)&&/\b(collected|cash collected|received)\b/i.test(question)&&/\b(compare|distinction|difference|separate|outstanding|receivable|unpaid|due dates?|overdue)\b/i.test(question)))return 'cash_position';
  if(/\b(paid late|late payment|outstanding|cash collection rate|collection rate|cash collected)\b/i.test(question))return 'collection_status';
  return null;
 }
@@ -26,7 +27,7 @@ export async function getInventory(pool:QueryablePool,id:string|undefined,ctx:Re
  return {source:'inventory_reference',kind:'inventory',available:datasets.some(d=>d.available===true),datasets};
 }
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;
-export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolRunAccumulator):Promise<string>{
+export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolRunAccumulator,options:{includeReceivableDetails?:boolean}={}):Promise<string>{
  const lines:string[]=[];
  if(intent==='activation_inventory'){
   const result=await read('get_register',{kind:'inventory',id:'activation'});
@@ -53,18 +54,23 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
  }else{
   if(intent==='cash_position'){
    const metrics:Record<string,Record<string,unknown>>={};
-   for(const id of ['M-02','M-03','M-01','M-07']){
+   for(const id of ['M-02','M-03','M-01','M-07','M-04']){
     const result=await read('get_metric',{metric_id:id});
     const row=(result.rows as Record<string,unknown>[]|undefined)?.[0];
     if(!row)throw new Error('Cash-position source returned no row: '+id);
     metrics[id]=row;
    }
    lines.push('## Current cash position (selected edition and as-of date)');
-   const labels:Record<string,string>={'M-02':'Signed total (cash + in-kind)','M-03':'Cash-type signed value','M-01':'Cash actually collected','M-07':'Outstanding cash'};
+   const labels:Record<string,string>={'M-02':'Signed total (cash + in-kind)','M-03':'Cash-type signed value','M-04':'Signed in-kind value','M-01':'Cash actually collected','M-07':'Outstanding cash'};
    lines.push('| Measure | Value |','|---|---:|');
-   for(const id of ['M-02','M-03','M-01','M-07']){
+   for(const id of ['M-02','M-03','M-04','M-01','M-07']){
     const r=metrics[id];
     lines.push(`| ${labels[id]} [${id}] | ${r.computable&&r.value!=null?'₹'+Number(r.value).toLocaleString('en-IN'):'Not computable: '+cell(r.reason)} |`);
+   }
+   const cashSigned=metrics['M-03'],cashCollected=metrics['M-01'],cashOutstanding=metrics['M-07'];
+   if(cashSigned.computable&&cashCollected.computable&&cashOutstanding.computable&&cashSigned.value!=null&&cashCollected.value!=null&&cashOutstanding.value!=null){
+    const difference=Number(cashSigned.value)-Number(cashCollected.value)-Number(cashOutstanding.value);
+    lines.push('',Math.abs(difference)<0.01?`Reconciliation: signed cash = collected cash + outstanding cash (${money(cashSigned.value)} = ${money(cashCollected.value)} + ${money(cashOutstanding.value)}).`:`Reconciliation gap: signed cash minus collected and outstanding is ${money(difference)}. The source metrics do not balance; investigate the underlying schedule/receipt records before relying on the total.`);
    }
    const outstanding=metrics['M-07'];
    if(outstanding.computable){
@@ -74,7 +80,21 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
     if(rows?.length){
      for(const r of rows.slice(0,5))lines.push(`- ${cell(r.sponsor_name)} — ₹${Number(r.value).toLocaleString('en-IN')} [sponsor_metrics:M-07]`);
     }else lines.push('No positive sponsor-level outstanding balances were returned.');
-    lines.push('', 'Follow up first on the highest positive outstanding balances above, validating due dates and receipt allocation with the account owner. This is a priority order from the outstanding ledger, not proof that an amount is late.');
+    if(options.includeReceivableDetails){
+     const receivables=await read('list_records',{kind:'receivables',limit:25});
+     const records=(receivables.rows as Record<string,unknown>[]|undefined)??[];
+     const asOf=String(receivables.as_of??'the selected as-of date');
+     const active=records.filter(r=>Number(r.outstanding)>0).sort((a,b)=>Number(b.overdue_amount??0)-Number(a.overdue_amount??0)||Number(b.outstanding??0)-Number(a.outstanding??0));
+     lines.push('',`**Due-date and urgency evidence (as of ${asOf}):**`,'| Sponsor / opportunity | Balance | Recorded overdue | Due-date evidence |','|---|---:|---:|---|');
+     for(const r of active){
+      const schedules=Array.isArray(r.payment_schedule)?r.payment_schedule as Record<string,unknown>[]:[];
+      const dues=schedules.filter(s=>Number(s.remaining_amount)>0&&s.due_date).map(s=>{const date=String(s.due_date);return `${date}: ${money(s.remaining_amount)} remaining (${date<asOf?'overdue':date===asOf?'due today':'not yet due'})`;});
+      lines.push(`| ${cell(r.sponsor_name)} / ${cell(r.opportunity_name)} | ${money(r.outstanding)} | ${Number(r.overdue_amount)>0?money(r.overdue_amount):'₹0 recorded'} | ${cell(dues.join('; ')||'No unpaid schedule due date returned')} |`);
+     }
+     const urgent=active.filter(r=>Number(r.overdue_amount)>0)[0];
+     lines.push('',urgent?`**First follow-up:** ${cell(urgent.sponsor_name)} has the largest recorded overdue amount (${money(urgent.overdue_amount)}); confirm receipt allocation and contact the owner.`:'**Urgency:** no positive overdue balance was returned. Use amount to order a balance check, but do not label undated balances late.');
+     if(active.length>=25)lines.push('The receivable list is capped at 25; the table may not be exhaustive.');
+    }else lines.push('', 'Follow up first on the highest positive outstanding balances above, validating due dates and receipt allocation with the account owner. This is a priority order from the outstanding ledger, not proof that an amount is late.');
    }else lines.push('', 'Sponsor follow-up ranking is unavailable because outstanding cash cannot be reconciled for this edition. Do not treat signed or invoiced value as collected cash.');
    lines.push('', 'Signed value, cash-type signed value, collected cash and outstanding cash are separate measures. In-kind is included only in M-02, not M-03 or M-01. A late-payment/T−7 conclusion requires dated due-date and receipt records.');
    return lines.join('\n');

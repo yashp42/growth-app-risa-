@@ -235,6 +235,10 @@ export interface AiStructuredResponse {
   data_refreshed?: boolean;
   answer_check_passed?: boolean;
   answer_check_status?: 'verified' | 'retried' | 'unverified' | string | null;
+  answer_check_warning?: string | null;
+  answer_completeness_passed?: boolean;
+  answer_completeness_missing?: string[];
+  synthesis_status?: 'not_requested' | 'synthesized' | 'unavailable' | 'rejected' | string;
   cached?: boolean;
   shortcut?: boolean;
   quota?: AiQuotaInfo | null;
@@ -335,5 +339,6 @@ export interface AiResponseIntegrityCheck {
   valid: boolean;
   unverifiedNumbers: boolean;
   missingDataLabels: boolean;
+  incompleteAnswer: boolean;
   warnings: string[];
 }

@@ -1,12 +1,14 @@
 import type { ToolRunAccumulator } from './tools.ts';
 
 export type StrategyIntent = 'growth_bets' | 'capacity_allocation';
-export function strategyIntent(question:string,hasFilters=false):StrategyIntent|null{
- if(hasFilters)return null;
- if(/\b(?:five|5)\b/i.test(question)&&/\b(?:growth bets?|bets?)\b/i.test(question)&&/\b(?:threshold|D-010|escalation|continue)\b/i.test(question))return 'growth_bets';
- if(/\b5 person[- ]weeks?\b/i.test(question)&&/\b(?:capacity|allocate|allocation|deprioritise|deprioritize)\b/i.test(question))return 'capacity_allocation';
- return null;
+export function strategyIntents(question:string,hasFilters=false):StrategyIntent[]{
+ if(hasFilters)return [];
+ const intents:StrategyIntent[]=[];
+ if(/\b(?:five|5)\b/i.test(question)&&/\b(?:growth bets?|bets?)\b/i.test(question)&&/\b(?:threshold|D-010|escalation|continue|intervene|evaluate)\b/i.test(question))intents.push('growth_bets');
+ if(/\b5 person[- ]weeks?\b/i.test(question)&&/\b(?:capacity|allocate|allocation|deprioritise|deprioritize|compare)\b/i.test(question))intents.push('capacity_allocation');
+ return intents;
 }
+export function strategyIntent(question:string,hasFilters=false):StrategyIntent|null{return strategyIntents(question,hasFilters)[0]??null;}
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;
 const cell=(v:unknown)=>String(v??'—').replace(/[|\r\n]/g,' ');
 export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRunAccumulator):Promise<string>{

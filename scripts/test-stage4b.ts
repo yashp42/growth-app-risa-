@@ -26,7 +26,7 @@ import {
 import { createOpenRouterClient } from '../server/llm/openrouter.ts';
 import { executeSetView } from '../server/llm/views.ts';
 import type { CanonicalRole } from '../server/permissions.ts';
-import { buildSystemPrompt, createAiApiRouter, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
+import { buildSystemPrompt, createAiApiRouter, followUpChannelTarget, isHumanOnlyWriteRequest } from '../server/routes/aiApi.ts';
 import { trimToolResultForModel } from '../server/llm/tools.ts';
 import { createWriteApiRouter } from '../server/routes/writeApi.ts';
 import { createReadApiRouter } from '../server/routes/readApi.ts';
@@ -2009,6 +2009,9 @@ test('[MOCKED] 2.6: every one of the 21 action types is stored as permission_lev
 });
 
 test('[MOCKED] 2.2: human-only finance writes are refused and name the Collections screen; reads and operational writes are not', () => {
+  assert.equal(followUpChannelTarget('Based on that diagnosis, prepare one follow-up task for the owner of the highest-priority open opportunity in that channel. Do not create the task yet; wait for my confirmation.', [
+    { role: 'assistant', content: 'Highest observed proposal-to-win rate: **warm** (3 wins from 5 proposals).' },
+  ]), 'warm');
   const refused: Array<[string, RegExp]> = [
     ["Mark Bramble's invoice as paid", /Collections → Invoices/],
     ['Record a receipt of ₹50,000 from Bramble', /Collections → Receipts/],
@@ -2038,10 +2041,12 @@ test('[MOCKED] 2.2: human-only finance writes are refused and name the Collectio
     'Show contracts with outstanding cash',
     'Create a task to chase the Bramble invoice',
     'Based on current pipeline performance, where should we allocate the next available 5 person-weeks?',
+    'Using approved scenarios, where should we allocate 5 person-weeks? Do not change the approved D-009 or D-010 assumptions.',
   ];
   for (const q of allowed) {
     assert.equal(isHumanOnlyWriteRequest(q).refuse, false, `should not refuse: ${q}`);
   }
+  assert.equal(isHumanOnlyWriteRequest('Change the approved D-009 Stretch scenario target to ₹30L.').refuse, true);
 });
 
 test('[MOCKED] 2.4: change the role cannot make is rejected at propose time and never stored', async () => {
@@ -2280,7 +2285,7 @@ test('[MOCKED] Groq primary -> Groq fallback -> OpenRouter :free chain with retr
   client.stop();
 });
 
-test('[MOCKED] 3-model-call cap fallback produces Markdown table & notice; sanitized error never leaks SQL', async () => {
+test('[MOCKED] 3-model-call cap fallback preserves verified evidence and notice; sanitized error never leaks SQL', async () => {
   const store = createMock4bStore();
   let modelCalls = 0;
   const mockFetch: typeof fetch = async (input) => {
@@ -2332,8 +2337,9 @@ test('[MOCKED] 3-model-call cap fallback produces Markdown table & notice; sanit
     assert.equal(rCap.status, 200);
     const bodyCap = (await rCap.json()) as { answer: string };
     assert.equal(modelCalls, 3);
-    assert.match(bodyCap.answer, /\|/);
-    assert.match(bodyCap.answer, /Summary not generated \(AI limit for this question\)/);
+    assert.match(bodyCap.answer, /Signed sponsorship value: ₹9,30,000/);
+    assert.match(bodyCap.answer, /AI explanation is temporarily unavailable|Summary not generated \(AI limit for this question\)/);
+    assert.doesNotMatch(bodyCap.answer, /SELECT\s|FROM\s+public\./i);
   } finally {
     await srv.close();
   }
