@@ -1,11 +1,13 @@
 import type { QueryablePool, ToolRunAccumulator } from './tools.ts';
 import { getDataset, type ReferenceContext } from './referenceData.ts';
 import { formatScenarioCash } from './responsePolicy.ts';
+import { isExplicitWriteRequest } from './actionIntent.ts';
 const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)+'|').replace(/[\r\n]/g,' ');
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
 export type FinancialIntent='activation_inventory'|'forecast_actual'|'collection_status'|'cash_position';
 export function financialIntent(question:string,hasFilters=false):FinancialIntent|null {
- if(hasFilters||/\b(create|update|delete|change|log|assign|move|mark|confirm|schedule)\b/i.test(question))return null;
+ if(hasFilters||isExplicitWriteRequest(question))return null;
+ if(/\b(?:change|update|set|revise|replace)\b.{0,60}\b(?:forecast|expected|stretch|projection|projected)\b/i.test(question))return null;
  // A short "budget?" question from the Analyst means the current sponsorship
  // money snapshot. Route it to the same verified metrics as an explicit cash
  // position request instead of asking the model to expose internal tools.

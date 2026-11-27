@@ -209,3 +209,27 @@ Remaining acceptance work: deploy this revision, then rerun all five broad promp
 - GitHub Actions run 58 passed clean install, lint, build and voice-preview generation, then found two stale Stage 4B assertions. The fallback test now checks the verified metric and availability notice rather than requiring an irrelevant table; the system prompt was shortened while keeping its guardrails and now fits the existing 600-token budget. Both focused tests pass locally.
 - These final fixes are being added to PR #19. Wait for the fresh hosted workflow (including the full scripted suite) to pass before merge.
 - PR is open, not merged. Do not deploy until the updated clean CI passes; after merge, verify Render and run the authenticated acceptance prompts. The earlier red workflow run is on the prior PR head and does not validate the lock-file correction.
+
+
+## Flexible Analyst follow-up
+
+The local continuation applies shared investigation, evidence-scope, cash, threshold, and safe task-draft fixes on top of merged PR #19. It is not live-validated. Track acceptance against the five user scenarios, plus paraphrases and permission/provider failure cases. Do not treat mocked test passes as evidence of live answer quality.
+
+### Current continuation state (2026-11-27)
+
+- The five acceptance prompts are not stored as fixed answer templates. Cash totals, due schedules, channel conversion, historical metrics, D-010 samples, and linked opportunities are read from edition-scoped records and approved rule/scenario sources; missing fields remain missing.
+- `ANALYST_FLEXIBLE_INVESTIGATION` now requires the explicit value `true`. The broad agentic tool loop remains available but is not the default: running the whole suite with that mode enabled exposed skipped evidence and broke provider-independent finance paths. The default uses the existing domain evidence planners, with LLM-written synthesis where useful. Treat this as a staged rollout decision, not proof that the open-ended path is production-ready.
+- Draft-only task follow-up now searches the opportunity, validates its owner, and requires a deadline from the user or a recorded source before preparing a dated proposal. The write tool remains unavailable for a draft-only request; acceptance still requires the normal confirmation flow.
+- The channel opportunity read uses a server-side channel filter; linked task reads can retrieve due-date context. Ambiguous top-ranked opportunities do not produce a proposal.
+- Cross-edition percentage-point arithmetic is allowed only from comparable numerator/denominator evidence with the same metric and filters. D-010 threshold outputs carry sample numerator/denominator and minimum sample gates.
+- Cash intent no longer mistakes descriptive “mark balances that cannot be ranked” wording for a write. Approved scenario preservation wording does not trigger a mutation refusal.
+
+Validation from this continuation:
+
+- `node --import tsx --test --test-reporter=dot scripts/test-*.ts`: pass (all scripted tests).
+- `npm run lint`: pass.
+- `npm run build`: pass with existing Vite `__dirname` and large-chunk warnings.
+- `git diff --check`: pass.
+- Public Render health was reachable and reported application/database readiness and 30/30 metric functions healthy. It did not report a deployed commit or exercise authenticated Analyst questions. Production revision and live answer quality therefore remain unverified.
+
+Next handoff: inspect this branch diff, push it as a separate PR (do not push directly to `main`), wait for hosted CI, deploy through the normal pipeline, verify Render's deployed revision, then rerun all five acceptance flows in an authenticated session and record full answers, sources, warnings, and action previews. Preserve the pre-existing untracked `work/` directory; it is not part of this change.

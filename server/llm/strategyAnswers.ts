@@ -1,4 +1,5 @@
 import type { ToolRunAccumulator } from './tools.ts';
+import { requiredSampleFloor } from '../ruleBands.ts';
 
 export type StrategyIntent = 'growth_bets' | 'capacity_allocation';
 export function strategyIntents(question:string,hasFilters=false):StrategyIntent[]{
@@ -52,10 +53,17 @@ export async function answerStrategy(intent:StrategyIntent,read:Read,acc:ToolRun
   const rs=byBet.get(id)??[];
   if(!rs.length){lines.push(`| ${betNames[id]} (${id}) | No linked D-010 threshold rule returned | Cannot evaluate | Retrieve the approved rule and required metric |`);continue;}
   for(const r of rs){
-   const status=String(r.status_label??'not evaluated');
-   const unavailable=r.computable!==true;
-   const next=unavailable?`Collect ${cell(r.kpi_name??r.metric_id)} at ${cell(r.evaluate_at)}; ${cell(r.reason??'observation unavailable')}`:cell(r.response);
-   lines.push(`| ${betNames[id]} (${id}) | ${cell(r.rule_id)}; ${cell(r.current_value)} [${cell(r.metric_id)}]; keep if ${cell(r.keep_if)}, change if ${cell(r.change_if)}, escalate if ${cell(r.escalate_if)} | ${unavailable?'Cannot yet evaluate':status} | ${next} |`);
+   const band=String(r.band??'').toLowerCase();
+   const rawStatus=String(r.status_label??'not evaluated').toLowerCase();
+   const minN=requiredSampleFloor(r.sample_size);
+   const observedN=Number(r.current_denominator);
+   const belowSampleGate=minN!==null&&(!Number.isFinite(observedN)||observedN<minN);
+   const unavailable=r.computable!==true||['not_due','unavailable','manual_review'].includes(band)||/not yet due|not computable|restricted|not defined|manual review|insufficient sample|not evaluat/i.test(rawStatus)||belowSampleGate;
+   const status=unavailable?'not yet evaluable':band==='keep'||/^keep\b/.test(rawStatus)?'continue':(['change','stop','escalate'].includes(band)||/change|stop|escalat/i.test(rawStatus))?'intervene':'not yet evaluable';
+   const current=r.current_value==null?'—':Number.isFinite(Number(r.current_value))?String(r.current_value):cell(r.current_value);
+   const sample=Number.isFinite(Number(r.current_denominator))?` (sample ${cell(r.current_numerator??'—')}/${cell(r.current_denominator)})`:'';
+   const next=unavailable?`${belowSampleGate?`Need sample n ≥ ${minN}; observed ${Number.isFinite(observedN)?observedN:'unknown'}. `:''}Collect ${cell(r.kpi_name??r.metric_id)} at ${cell(r.evaluate_at)}; ${cell(r.reason??rawStatus??'observation unavailable')}`:cell(r.response);
+   lines.push(`| ${betNames[id]} (${id}) | ${cell(r.rule_id)}; ${current}${sample} [${cell(r.metric_id)}]; sample target ${cell(r.sample_size)}; keep if ${cell(r.keep_if)}, change if ${cell(r.change_if)}, escalate if ${cell(r.escalate_if)} | ${status} (${cell(r.status_label)}) | ${next} |`);
   }
  }
  lines.push('','Use **continue** only for a keep band, **intervene** for a change/escalation band, and **not yet evaluable** where the metric is missing, restricted, not due or below its minimum sample. D-010 is cited as the approved rule source.');

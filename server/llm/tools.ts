@@ -18,7 +18,7 @@ import {
   formatShortDisplayDate,
   isValidIsoDate,
 } from '../gates.ts';
-import { evaluateRuleBand, type RuleMetricSnapshot } from '../ruleBands.ts';
+import { evaluateRuleBand, requiredSampleFloor, type RuleMetricSnapshot } from '../ruleBands.ts';
 import {
   ALLOWED_CHANNEL_GROUPS,
   coerceMetricRow,
@@ -231,9 +231,12 @@ export const ListRecordsArgsSchema = z
         state: z.enum(['open', 'confirmed', 'lost', 'signed', 'won']).optional(),
         status: z.string().trim().optional(),
         campaign_id: z.string().trim().optional(),
+        channel_group: z.enum(['warm','inbound','cold','renewal','premium']).optional(),
         sponsor_id: z.string().trim().optional(),
         overdue: z.boolean().optional(),
         owner_member_id: z.string().trim().optional(),
+        linked_type: z.string().trim().optional(),
+        linked_id: z.string().trim().optional(),
         search: z.string().trim().optional(),
         bet_id: z.string().trim().optional(),
       })
@@ -351,7 +354,7 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
     type: 'function',
     function: {
       name: 'get_register',
-      description: 'Read kpi, rule, experiment, assumption, decision, bet, gate, source, benchmark, inventory or prospects. Inventory reads commercial inventory and pricing source rows; id may select activation. Prospects are external research targets, not pipeline or forecasts; verified routes are not introductions. Use filters for company, category, action or verified_route. Benchmarks are external research: preserve ASK vs ACTUAL vs COST.',
+      description: 'Read kpi, rule, experiment, assumption, decision, bet, gate, source, benchmark, inventory or prospects. Rule rows include the linked approved experiment sample target and latest metric numerator/denominator; check those before applying a threshold. Inventory reads commercial inventory and pricing source rows; id may select activation. Prospects are external research targets, not pipeline or forecasts; verified routes are not introductions. Use filters for company, category, action or verified_route. Benchmarks are external research: preserve ASK vs ACTUAL vs COST.',
       parameters: {
         type: 'object',
         properties: {
@@ -392,7 +395,7 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
     function: {
       name: 'list_records',
       description:
-        'List at most 25 RBAC-scoped records; limit must be 1..25. Use get_sponsor_metrics for financial rankings, not a partial record listing. Records: (opportunities with state=open|confirmed|lost, tasks, receivables per active contract, sponsors, campaigns, contacts, team_members).',
+        'List at most 25 RBAC-scoped records; limit must be 1..25. Opportunities can be filtered by originating campaign channel_group (warm, inbound, cold, renewal, premium), campaign, stage, owner, sponsor, bet or open/confirmed/lost state. Tasks can be filtered by their linked record type and ID to retrieve recorded due dates and status. Use get_sponsor_metrics for financial rankings, not a partial record listing. Records: (opportunities with state=open|confirmed|lost, tasks, receivables per active contract, sponsors, campaigns, contacts, team_members).',
       parameters: {
         type: 'object',
         properties: {
@@ -418,9 +421,12 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
               },
               status: { type: 'string' },
               campaign_id: { type: 'string' },
+              channel_group: { type: 'string', enum: ['warm','inbound','cold','renewal','premium'], description: 'Filter by the originating campaign channel group.' },
               sponsor_id: { type: 'string' },
               overdue: { type: 'boolean' },
               owner_member_id: { type: 'string' },
+              linked_type: { type: 'string', description: 'Related record type for tasks.' },
+              linked_id: { type: 'string', description: 'Related record ID for tasks.' },
               search: { type: 'string' },
               bet_id: { type: 'string' },
             },
@@ -1141,10 +1147,13 @@ export async function executeReadTool(
       const qRes = await ctx.pool.query<Record<string, unknown>>(
         `SELECT tr.rule_id, tr.kpi_id, tr.evaluate_at, tr.keep_if, tr.change_if,
                 tr.escalate_if, tr.response, tr.owner_role, tr.decision_id, tr.rule_status,
-                kd.name AS kpi_name, kd.bet_id, kd.metric_id
+                kd.name AS kpi_name, kd.bet_id, kd.metric_id,
+                ex.experiment_id, ex.sample_size, ex.population, ex.time_limit
            FROM public.threshold_rule tr
            LEFT JOIN public.kpi_definition kd
              ON kd.kpi_id = tr.kpi_id AND kd.valid_to IS NULL AND NOT kd.is_deleted
+           LEFT JOIN public.experiment ex
+             ON ex.rule_id = tr.rule_id AND ex.record_class = 'operating_plan' AND NOT ex.is_deleted
           WHERE tr.valid_to IS NULL AND NOT tr.is_deleted ${idClause}
           ORDER BY tr.rule_id`,
         params
@@ -1214,15 +1223,27 @@ export async function executeReadTool(
             ? { notDueMessage: cashGateNotDueMessage }
             : undefined
         );
+        const minSample = requiredSampleFloor(row.sample_size);
+        const observedSample = metricRow?.denominator;
+        const sampleIncomplete = minSample !== null && (
+          observedSample === null || observedSample === undefined ||
+          !Number.isFinite(Number(observedSample)) || Number(observedSample) < minSample
+        );
+        const finalEvaluation = sampleIncomplete
+          ? { band: 'unavailable' as const, status_label: `insufficient sample (${observedSample ?? 'unknown'}/${minSample})`, severity: 'neutral' as const }
+          : ev;
         return {
           ...row,
           metric_id: effectiveMetricId,
           current_value: metricRow?.value ?? null,
+          current_numerator: metricRow?.numerator ?? null,
+          current_denominator: metricRow?.denominator ?? null,
+          current_unit: metricRow?.unit ?? null,
           computable: metricRow?.computable ?? false,
           reason: metricRow?.reason ?? (restricted ? 'Restricted for viewer role' : null),
-          band: ev.band,
-          status_label: ev.status_label,
-          severity: ev.severity,
+          band: finalEvaluation.band,
+          status_label: finalEvaluation.status_label,
+          severity: finalEvaluation.severity,
         };
       });
 
@@ -1378,6 +1399,10 @@ export async function executeReadTool(
         params.push(f.campaign_id);
         where.push(`o.originating_campaign_id = $${params.length}`);
       }
+      if (f.channel_group) {
+        params.push(f.channel_group);
+        where.push(`ch.channel_group = $${params.length}`);
+      }
       if (f.sponsor_id) {
         params.push(f.sponsor_id);
         where.push(`o.sponsor_id = $${params.length}`);
@@ -1407,6 +1432,8 @@ export async function executeReadTool(
                 sv.valid_from AS stage_since, o.created_at
            FROM public.opportunity o
            JOIN public.sponsor sp ON sp.sponsor_id = o.sponsor_id
+           LEFT JOIN public.campaign c ON c.campaign_id = o.originating_campaign_id AND NOT c.is_deleted
+           LEFT JOIN public.channel ch ON ch.channel_id = c.channel_id
            LEFT JOIN LATERAL (
              SELECT * FROM public.opportunity_stage_version osv
               WHERE osv.opportunity_id = o.opportunity_id
@@ -1442,6 +1469,14 @@ export async function executeReadTool(
       if (f.owner_member_id) {
         params.push(f.owner_member_id);
         where.push(`t.owner_member_id = $${params.length}`);
+      }
+      if (f.linked_type) {
+        params.push(f.linked_type);
+        where.push(`t.linked_type = $${params.length}`);
+      }
+      if (f.linked_id) {
+        params.push(f.linked_id);
+        where.push(`t.linked_id = $${params.length}`);
       }
       if (f.status) {
         params.push(f.status);
