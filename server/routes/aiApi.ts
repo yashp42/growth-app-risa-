@@ -1,7 +1,7 @@
 import { metricFallback } from '../llm/metricFallback.ts';
 import { readUploads } from '../uploadedDatasets.ts';
 import { usesUploadedContext } from '../llm/uploadedContext.ts';
-import { isGeneralAdvice, GENERAL_ADVICE_PROMPT } from '../llm/advice.ts';
+import { deterministicGeneralAdvice, isGeneralAdvice, GENERAL_ADVICE_PROMPT } from '../llm/advice.ts';
 import { planQuestion, relevantToolNames } from '../llm/questionPlan.ts';
 import { verifyScopedAnswer, verifiedFactsFallback } from '../llm/claimGrounding.ts';
 import { operationalIntent, answerOperational } from '../llm/operationalAnswers.ts';
@@ -615,6 +615,34 @@ function buildDeterministicToolFallback(
       const flagged=(p.rules as Record<string,unknown>[]).filter(r=>r.computable===true && /change|escalate|stop/i.test(String(r.band)+' '+String(r.status_label)));
       if(flagged.length) return 'Current threshold checks flag these priorities:\n'+flagged.slice(0,3).map(r=>'- **'+String(r.kpi_name??r.rule_id)+'**: '+String(r.status_label)+'. '+String(r.response??'Review the affected records before changing the initiative.')).join('\n')+'\nThese are rule-based signals, not proof of the cause. Review the affected campaign and assign a follow-up before stopping an initiative.';
     }
+  }
+
+  // A provider outage must not turn a useful answer into an unexplained raw
+  // table. Summarise the records that were actually retrieved and leave the
+  // structured table block as optional supporting detail in the UI.
+  for (const raw of acc.toolResults) {
+    if (!raw || typeof raw !== 'object') continue;
+    const p = raw as Record<string, unknown>;
+    const rows = Array.isArray(p.rows)
+      ? p.rows.filter((row): row is Record<string, unknown> => !!row && typeof row === 'object')
+      : [];
+    if (rows.length === 0 || rows.every((row) => typeof row.metric_id === 'string')) continue;
+
+    const kind = String(p.kind ?? p.source ?? 'records').replace(/_/g, ' ');
+    const describe = (row: Record<string, unknown>) => {
+      const name = row.name ?? row.title ?? row.sponsor_name ?? row.company ?? row.display_name ?? row.opportunity_name ?? row.campaign_name ?? row.dataset_id;
+      const stage = row.stage ?? row.status ?? row.lifecycle_status;
+      const value = row.value ?? row.proposed_value ?? row.open_pipeline ?? row.signed_value ?? row.cash_collected;
+      const parts: string[] = [String(name ?? 'Unnamed record')];
+      if (stage) parts.push(String(stage).replace(/_/g, ' '));
+      if (value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))) {
+        parts.push(`₹${Number(value).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`);
+      }
+      return parts.join(' — ');
+    };
+    const sample = rows.slice(0, 3).map(describe);
+    const more = rows.length > sample.length ? ` There are ${rows.length - sample.length} more in the retrieved result.` : '';
+    return `I found ${rows.length} ${kind} record${rows.length === 1 ? '' : 's'} for this question. ${sample.join('; ')}.${more} The supporting table shows the current records. Review the owner, stage, and next due action before making a change.`;
   }
   const sections: string[] = [];
   const sources: string[] = [];
@@ -1334,7 +1362,7 @@ export function createAiApiRouter(
       } catch (err) {
         trackFailure(err);
         generationFallbackReason = err instanceof OpenRouterError && err.code === 'AI_QUOTA_EXHAUSTED' ? 'quota' : 'unavailable';
-        finalAnswer = 'General advice is temporarily unavailable from the free AI provider. Your data is unchanged. Please retry later; database-backed questions can still work.';
+        finalAnswer = deterministicGeneralAdvice(question);
       }
     } else if (operationalQuery || basicIntent || prospectQuery || financialQuery) {
       routeOverride = operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseCsv, suggestMapping, mappedRows, resolveImportReferences } from '../src/lib/csvImport.ts';
-import { isGeneralAdvice } from '../server/llm/advice.ts';
+import { deterministicGeneralAdvice, isGeneralAdvice } from '../server/llm/advice.ts';
 import { uploadedDatasetTool, readUploads } from '../server/uploadedDatasets.ts';
 import { answerTextForSpeech } from '../src/lib/speech.ts';
 
@@ -41,6 +41,11 @@ test('[MOCKED] imports reject duplicate rows, duplicate mapping and invalid valu
  const p=parseCsv('Sponsor ID,Support Type,Amount\nSP-A,cash,-1');assert.throws(()=>mappedRows(p,'opportunities',suggestMapping(p.columns,'opportunities')),/nonnegative/);
 });
 for(const q of ['How do I approach a new sponsor?','How to write a sponsorship proposal?','Explain cash collection','How should we improve outreach?'])test('[MOCKED] general advice needs no business retrieval: '+q,()=>assert.equal(isGeneralAdvice(q),true));
+test('[MOCKED] generic guidance remains useful when no provider is configured',()=>{
+ assert.match(deterministicGeneralAdvice('How do I import a CSV?'),/Import data/);
+ assert.match(deterministicGeneralAdvice('How do I collect a payment?'),/Collections/);
+ assert.match(deterministicGeneralAdvice('How should we improve outreach?'),/outcome/i);
+});
 for(const q of ['How are our campaigns performing?','How should we fix these campaigns?','How can I improve our current win rate?','How much did we collect today?','Create a task','How do I analyse my uploaded dataset?'])test('[MOCKED] operational question never bypasses evidence: '+q,()=>assert.equal(isGeneralAdvice(q),false));
 const scope={actorMemberId:'MOCK-A',editionId:'MOCK-ED',recordClass:'simulated',dataVersion:9};
 test('[MOCKED] uploaded dataset reads bind actor and edition and compute summaries over all matches before limiting',async()=>{
@@ -54,6 +59,12 @@ test('[MOCKED] absent dataset is explicitly unavailable, never an empty operatio
  const pool={query:async<T>()=>({rows:[] as T[]})};
  assert.equal((await uploadedDatasetTool(pool,scope,{dataset_id:'missing'})).available,false);
  assert.deepEqual(await readUploads(pool,scope),[]);
+});
+test('[MOCKED] a revised same-name upload replaces the prior snapshot in normal discovery',async()=>{
+ let sql='';
+ const pool={query:async<T>(query:string)=>{sql=query;return {rows:[] as T[]};}};
+ await readUploads(pool,scope);
+ assert.match(sql,/DISTINCT ON \(CASE WHEN \$4::text IS NULL THEN lower\(trim\(COALESCE\("after"->>'name',''\)\)\)/);
 });
 test('[MOCKED] uploaded ranking finds a maximum outside the preview and pagination discloses remaining rows',async()=>{
  const rows=Array.from({length:40},(_,i)=>({Sponsor:'Synthetic '+i,Amount:String(i*100)}));

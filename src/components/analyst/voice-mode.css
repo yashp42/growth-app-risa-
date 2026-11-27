@@ -89,6 +89,9 @@
 .voice-message-content .analyst-markdown pre,.voice-message-content .analyst-markdown code {background:#05241d;color:#d7f9e6;}
 .voice-message-content .analyst-markdown table {font-size:13px;}
 .voice-message-content .analyst-markdown tbody {border-color:#c7ffdf1a;}
+.voice-message-content .analyst-markdown :is(figure,table,thead,tbody,tr,td,th) {background-color:#10372c;color:#e3f4e9;border-color:#c7ffdf26;}
+.voice-message-content .analyst-markdown th {background-color:#1b4b3a;color:#dcf8e7;}
+.voice-message-content .analyst-markdown td {background-color:#10372c;}
 .voice-message-interim .voice-message-content {border-style:dashed;color:#c0d8cb;}
 .voice-transcript-caret {display:inline-block;width:2px;height:1em;vertical-align:middle;margin-left:5px;background:#b8f9d4;animation:voice-caret 1s steps(2) infinite;}
 .voice-empty {display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;padding:28px 15px;text-align:center;color:#93b6a4;}

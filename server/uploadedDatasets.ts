@@ -2,11 +2,11 @@ import type { QueryablePool } from './llm/tools.ts';
 export interface UploadScope { actorMemberId:string; editionId:string; recordClass:string; dataVersion?:number|string }
 export async function readUploads(pool:QueryablePool,scope:UploadScope,id?:string,query='') {
  const result=await pool.query<{entity_id:string;after:Record<string,unknown>;created_at:string}>(
-  `SELECT entity_id, CASE WHEN $4::text IS NULL THEN "after" - 'rows' ELSE "after" END AS "after", created_at FROM (SELECT DISTINCT ON (entity_id) entity_id, "after", created_at FROM public.audit_event
+  `SELECT entity_id, CASE WHEN $4::text IS NULL THEN "after" - 'rows' ELSE "after" END AS "after", created_at FROM (SELECT DISTINCT ON (CASE WHEN $4::text IS NULL THEN lower(trim(COALESCE("after"->>'name',''))) ELSE entity_id END) entity_id, "after", created_at FROM public.audit_event
    WHERE entity='uploaded_dataset' AND actor_id=$1 AND record_class=$2 AND NOT is_deleted
    AND "after"->>'edition_id'=$3 AND ($4::text IS NULL OR entity_id=$4)
    AND ($5::text='' OR strpos(lower(COALESCE("after"->>'name','')),lower($5))>0)
-   ORDER BY entity_id, created_at DESC) latest ORDER BY created_at DESC LIMIT 25`,[scope.actorMemberId,scope.recordClass,scope.editionId,id??null,query]);
+   ORDER BY CASE WHEN $4::text IS NULL THEN lower(trim(COALESCE("after"->>'name',''))) ELSE entity_id END, created_at DESC) latest ORDER BY created_at DESC LIMIT 25`,[scope.actorMemberId,scope.recordClass,scope.editionId,id??null,query]);
  return result.rows;
 }
 export async function uploadedDatasetTool(pool:QueryablePool,scope:UploadScope,args:{dataset_id?:string;query?:string;filter?:Record<string,string>;limit?:number;sort_by?:string;descending?:boolean;offset?:number}) : Promise<Record<string,unknown>> {

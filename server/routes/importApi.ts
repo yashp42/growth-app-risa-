@@ -37,6 +37,9 @@ export function createImportApiRouter(config:ServerConfig,db:DatabasePoolState,a
    const batch=await ensureUiImportBatch(client,edition.editionId,edition.recordClass,actor.memberId);
    const version=await fetchAppDataVersion(client);
    await insertAuditEvent(client,{actorId:actor.memberId,entity:'uploaded_dataset',entityId:id,operation:'insert',after:{name:input.name,edition_id:edition.editionId,columns:data.columns,rows:data.rows,row_count:data.rows.length},dataVersion:version,recordClass:edition.recordClass,importBatchId:batch,sourceRef:'ui:csv_import',evidenceClass:'U'});
+   // Reference uploads are intentionally append-only audit data rather than
+   // operational facts. Analyst cache identity includes the uploaded snapshot
+   // IDs, so this does not reuse an answer from before this import.
    return {dataset_id:id,row_count:data.rows.length,data_version:version,duplicate:false};
   });
   res.status(result.duplicate?200:201).json(result);

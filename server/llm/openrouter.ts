@@ -704,7 +704,9 @@ export function createOpenRouterClient(
       model: entry.model,
       messages: tools?.length ? messages : answerOnlyMessages(messages),
       temperature,
-      max_tokens: tools && tools.length > 0 ? 1200 : 650,
+      // Tool calls need room for structured arguments; final prose does not.
+      // This is a cost guard as well as an answer-quality guard.
+      max_tokens: tools && tools.length > 0 ? 800 : 380,
     };
 
     if (tools && tools.length > 0) {
