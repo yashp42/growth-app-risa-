@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { parseCsv, suggestMapping, mappedRows } from '../src/lib/csvImport.ts';
+import { parseCsv, suggestMapping, mappedRows, resolveImportReferences } from '../src/lib/csvImport.ts';
 import { isGeneralAdvice } from '../server/llm/advice.ts';
 import { uploadedDatasetTool, readUploads } from '../server/uploadedDatasets.ts';
 import { answerTextForSpeech } from '../src/lib/speech.ts';
@@ -27,6 +27,13 @@ test('[MOCKED] unfamiliar columns map only to explicit supported fields',()=>{
  assert.deepEqual(mappedRows(d,'sponsors',map),[{display_name:'Acme',city:'Pune'}]);
  assert.deepEqual(mappedRows(d,'dataset',{}),d.rows);
  assert.throws(()=>mappedRows(d,'campaigns',{}),/required/);
+});
+test('[MOCKED] CSV reference names resolve exactly; unknown and ambiguous identities block writes',()=>{
+ const rows=[{name:'Outreach',channel_id:'Warm referrals',owner_member_id:'Riya'}];
+ const catalogues={channel_id:[{channel_id:'CH-MOCK',name:'Warm referrals'}],owner_member_id:[{member_id:'TM-MOCK',full_name:'Riya'}]};
+ assert.deepEqual(resolveImportReferences(rows,catalogues),[{name:'Outreach',channel_id:'CH-MOCK',owner_member_id:'TM-MOCK'}]);
+ assert.throws(()=>resolveImportReferences(rows,{...catalogues,owner_member_id:[]}),/not found/);
+ assert.throws(()=>resolveImportReferences(rows,{...catalogues,owner_member_id:[{member_id:'A',full_name:'Riya'},{member_id:'B',full_name:'Riya'}]}),/ambiguous/);
 });
 test('[MOCKED] imports reject duplicate rows, duplicate mapping and invalid values',()=>{
  const d=parseCsv('Name,Channel\nAlpha,CH-A\nAlpha,CH-A');assert.throws(()=>mappedRows(d,'campaigns',{name:'Name',channel_id:'Channel'}),/duplicate record/);

@@ -7,7 +7,7 @@ export const IMPORT_FIELDS: Record<Exclude<ImportDestination,'dataset'>, string[
  opportunities:['sponsor_id','name','support_type','proposed_value','owner_member_id','originating_campaign_id'],
 };
 const normal=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
-const aliases:Record<string,string[]>={display_name:['brand','brandname','company','companyname','sponsor','sponsorname'],name:['campaign','campaignname','opportunity','opportunityname'],proposed_value:['dealvalue','dealvalueinr','amount','value','proposedvalueinr'],channel_id:['channel','channelid'],owner_member_id:['owner','memberid','ownermemberid'],due_at:['duedate','deadline'],title:['task','taskname'],support_type:['supporttype'],sponsor_id:['sponsorid','brandid'],originating_campaign_id:['campaignid']};
+const aliases:Record<string,string[]>={display_name:['brand','brandname','company','companyname','sponsor','sponsorname'],name:['campaign','campaignname','opportunity','opportunityname'],proposed_value:['dealvalue','dealvalueinr','amount','value','proposedvalueinr'],channel_id:['channel','channelid'],category_id:['category','industry','sector'],owner_member_id:['owner','memberid','ownermemberid'],due_at:['duedate','deadline'],title:['task','taskname'],support_type:['supporttype'],sponsor_id:['sponsorid','brandid','sponsor','brand','company','sponsorname','brandname'],originating_campaign_id:['campaignid','campaign','campaignname']};
 export function suggestMapping(columns:string[],destination:ImportDestination):Record<string,string>{
  if(destination==='dataset')return {};
  return Object.fromEntries(IMPORT_FIELDS[destination].map(field=>[field,columns.find(c=>normal(c)===normal(field)||aliases[field]?.includes(normal(c)))??'']));
@@ -50,5 +50,27 @@ export function mappedRows(data:CsvData,destination:ImportDestination,mapping:Re
   if(out.planned_start&&out.planned_end&&out.planned_end<out.planned_start)throw Error(`Row ${i+2}: end is before start.`);
   const key=normal(out.display_name??out.name??out.title??JSON.stringify(out));if(seen.has(key))throw Error(`Row ${i+2}: duplicate record in this CSV.`);seen.add(key);
   return out;
+ });
+}
+
+export const IMPORT_REFERENCES:Record<string,{endpoint:string;list:string;id:string;name:string}>={
+ channel_id:{endpoint:'reference/channels',list:'channels',id:'channel_id',name:'name'},
+ category_id:{endpoint:'reference/categories',list:'categories',id:'category_id',name:'name'},
+ owner_member_id:{endpoint:'team',list:'members',id:'member_id',name:'full_name'},
+ sponsor_id:{endpoint:'sponsors',list:'sponsors',id:'sponsor_id',name:'display_name'},
+ originating_campaign_id:{endpoint:'campaigns',list:'campaigns',id:'campaign_id',name:'name'},
+};
+/** Exact canonical IDs or unambiguous display names only. Never fuzzy-merge business identities. */
+export function resolveImportReferences(rows:Record<string,string>[],catalogues:Record<string,Record<string,unknown>[]>):Record<string,string>[] {
+ return rows.map((row,i)=>{
+  const next={...row};
+  for(const [field,meta] of Object.entries(IMPORT_REFERENCES)){
+   const value=row[field]?.trim();if(!value)continue;
+   const list=catalogues[field]??[],direct=list.find(r=>r[meta.id]===value);
+   const matches=direct?[direct]:list.filter(r=>String(r[meta.name]??'').trim().toLowerCase()===value.toLowerCase());
+   if(matches.length!==1)throw Error(`Row ${i+2}: ${field} “${value}” ${matches.length?'is ambiguous; use a canonical ID':'was not found in the current workspace'}.`);
+   next[field]=String(matches[0][meta.id]);
+  }
+  return next;
  });
 }

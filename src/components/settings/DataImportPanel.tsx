@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
 import { apiFetch } from '../../services/authSession';
-import { IMPORT_FIELDS, mappedRows, parseCsv, suggestMapping, type CsvData, type ImportDestination } from '../../lib/csvImport';
+import { IMPORT_FIELDS, IMPORT_REFERENCES, resolveImportReferences, mappedRows, parseCsv, suggestMapping, type CsvData, type ImportDestination } from '../../lib/csvImport';
 
 async function jsonRequest(path:string,init?:RequestInit):Promise<Record<string,unknown>> {
  const res=await apiFetch(path,{...init,headers:{'Content-Type':'application/json',Accept:'application/json'}});
@@ -25,15 +25,22 @@ export function DataImportPanel(){
     setReport(`${result.duplicate?'Already saved':'Saved'} ${result.row_count} rows as ${result.dataset_id}. Ask the Analyst about “${name}”. This reference upload does not change pipeline or collected cash.`);
    }else{
     if(preview.rows.length>100)throw Error('Operational imports are limited to 100 rows. Split the CSV or save it as a reference dataset.');
-    // Read the current permitted list before creating anything. Never merge records by a guessed identity.
+    const catalogueEntries=await Promise.all(Object.entries(IMPORT_REFERENCES).filter(([field])=>preview.rows.some(r=>!!r[field])).map(async([field,meta])=>{
+      const response=await jsonRequest(`/api/${meta.endpoint}?`+new URLSearchParams(context).toString());
+      const values=response[meta.list]??(field==='owner_member_id'?response.team:undefined)??response.rows;
+      if(!Array.isArray(values))throw Error(`The ${field} directory could not be loaded.`);
+      return [field,values] as const;
+    }));
+    const operationalRows=resolveImportReferences(preview.rows,Object.fromEntries(catalogueEntries));
+    // Resolve all referenced identities before writing any row.
     const existing=await jsonRequest(`/api/${destination}?`+new URLSearchParams(context).toString());
     const raw=existing[destination]??existing.rows??existing.tasks??[];
     const list=Array.isArray(raw)?raw as Record<string,unknown>[]:[];
     const key=destination==='sponsors'?'display_name':destination==='tasks'?'title':'name';
     const names=new Set(list.map(r=>String(r[key]??'').trim().toLowerCase()).filter(Boolean));
     const done=new Set(saved),failures:string[]=[];
-    for(let i=0;i<preview.rows.length;i++){
-     if(done.has(i))continue;const row=preview.rows[i];
+    for(let i=0;i<operationalRows.length;i++){
+     if(done.has(i))continue;const row=operationalRows[i];
      if(row[key]&&names.has(row[key].trim().toLowerCase())){failures.push(`Row ${i+2}: an existing ${destination.slice(0,-1)} has this name. Use its edit screen; it was not duplicated.`);continue;}
      try{
       const defaults=destination==='sponsors'?{lifecycle_status:'research_target',first_source:'research'}:destination==='campaigns'?{status:'planned'}:destination==='tasks'?{status:'open'}:{};
@@ -55,7 +62,7 @@ export function DataImportPanel(){
   {data?<><label className="block text-sm">Dataset name<input aria-label="Dataset name" className="block border rounded p-2 mt-1" value={name} disabled={busy} maxLength={120} onChange={e=>setName(e.target.value)}/></label>
    <p className="text-sm">{data.rows.length} rows · {data.columns.length} columns</p>
    {destination!=='dataset'?<div className="grid sm:grid-cols-2 gap-3">{IMPORT_FIELDS[destination].map(field=><label className="text-sm" key={field}>{field.replace(/_/g,' ')}<select aria-label={`Map ${field}`} className="block border rounded p-2 w-full" value={mapping[field]??''} disabled={busy||saved.size>0} onChange={e=>setMapping({...mapping,[field]:e.target.value})}><option value="">Not mapped</option>{data.columns.map(c=><option key={c} value={c}>{c}</option>)}</select></label>)}</div>:null}
-   {destination!=='dataset'?<p className="text-sm">Unmapped columns are not written: {data.columns.filter(c=>!Object.values(mapping).includes(c)).join(', ')||'none'}. Use Reference dataset to preserve the entire file. Category, channel, owner and sponsor fields use canonical IDs, not free-text names.</p>:null}
+   {destination!=='dataset'?<p className="text-sm">Unmapped columns are not written: {data.columns.filter(c=>!Object.values(mapping).includes(c)).join(', ')||'none'}. Use Reference dataset to preserve the entire file. Category, channel, owner, sponsor and campaign fields accept canonical IDs or exact, unambiguous names from this workspace. Unknown or ambiguous names block the import before writes.</p>:null}
    <div className="overflow-auto max-h-56"><table className="text-sm"><thead><tr>{Object.keys(preview.rows[0]??data.rows[0]).map(c=><th key={c} className="p-2 text-left">{c}</th>)}</tr></thead><tbody>{(preview.rows.length?preview.rows:data.rows).slice(0,5).map((r,i)=><tr key={i}>{Object.values(r).map((v,j)=><td key={j} className="p-2 max-w-52 truncate">{v}</td>)}</tr>)}</tbody></table></div>
    {preview.error?<p role="alert">{preview.error}</p>:null}
    <button type="button" className="button-primary" disabled={busy||isReadOnlyHistorical||!!preview.error||!name.trim()} onClick={()=>void commit()}>{busy?'Importing…':`Confirm import to ${editionId}`}</button>
