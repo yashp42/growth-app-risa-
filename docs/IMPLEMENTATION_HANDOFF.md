@@ -200,3 +200,10 @@ Validation for this pass:
 - Exact production DB responses, authenticated browser behavior, and live provider synthesis are still unverified. These changes are local and have not been pushed or deployed.
 
 Remaining acceptance work: deploy this revision, then rerun all five broad prompts in an authenticated session. The historical-funnel live failure specifically needs its new `answer_check_warning`, completeness fields, and source tool trace to determine whether production is serving stale code or the selected historical records make one or more stage/channel comparisons unavailable. Keep the full answer in the evaluation record, not only the rendered metric widgets.
+
+### PR and clean-install check (2026-11-27)
+
+- Opened PR #19, `Improve Analyst evidence planning and synthesis`, from `codex/analyst-evidence-architecture`; it contains the 13 intended implementation/test/handoff files and excludes the pre-existing `work/` directory. The branch comparison is 400 additions / 61 deletions, without line-ending churn.
+- GitHub Actions initially failed before tests because `npm ci` found the lock file missing optional `@emnapi` entries required by the existing Rolldown WASI binding. `package-lock.json` has now been regenerated with npm so those entries are present.
+- A local `npm ci --dry-run` could not finish because Windows denied unlinking `node_modules/.package-lock.json` (EPERM). Wait for the PR workflow on the updated head to confirm the clean install before merge.
+- PR is open, not merged. Do not deploy until the updated clean CI passes; after merge, verify Render and run the authenticated acceptance prompts. The earlier red workflow run is on the prior PR head and does not validate the lock-file correction.
