@@ -430,6 +430,7 @@ export function verifyAnalystResponseIntegrity(
   );
 
   let unverifiedNumbers = response.answer_check_status === 'unverified';
+  const incompleteAnswer = response.answer_completeness_passed === false;
 
   if (
     toolCallIds.size > 0 &&
@@ -456,15 +457,19 @@ export function verifyAnalystResponseIntegrity(
   }
 
   if (response.answer_check_status === 'unverified') {
-    warnings.push(
-      'The server answer check flagged that a requested figure could not be verified.'
-    );
+    warnings.push(response.answer_check_warning || 'A requested figure could not be verified.');
+  }
+
+  if (incompleteAnswer) {
+    const missing = (response.answer_completeness_missing ?? []).join(', ');
+    warnings.push(missing ? `The answer is incomplete: ${missing}.` : 'The answer may be incomplete.');
   }
 
   return {
-    valid: !unverifiedNumbers && !missingDataLabels,
+    valid: !unverifiedNumbers && !missingDataLabels && !incompleteAnswer,
     unverifiedNumbers,
     missingDataLabels,
+    incompleteAnswer,
     warnings,
   };
 }
@@ -674,6 +679,14 @@ function normalizeStructuredResponse(
         : undefined,
     answer_check_status:
       (raw.answer_check_status as string | null | undefined) ?? null,
+    answer_check_warning:
+      typeof raw.answer_check_warning === 'string' ? sanitizeUntrustedText(raw.answer_check_warning) : null,
+    answer_completeness_passed:
+      typeof raw.answer_completeness_passed === 'boolean' ? raw.answer_completeness_passed : undefined,
+    answer_completeness_missing:
+      Array.isArray(raw.answer_completeness_missing) ? raw.answer_completeness_missing.map((x) => sanitizeUntrustedText(String(x))).filter(Boolean) : [],
+    synthesis_status:
+      typeof raw.synthesis_status === 'string' ? raw.synthesis_status : 'not_requested',
     cached: Boolean(raw.cached),
     shortcut: Boolean(raw.shortcut),
     quota: (raw.quota as AiQuotaInfo | null | undefined) ?? null,

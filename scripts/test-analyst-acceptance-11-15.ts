@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { financialIntent, answerFinancial } from '../server/llm/financialAnswers.ts';
-import { strategyIntent, answerStrategy } from '../server/llm/strategyAnswers.ts';
+import { strategyIntent, strategyIntents, answerStrategy } from '../server/llm/strategyAnswers.ts';
 import { basicAnalyticsIntent, answerBasicAnalytics } from '../server/llm/basicAnalytics.ts';
 import { operationalIntent, answerOperational } from '../server/llm/operationalAnswers.ts';
 import { verifyScopedAnswer } from '../server/llm/claimGrounding.ts';
@@ -48,6 +48,31 @@ test('[MOCKED] D-010 bet answer evaluates rule snapshots and keeps missing bets 
 
 test('[MOCKED] capacity request recognises the approved 5 person-week plan',()=>{
  assert.equal(strategyIntent('We have limited team capacity. Based on current pipeline performance, cash potential, effort requirements and the approved scenarios, where should we allocate the next available 5 person-weeks?'),'capacity_allocation');
+ const compound='Using the approved D-010 thresholds evaluate all five growth bets, then compare where the next 5 person-weeks could go. Do not change the approved D-009 or D-010 assumptions.';
+ assert.deepEqual(strategyIntents(compound),['growth_bets','capacity_allocation']);
+});
+
+test('[MOCKED] broad qualified-opportunity wording routes to campaign and channel leakage analysis',()=>{
+ const q='Which campaigns and acquisition channels are losing the most qualified sponsorship opportunities before they become confirmed wins? Compare the stages using the correct counts and denominators, show the conversion rate for each comparable group, and identify where the largest number of qualified opportunities is being lost.';
+ assert.equal(basicAnalyticsIntent(q),'campaign_leakage');
+});
+
+test('[MOCKED] combined cash position and due-date request composes both evidence sets',async()=>{
+ const q='Reconcile signed value, signed cash, cash collected, and outstanding cash. For each balance show documented due dates and overdue status.';
+ assert.equal(financialIntent(q),'cash_position');
+ const acc=createToolAccumulator();const requested:string[]=[];
+ const answer=await answerFinancial('cash_position',async(name,args)=>{
+  requested.push(`${name}:${String(args.metric_id??args.kind??'')}`);
+  if(name==='get_metric'){
+   const id=String(args.metric_id),v:Record<string,number>={'M-02':110,'M-03':100,'M-04':10,'M-01':40,'M-07':60};
+   const out={source:'metrics.get_metric',edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:'2026-11-27',rows:[{metric_id:id,value:v[id],computable:true,unit:'INR'}]};acc.toolResults.push(out);return out;
+  }
+  if(name==='get_sponsor_metrics')return {rows:[{sponsor_name:'Acme',value:60,position:1}]};
+  if(name==='list_records')return {edition_id:'ED-2026-DEMO',as_of:'2026-11-27',rows:[{sponsor_name:'Acme',opportunity_name:'Acme 2026',outstanding:60,overdue_amount:20,payment_schedule:[{due_date:'2026-11-20',remaining_amount:20}]}]};
+  return {};
+ },acc,{includeReceivableDetails:true});
+ assert.ok(requested.includes('list_records:receivables'));
+ assert.match(answer,/Cash actually collected/);assert.match(answer,/Due-date and urgency evidence/);assert.match(answer,/overdue/);assert.match(answer,/Reconciliation:/);
 });
 
 test('[MOCKED] historical funnel derived movement passes grounding without pooling editions',async()=>{
@@ -83,7 +108,7 @@ test('[MOCKED] channel three-turn and combined prompts route to the appropriate 
 });
 
 test('[MOCKED] qualified-lead leakage query uses stage-specific campaign metrics without an LLM provider',async()=>{
- const q='Which campaign is leaking the most qualified leads?';
+ const q='Which campaigns and acquisition channels are losing the most qualified sponsorship opportunities before they become confirmed wins? Compare the stages using the correct counts and denominators, show the conversion rate for each comparable group, and identify where the largest number of qualified opportunities is being lost. Separate what the records prove from possible explanations. Recommend three actions for this week, naming the metric each should improve and how we’ll measure it. Don’t claim an action has been taken.';
  assert.equal(basicAnalyticsIntent(q),'campaign_leakage');
  const acc=createToolAccumulator();
  const answer=await answerBasicAnalytics('campaign_leakage',async(name,args)=>{
@@ -99,7 +124,7 @@ test('[MOCKED] qualified-lead leakage query uses stage-specific campaign metrics
   };
   const out={source:'metrics.get_metric',edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:'2026-11-27',rows:[{metric_id:metric,...base[metric],unit:metric==='M-10'?'count':'ratio'}]};acc.toolResults.push(out);return out;
  },acc);
- assert.match(answer,/Warm Referrals/);assert.match(answer,/3 \/ 6/);assert.match(answer,/largest observed absolute leakage/i);
+ assert.match(answer,/Warm Referrals/);assert.match(answer,/3 \/ 6/);assert.match(answer,/largest observed absolute leakage/i);assert.match(answer,/Stage comparison by acquisition channel/);assert.match(answer,/Recommended actions for this week/);
  const verification=verifyScopedAnswer(answer,{toolResults:acc.toolResults,knowledgeTexts:[],userQuestion:q},{editionId:'ED-2026-DEMO',recordClass:'simulated',asOf:'2026-11-27'});
  assert.equal(verification.passed,true,JSON.stringify(verification));
 });

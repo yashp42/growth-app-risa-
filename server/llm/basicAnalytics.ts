@@ -9,7 +9,7 @@ export function basicAnalyticsIntent(question: string, hasFilters = false, previ
   if (/\bchannel\b/i.test(fullContext) && /\bwhy\b/i.test(fullContext) && /\b(?:three|3)\b/i.test(fullContext) && /\bactions?\b/i.test(fullContext) && /\b(?:based on|that diagnosis|this diagnosis)\b/i.test(fullContext) && /\bwhy\b/i.test(question) && /\bactions?\b/i.test(question)) return 'channel_full_diagnosis';
   if (/\bchannel\b/i.test(question) && /\b(?:strongest|best|leading|top)\b/i.test(question) && /\b(?:acquisition|results|performance|performing)\b/i.test(question)) return 'channel_performance';
   if (/\b2025\b/i.test(question) && /\b2026\b/i.test(question) && /\b(funnel|conversion|channel|acquisition)\b/i.test(question)) return 'historical_funnel_compare';
-  if (/\bcampaigns?\b/i.test(question) && /\bqualified leads?\b/i.test(question) && /\bleak(?:ing|age)?\b/i.test(question)) return 'campaign_leakage';
+  if (/\b(?:campaigns?|channels?)\b/i.test(question) && /\bqualified\s+(?:(?:sponsorship\s+)?(?:leads?|opportunities|prospects?)|brands?)\b/i.test(question) && /\b(?:leak(?:ing|age)?|los(?:e|ing|t)|drop[- ]?off|before\s+(?:they\s+)?(?:become|turn\s+into))\b/i.test(question)) return 'campaign_leakage';
   if (/\b(?:19\d{2}|20(?:0\d|1\d|2[0-4]|[3-9]\d))\b/.test(question)) return null;
   const q = question.trim().replace(/[?!.]+$/, '').toLowerCase();
   if (/^(?:what(?:'s| is) (?:the |our )?(?:total )?signed sponsorship value|show (?:me )?(?:the |our )?signed total|how much have we signed)(?: (?:in|for) 202[56])?$/.test(q)) return 'signed';
@@ -129,7 +129,23 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       if(leaders.length)lines.push('',`Largest observed absolute leakage: **${leaders.map(r=>r.name).join(', ')}** (${cell(leaders[0].leaked)} qualified brands without an opportunity). Compare its rate and base size before interpreting it as worse performance.`);
       else lines.push('', 'No positive M-17 leakage count was computable in the returned campaign cohort.');
       if(rows.length>=25)lines.push('This result is limited to the first 25 campaign records returned; a complete ranking needs a larger campaign query.');
-      lines.push('', 'This is a stage-drop-off signal, not proof of why leads were lost. Review the qualified lead and its recorded next step with the campaign owner before changing investment.');
+      const channels=['warm','inbound','cold'];
+      const channelEvidence=new Map<string,Record<string,Record<string,unknown>>>();
+      for(const channel of channels){
+        const metrics:Record<string,Record<string,unknown>>={};
+        for(const id of ['M-17','M-18','M-19','M-13']){
+          const result=await read('get_metric',{metric_id:id,filters:{channel_group:channel}});
+          const row=(result.rows as Record<string,unknown>[]|undefined)?.[0];
+          if(row)metrics[id]=row;
+        }
+        channelEvidence.set(channel,metrics);
+      }
+      lines.push('', '**Stage comparison by acquisition channel** (M-17 to M-19 use qualified-brand denominators; M-13 is the separate opportunity-level proposal-to-win rate.)', '', '| Channel | Qualified without opportunity [M-17] | Timely handoff [M-18] | Timely proposal [M-19] | Proposal-to-win [M-13] |','|---|---:|---:|---:|---:|');
+      const fmt=(r:Record<string,unknown>|undefined)=>!r?'Unavailable':r.computable&&r.value!=null?`${cell(r.numerator)} / ${cell(r.denominator)} (${(Number(r.value)*100).toFixed(1)}%)`:`Unavailable (${cell(r.reason)})`;
+      for(const channel of channels){const m=channelEvidence.get(channel)!;lines.push(`| ${channel} | ${fmt(m['M-17'])} | ${fmt(m['M-18'])} | ${fmt(m['M-19'])} | ${fmt(m['M-13'])} |`);}
+      const channelLeaks=channels.map(channel=>({channel,row:channelEvidence.get(channel)?.['M-17']})).filter(x=>x.row?.computable).sort((a,b)=>Number(b.row?.numerator??0)-Number(a.row?.numerator??0));
+      if(channelLeaks.length)lines.push('',`Largest channel loss by count is **${channelLeaks[0].channel}**: ${cell(channelLeaks[0].row?.numerator)} qualified brands did not reach an opportunity (M-17). Treat this as volume, not proof of worse rate; compare the denominators above.`);
+      lines.push('', '**What the records prove:** M-17 identifies qualified brands that have no opportunity; M-18 and M-19 show the timely handoff and proposal rates defined by those metrics; M-13 describes proposal-to-win at opportunity grain. These measures have distinct denominators. The largest absolute M-17 loss is not automatically the worst rate or the cause of the loss.', '', '**Recommended actions for this week:**', '- Review the campaign with the highest M-17 loss count with its owner; inspect the affected qualified-brand records and set documented next steps. Measure M-17 numerator and rate at week end.', '- For the lowest comparable M-18 campaign/channel, audit qualification-to-opportunity handoff delays. Measure its numerator ÷ denominator on the next cohort.', '- Review proposals stalled before the M-19 window with owners; measure M-19 numerator ÷ denominator and keep M-13 proposal-to-win separate. These are recommendations only; nothing has been changed.');
     }
   } else if (intent === 'signed') {
     lines.push('| Measure | Value | Source |', '|---|---:|---|');

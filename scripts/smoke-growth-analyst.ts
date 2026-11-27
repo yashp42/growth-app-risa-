@@ -336,11 +336,17 @@ const unverifiedResponse: AiStructuredResponse = {
   action_ids: [],
   tool_calls: [{ tool_call_id: 'real-tc', tool_name: 'get_metric' }],
   answer_check_status: 'unverified',
+  answer_check_warning: 'One reported amount did not match its cited metric.',
+  answer_completeness_passed: false,
+  answer_completeness_missing: ['directional comparison'],
 };
 const integrityCheck = verifyAnalystResponseIntegrity(unverifiedResponse);
 assert.equal(integrityCheck.valid, false);
 assert.equal(integrityCheck.unverifiedNumbers, true);
 assert.equal(integrityCheck.missingDataLabels, true);
+assert.equal(integrityCheck.incompleteAnswer, true);
+assert.ok(integrityCheck.warnings.some((warning) => warning.includes('directional comparison')));
+assert.ok(integrityCheck.warnings.some((warning) => warning.includes('did not match its cited metric')));
 
 // ---------------------------------------------------------------------------
 // 4. Adversarial Prompt-Injection & PII Redaction Tests

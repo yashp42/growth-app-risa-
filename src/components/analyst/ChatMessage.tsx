@@ -181,6 +181,15 @@ export function ChatMessage({
         </div>
       ) : null}
 
+      {structured?.synthesis_status === 'unavailable' ? (
+        <div
+          role="status"
+          className="mt-3 rounded border border-[var(--color-border-subtle)] bg-[var(--color-surface-subtle)] px-3 py-2 text-[13px] text-[var(--color-ink-muted)]"
+        >
+          The records and metrics above are still available; the Analyst’s explanatory synthesis could not be generated this time.
+        </div>
+      ) : null}
+
       {/* Dynamic AI View attachment summary */}
       {structured?.view_spec && onActivateView ? (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--color-accent)]/30 bg-[var(--color-surface-subtle)] px-3.5 py-2.5">

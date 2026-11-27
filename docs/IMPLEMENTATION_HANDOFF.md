@@ -152,10 +152,51 @@ Checks on this follow-up:
 
 The changes are pushed to `main` through `c2a5d3705c7889984ac4cdab453a8c43d40ffab1` (includes a follow-up commit restoring the complete Stage 4B test file). Deployment is still pending verification. After deployment, re-test (1) combined cash, (2) due-date follow-up, (3) historical vs simulated funnel, (4) all five D-010 bets, (5) capacity recommendation, (6) campaign leakage, (7) channel performance/why/actions in separate turns, and (8) the same channel diagnosis in one combined message. Provider availability is still external; provider-independent database routes should remain usable during outages.
 
-### Architecture assessment from the live examples
+### Architecture assessment and current state
 
-The Analyst is a hybrid, not a model-only chatbot: SQL-backed metric tools are the source of truth for totals and rates; the LLM is used for flexible intent/tool selection and evidence synthesis on less prescriptive questions. Several high-risk/common intents currently bypass model synthesis and use bespoke deterministic answer functions. This is intentional for financial/funnel correctness, but it can feel like “fetch and show” and has made routing brittle as phrase variants were added. The answer verifier checks numeric grounding and edition/scope, not whether an answer fully addresses the question or whether its recommendation follows logically. For the next architectural pass, centralize intent arbitration and a typed evidence plan (required metrics, editions, grain, permissions, completeness), then use one synthesis/answer contract for deterministic and model-assisted paths. Keep SQL authoritative, require source-linked claims, report missing evidence per requested part, and test answer completeness as well as numeric correctness. This addresses the repeated pattern more directly than adding another isolated regex route.
+The Analyst remains a hybrid: SQL-backed metric tools are authoritative for operational facts; PostgreSQL lexical RAG supplies approved definitions/rules; the LLM chooses tools for open-ended questions and now synthesizes interpretation over retrieved evidence for complex funnel, historical and strategy requests. High-risk cash totals continue to use validated deterministic calculations.
+
+The follow-up implemented a shared `AnalystEvidencePlan` in `server/llm/analystPlan.ts`. It arbitrates the existing domain intents into one multi-facet request, records evidence obligations and required answer sections, and is used by the route for deterministic and model-assisted requests. A shared final check marks missing sections as incomplete, appends an honest user-facing explanation, and returns structured completeness fields. `verifyScopedAnswer` remains the independent numeric/edition checker. LLM synthesis is optional: its narrative must pass grounding and internal-tool leak checks; the evidence-backed answer remains intact if synthesis is unavailable or rejected. The UI now surfaces specific verification warnings and incompleteness.
+
+This is a coherent first architecture layer, not a semantic guarantee: intent recognition still uses bounded language patterns, answer coverage uses required-section checks, and the general numeric verifier cannot prove causality or recommendation quality. Keep SQL authoritative, use RAG for definitions/rules rather than operational numbers, and continue adding paraphrase, multi-turn, and real database acceptance cases. Do not describe a local mock pass as live verification.
 
 Knowledge retrieval is implemented as RAG using PostgreSQL full-text search (`tsvector`/GIN + `websearch_to_tsquery`), title/section trigram similarity, term expansion and ranked `knowledge_chunk` results; returned chunks enter the model context with provenance. This is lexical/hybrid retrieval, not embedding/vector search: `db/01_schema.sql` records that pgvector was deferred pending OD-06. Numerical operational claims should continue to use SQL metric tools, not document retrieval.
 
 The “budget?” screenshot revealed a system-boundary leak: the model disclosed `get_sponsor_metrics` and told the user to run it. Commit `2c4f990f9396a99894e9779143e329c4167745ad` routes short sponsorship-budget shorthand to the deterministic current cash-position answer, adds a shared final-response guard against exposing internal tool/query instructions, adds a direct user-facing prompt rule, and restores the complete Stage 4B test file. Focused tests, lint, and production build passed locally before the push. The Render health check and authenticated live UI still need post-deploy verification.
+
+## Follow-up from the five live acceptance prompts (2026-11-27)
+
+The latest Analyst outputs showed a compound-question failure: campaign leakage was answered with raw opportunities, cash-plus-due-date questions returned only receivables, a request to preserve approved assumptions triggered a mutation refusal, and a channel-based task follow-up was searched as though the entire phrase were a sponsor name. The live historical-funnel answer was withheld even though the local deterministic regression test passes; this remains a production/data verification item, not a claimed fix.
+
+Local changes in this continuation:
+
+- Strategy routing now returns every applicable intent. A single prompt can evaluate D-010 growth bets and answer the five-person-week capacity comparison; the route composes both sections while preserving D-009/D-010.
+- Cash questions that ask for signed, collected, outstanding and due-date evidence now route through one composed cash answer. It includes M-04 in-kind separately, states the M-03 = M-01 + M-07 reconciliation or reports a gap, and appends the permission-scoped receivable schedule evidence when requested.
+- Qualified sponsorship opportunities/prospects and stage-drop-off phrasing routes to the deterministic leakage analysis. The answer includes campaign and channel stages, keeps M-17/M-18/M-19 brand denominators distinct from M-13 opportunity grain, identifies absolute loss volume separately from rate, and makes three measurable recommendations without claiming execution.
+- Scenario refusal now ignores an explicit instruction to *not* change approved assumptions; positive requests to change an approved scenario remain refused.
+- Confirmation-gated follow-up requests referring to “that channel” carry the previously established channel into the opportunity query. Open opportunities are ranked by stage maturity and then proposed value; tied top records or missing owners do not produce a task proposal. The selection basis is disclosed.
+- Added regression cases for the real broad prompts, compound cash + due-date composition, dual strategy intents, and channel-context carryover.
+
+Checks in this continuation:
+
+- `npm.cmd run lint`: pass.
+- `npx.cmd tsx --test scripts/test-analyst-acceptance-11-15.ts scripts/test-basic-analytics.ts scripts/test-chatbot-reliability.ts`: 31/31 pass.
+- `npx.cmd tsx --test --test-name-pattern='human-only' scripts/test-stage4b.ts`: 1/1 matching test passes, including preservation wording and the channel resolver assertion.
+- Build and authenticated live browser checks have not yet been rerun for this exact working tree. Do not claim production deployment or live acceptance completion.
+
+## Shared Analyst planning and synthesis pass (2026-11-27)
+
+The code now has a shared `AnalystEvidencePlan` (`server/llm/analystPlan.ts`) that arbitrates all domain facets for one user message, captures required evidence, and declares answer sections for the acceptance cases. `aiApi.ts` uses that plan for both deterministic and model-assisted routes. After answer generation, missing required sections are disclosed in the answer and returned as `answer_completeness_passed` / `answer_completeness_missing`; numeric/scope checking remains a separate `verifyScopedAnswer` pass. Its warning reason now reaches the UI instead of a generic “could not be verified” banner.
+
+Complex campaign/channel funnel, historical-comparison and strategy answers now get an optional LLM synthesis paragraph above the unchanged verified evidence report. The prompt forbids new numbers, causality claims, and unsupported actions. The synthesis is discarded if numeric/scope grounding fails or if it leaks internal tools. Provider failure leaves the complete structured evidence answer available; status is reported as `synthesis_status` instead of making the database answer unavailable. The chat now tells the user when the evidence report is present but the synthesis layer was unavailable. Simpler financial totals remain deterministic.
+
+Validation for this pass:
+
+- `npm.cmd run lint`: pass.
+- `npx.cmd tsx scripts/smoke-growth-analyst.ts`: pass.
+- `npx.cmd tsx --test scripts/test-analyst-plan.ts scripts/test-analyst-acceptance-11-15.ts scripts/test-basic-analytics.ts scripts/test-chatbot-reliability.ts`: 35/35 pass.
+- `npx.cmd tsx --test --test-name-pattern='human-only' scripts/test-stage4b.ts`: 1/1 matching finance/write-policy test passes.
+- `npm.cmd run build`: pass; existing Vite `__dirname` and large-chunk warnings remain.
+- Exact production DB responses, authenticated browser behavior, and live provider synthesis are still unverified. These changes are local and have not been pushed or deployed.
+
+Remaining acceptance work: deploy this revision, then rerun all five broad prompts in an authenticated session. The historical-funnel live failure specifically needs its new `answer_check_warning`, completeness fields, and source tool trace to determine whether production is serving stale code or the selected historical records make one or more stage/channel comparisons unavailable. Keep the full answer in the evaluation record, not only the rendered metric widgets.
