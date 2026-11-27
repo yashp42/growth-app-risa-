@@ -1,3 +1,4 @@
+import { opportunityStart } from '../opportunityInput.ts';
 import { Router, type Request, type Response } from 'express';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
@@ -2118,6 +2119,7 @@ export function createWriteApiRouter(
   //    POST /api/opportunities/:id/stage, POST /api/opportunities/:id/confirm
   // ---------------------------------------------------------------------------
   const CreateOpportunitySchema = z.object({
+    initialStage: z.enum(['prospecting','contacted','proposal_sent','negotiating']).default('prospecting'),
     sponsorId: z.string().trim().min(1),
     editionId: z.string().trim().min(1),
     primaryContactId: z.string().trim().min(1).nullable().optional(),
@@ -2148,8 +2150,11 @@ export function createWriteApiRouter(
       );
       rejectHistoricalWriteRequest(editionId, requestedRecordClass);
 
-      const rawProposed = pick(raw, 'proposedValue', 'proposed_value');
+      let start: ReturnType<typeof opportunityStart>;
+      try { start = opportunityStart(raw); } catch (err) { throw new AppApiError(422,'INVALID_INITIAL_STAGE',(err as Error).message); }
+      const rawProposed = start.proposedValue;
       const input = parseWithSchema(CreateOpportunitySchema, {
+        initialStage: start.stage,
         sponsorId: pick(raw, 'sponsorId', 'sponsor_id'),
         editionId,
         primaryContactId: pick(raw, 'primaryContactId', 'primary_contact_id') || null,
@@ -2157,15 +2162,15 @@ export function createWriteApiRouter(
           pick(raw, 'originatingCampaignId', 'originating_campaign_id') || null,
         betId: pick(raw, 'betId', 'bet_id') || null,
         supportType: pick(raw, 'supportType', 'support_type'),
-        isRenewal: Boolean(pick(raw, 'isRenewal', 'is_renewal') ?? false),
+        isRenewal: pick(raw, 'isRenewal', 'is_renewal') ?? false,
         renewalRoute: pick(raw, 'renewalRoute', 'renewal_route') || null,
-        recoveredLead: Boolean(pick(raw, 'recoveredLead', 'recovered_lead') ?? false),
+        recoveredLead: pick(raw, 'recoveredLead', 'recovered_lead') ?? false,
         name: pick(raw, 'name') || null,
         proposedValue:
           rawProposed === undefined || rawProposed === null || rawProposed === ''
             ? null
             : rawProposed,
-        ownerMemberId: pick(raw, 'ownerMemberId', 'owner_member_id') || null,
+        ownerMemberId: start.ownerMemberId || null,
       });
 
       const actor = getVerifiedActor(req);
@@ -2286,7 +2291,7 @@ export function createWriteApiRouter(
              proposed_value, confirmed_value, version_no,
              record_class, import_batch_id, source_ref, evidence_class, created_by
            ) VALUES (
-             $1, clock_timestamp(), $2, 'prospecting', $3,
+             $1, clock_timestamp(), $2, $8, $3,
              $4, 0, 1,
              $5, $6, 'ui:opportunities', 'T', $7
            )
@@ -2299,6 +2304,7 @@ export function createWriteApiRouter(
             edition.recordClass,
             batchId,
             actor.memberId,
+            input.initialStage,
           ]
         );
 
@@ -2334,6 +2340,8 @@ export function createWriteApiRouter(
   );
 
   const UpdateOpportunityMetadataSchema = z.object({
+    supportType: z.enum(OPPORTUNITY_SUPPORT_TYPES).optional(),
+    isRenewal: z.boolean().optional(),
     name: z.string().trim().max(240).nullable().optional(),
     primaryContactId: z.string().trim().min(1).nullable().optional(),
     betId: z.string().trim().min(1).nullable().optional(),
@@ -2370,6 +2378,8 @@ export function createWriteApiRouter(
       const { scope } = getDecision(req);
 
       const input = parseWithSchema(UpdateOpportunityMetadataSchema, {
+        supportType: pick(raw,'supportType','support_type'),
+        isRenewal: pick(raw,'isRenewal','is_renewal'),
         name: hasAnyKey(raw, 'name') ? pick(raw, 'name') || null : undefined,
         primaryContactId: hasAnyKey(raw, 'primaryContactId', 'primary_contact_id')
           ? pick(raw, 'primaryContactId', 'primary_contact_id') || null
@@ -2385,8 +2395,10 @@ export function createWriteApiRouter(
           opportunity_id: string;
           edition_id: string;
           record_class: string;
+          support_type: string;
+          is_renewal: boolean;
         }>(
-          `SELECT opportunity_id, edition_id, record_class
+          `SELECT opportunity_id, edition_id, record_class, support_type, is_renewal
              FROM public.opportunity
             WHERE opportunity_id = $1
               AND NOT is_deleted
@@ -2422,12 +2434,19 @@ export function createWriteApiRouter(
           actor.memberId
         );
 
+        const classificationChanged = (input.supportType !== undefined && input.supportType !== existing.support_type) || (input.isRenewal !== undefined && input.isRenewal !== existing.is_renewal);
+        if(classificationChanged) {
+          const signed = await client.query<{has_contract:boolean}>('SELECT EXISTS (SELECT 1 FROM public.contract WHERE opportunity_id=$1 AND NOT is_deleted) AS has_contract',[opportunityId]);
+          if(signed.rows[0]?.has_contract) throw new AppApiError(422,'SIGNED_CLASSIFICATION_IMMUTABLE','Support type and renewal classification cannot change after a contract has been recorded.');
+        }
         const sets: string[] = [];
         const params: unknown[] = [];
         const addSet = (col: string, val: unknown) => {
           params.push(val);
           sets.push(`${col} = $${params.length}`);
         };
+        if (input.supportType !== undefined) addSet('support_type', input.supportType);
+        if (input.isRenewal !== undefined) addSet('is_renewal', input.isRenewal);
         if (input.name !== undefined) addSet('name', input.name);
         if (input.primaryContactId !== undefined)
           addSet('primary_contact_id', input.primaryContactId);
@@ -2438,7 +2457,7 @@ export function createWriteApiRouter(
           throw new AppApiError(
             400,
             'INVALID_ARGUMENT',
-            'Allowed PATCH fields: name, primary_contact_id, bet_id.'
+            'Allowed PATCH fields: name, primary_contact_id, bet_id, support_type, is_renewal.'
           );
         }
 

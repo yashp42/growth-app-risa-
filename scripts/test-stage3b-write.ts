@@ -498,7 +498,25 @@ function createStage3BMockPool(storeRef: { current: MockStore }) {
       return { rows: [row], rowCount: 1 };
     }
 
+    if(norm.startsWith('INSERT INTO public.opportunity (')) {
+      const row={opportunity_id:String(params?.[0]),sponsor_id:String(params?.[1]),edition_id:String(params?.[2]),support_type:String(params?.[6]),is_renewal:params?.[7],name:params?.[10],record_class:String(params?.[11]),is_deleted:false};
+      target.opportunities.set(row.opportunity_id,row);target.dataVersion++;
+      return {rows:[row],rowCount:1};
+    }
+    if(norm.startsWith('UPDATE public.opportunity SET')) {
+      const id=String(params?.[params.length-1]);const row=target.opportunities.get(id);
+      const assignments=norm.split(' SET ')[1].split(' WHERE ')[0].split(',');
+      for(const assignment of assignments){const m=assignment.trim().match(/^(\w+) = \$(\d+)$/);if(m&&row)row[m[1]]=params?.[Number(m[2])-1];}
+      target.dataVersion++;
+      return {rows:row?[row]:[],rowCount:row?1:0};
+    }
+    if(norm.includes('AS has_contract'))return {rows:[{has_contract:[...target.contracts.values()].some(c=>c.opportunity_id===params?.[0]&&!c.is_deleted)}],rowCount:1};
     if (norm.startsWith('INSERT INTO public.opportunity_stage_version (')) {
+      if(params?.length===8){
+        const row={history_id:String(params[0]),opportunity_id:String(params[1]),owner_member_id:params[2],proposed_value:params[3],confirmed_value:0,version_no:1,record_class:params[4],stage:String(params[7]),is_deleted:false};
+        target.stageVersions.push(row);target.dataVersion++;
+        return {rows:[row],rowCount:1};
+      }
       const isConfirm = norm.includes("'partner_confirmed'");
       const row = isConfirm
         ? {
@@ -984,4 +1002,25 @@ test('[MOCKED] Stage 3B Test 6: Exhaustive permission matrix & withActorTransact
   const keys = storeRef.current.setConfigCalls.map((c) => `${c.key}=${c.value}`);
   assert.ok(keys.includes('app.actor_member_id=SIM-LEAD'));
   assert.ok(keys.includes('app.actor_auth_uid=auth-SIM-LEAD'));
+});
+
+
+test('[MOCKED] nested opportunity create form persists the requested amount, owner and starting stage',async()=>{
+ const storeRef={current:createInitialMockStore()},actorRef={current:'SIM-LEAD'};
+ const {app}=buildStage3BTestApp(actorRef,storeRef);
+ const created=await sendRequest(app,'POST','/api/opportunities',{edition_id:'ED-2026-DEMO',record_class:'simulated',sponsor_id:'SP26-BRAMBLE',support_type:'cash',name:'Nested form fixture',initial_stage:{stage:'proposal_sent',owner_member_id:'SIM-PART',proposed_value:76543}});
+ assert.equal(created.status,201,JSON.stringify(created.json));
+ const row=(created.json.opportunity as any).current_stage_version;
+ assert.equal(row.proposed_value,76543);assert.equal(row.owner_member_id,'SIM-PART');assert.equal(row.stage,'proposal_sent');
+ const updated=await sendRequest(app,'PATCH','/api/opportunities/'+created.json.id,{support_type:'in_kind',is_renewal:true});
+ assert.equal(updated.status,200,JSON.stringify(updated.json));
+ assert.equal((updated.json.opportunity as any).support_type,'in_kind');assert.equal((updated.json.opportunity as any).is_renewal,true);
+});
+test('[MOCKED] conflicting starts and unsupported confirmed starts cannot create an opportunity',async()=>{
+ const storeRef={current:createInitialMockStore()},actorRef={current:'SIM-LEAD'};const {app}=buildStage3BTestApp(actorRef,storeRef);
+ for(const extra of [{proposed_value:4,initial_stage:{proposed_value:8}},{initial_stage:{stage:'partner_confirmed'}}]){
+  const before=storeRef.current.opportunities.size;
+  const r=await sendRequest(app,'POST','/api/opportunities',{edition_id:'ED-2026-DEMO',sponsor_id:'SP26-BRAMBLE',support_type:'cash',...extra});
+  assert.equal(r.status,'proposed_value' in extra?422:400,JSON.stringify(r.json));assert.equal(storeRef.current.opportunities.size,before);
+ }
 });

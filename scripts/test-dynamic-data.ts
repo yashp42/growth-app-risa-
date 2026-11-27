@@ -55,3 +55,12 @@ test('[MOCKED] absent dataset is explicitly unavailable, never an empty operatio
  assert.equal((await uploadedDatasetTool(pool,scope,{dataset_id:'missing'})).available,false);
  assert.deepEqual(await readUploads(pool,scope),[]);
 });
+test('[MOCKED] uploaded ranking finds a maximum outside the preview and pagination discloses remaining rows',async()=>{
+ const rows=Array.from({length:40},(_,i)=>({Sponsor:'Synthetic '+i,Amount:String(i*100)}));
+ const pool={query:async<T>()=>({rows:[{entity_id:'UPLOAD-MOCK',created_at:'2026-11-01',after:{name:'Ranked',columns:['Sponsor','Amount'],row_count:40,rows}}] as T[]})};
+ const ranked=await uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',sort_by:'Amount',descending:true,limit:1});
+ assert.deepEqual(ranked.rows,[{Sponsor:'Synthetic 39',Amount:'3900'}]);assert.equal(ranked.matched_count,40);assert.equal(ranked.next_offset,1);
+ const next=await uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',sort_by:'Amount',descending:true,offset:1,limit:1});
+ assert.deepEqual(next.rows,[{Sponsor:'Synthetic 38',Amount:'3800'}]);
+ await assert.rejects(()=>uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',sort_by:'missing'}),/Unknown/);
+});

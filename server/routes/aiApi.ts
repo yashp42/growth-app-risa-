@@ -1,4 +1,5 @@
 import { readUploads } from '../uploadedDatasets.ts';
+import { usesUploadedContext } from '../llm/uploadedContext.ts';
 import { isGeneralAdvice, GENERAL_ADVICE_PROMPT } from '../llm/advice.ts';
 import { planQuestion, relevantToolNames } from '../llm/questionPlan.ts';
 import { verifyScopedAnswer, verifiedFactsFallback } from '../llm/claimGrounding.ts';
@@ -1296,7 +1297,7 @@ export function createAiApiRouter(
     };
     const questionPlan = planQuestion(question,typeof previousQuestion==='string'?previousQuestion:'');
     const adviceOnly = isGeneralAdvice(question);
-    const usesUpload = /\b(uploaded|imported|csv|custom dataset|my file)\b/i.test(question) || uploads.some(f=>question.toLowerCase().includes(String(f.after.name).toLowerCase()));
+    const usesUpload = usesUploadedContext(question,typeof previousQuestion==='string'?previousQuestion:'',uploads.map(f=>String(f.after.name??'')));
     const operationalQuery = usesUpload ? null : operationalIntent(question,Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)),typeof previousQuestion==='string'?previousQuestion:'');
     const basicIntent = usesUpload ? null : basicAnalyticsIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
     const financialQuery = usesUpload ? null : financialIntent(question, Boolean(parsed.data.filters && Object.values(parsed.data.filters).some(Boolean)));
