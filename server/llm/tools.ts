@@ -1494,7 +1494,40 @@ export async function executeReadTool(
               c.opportunity_name.toLowerCase().includes(f.search!.toLowerCase())
           )
         : contractRows;
-      rows = filteredContracts.map((c) => ({
+      let scheduleByContract = new Map<string, Record<string, unknown>[]>();
+      const visibleContractIds = filteredContracts.map((c) => c.contract_id);
+      if (profile.scheduleScope !== 'none' && visibleContractIds.length) {
+        const scheduleResult = await ctx.pool.query<Record<string, unknown>>(
+          `SELECT contract_id, schedule_item_id, kind, due_date, amount_due,
+                  allocated_amount, remaining_amount
+             FROM public.payment_schedule_item_status_view
+            WHERE record_class = $2
+              AND contract_id = ANY($1::text[])
+            ORDER BY due_date ASC, schedule_item_id ASC`,
+          [visibleContractIds, ed.record_class]
+        );
+        scheduleByContract = new Map();
+        for (const item of scheduleResult.rows) {
+          const key = String(item.contract_id);
+          const list = scheduleByContract.get(key) ?? [];
+          list.push({
+            schedule_item_id: item.schedule_item_id,
+            kind: item.kind,
+            due_date: item.due_date instanceof Date ? item.due_date.toISOString().slice(0, 10) : item.due_date,
+            amount_due: toNum(item.amount_due),
+            allocated_amount: toNum(item.allocated_amount),
+            remaining_amount: toNum(item.remaining_amount),
+          });
+          scheduleByContract.set(key, list);
+        }
+      }
+      rows = filteredContracts.map((c) => {
+        const schedule = scheduleByContract.get(c.contract_id) ?? [];
+        const scheduleSummary = schedule
+          .filter(item => Number(item.remaining_amount) > 0 && item.due_date)
+          .map(item => `${String(item.due_date).slice(0, 10)} (${Number(item.remaining_amount).toLocaleString('en-IN')} remaining)`)
+          .join('; ');
+        return ({
         contract_id: c.contract_id,
         sponsor_id: c.sponsor_id,
         sponsor_name: c.sponsor_name,
@@ -1506,9 +1539,12 @@ export async function executeReadTool(
         cash_received: c.cash_received,
         outstanding: c.outstanding,
         overdue_amount: c.overdue_amount,
+        payment_schedule: schedule,
+        payment_schedule_summary: scheduleSummary || null,
         status: c.status,
         owner_name: c.owner_name,
-      }));
+      });
+      });
     } else if (args.kind === 'sponsors') {
       if (profile.sponsorsScope === 'none') {
         throw new Error('Your role does not permit viewing sponsors.');

@@ -129,3 +129,25 @@ The 2026-11-27 continuation added scoped deterministic routes and regression cov
 Files added/changed for this acceptance work include `server/llm/strategyAnswers.ts`, `server/llm/basicAnalytics.ts`, `server/llm/financialAnswers.ts`, `server/llm/operationalAnswers.ts`, `server/routes/aiApi.ts`, and tests under `scripts/test-analyst-acceptance-11-15.ts`, `scripts/test-basic-analytics.ts`, and `scripts/test-stage4b.ts`.
 
 Acceptance caveat: deterministic/mock regression tests establish routing, source selection, math-field preservation, and uncertainty handling. They do not prove current production database contents, authenticated browser behavior, or OpenRouter availability. Complete those live checks in an authenticated environment before declaring all reviewer tests passed.
+
+## Analyst reliability follow-up (2026-11-27 evening)
+
+The latest user screenshots exposed three additional gaps: the cash answer checker rejected sponsor-level M-07 values because they were cited as the overall M-07 total; due-date follow-ups only returned aggregate collection metrics; and “allocate 5 person-weeks” was mistaken for a finance-only receipt allocation. Also, channel leakage analysis depended on an unavailable provider.
+
+Current uncommitted changes address these with:
+
+- sponsor-ranking citations use `sponsor_metrics:M-07`, so named sponsor balances are checked against sponsor-level evidence;
+- receivable records now include permission-scoped unpaid schedule items and due dates, and the deterministic follow-up answer prioritizes recorded overdue amount, then outstanding amount, while explicitly marking unknown urgency;
+- finance-only refusal is restricted to receipt/payment/bank-transaction allocation or reconciliation; capacity planning remains available to the strategy route;
+- “which campaign is leaking qualified leads” uses M-10/M-17/M-18/M-19 per campaign without calling a model provider;
+- historical funnel comparisons add their computed rate deltas to the verification evidence, retaining edition separation and small-sample caveats;
+- channel follow-ups and a combined three-message request return measured evidence, distinguish inference, and give unexecuted recommendations.
+
+Checks on this follow-up:
+
+- `npm.cmd run lint`: pass.
+- `npm.cmd run build`: pass; existing Vite config/chunk-size warnings remain.
+- `npx.cmd tsx --test scripts/test-analyst-acceptance-11-15.ts scripts/test-basic-analytics.ts`: 14/14 pass.
+- `scripts/test-stage4b.ts`: attempted, but HTTP tests requiring local loopback failed with Windows `EACCES` connecting to `127.0.0.1`; the relevant finance-refusal unit assertion passed. Re-run that integration suite in an environment permitting loopback.
+
+These changes are not yet pushed/deployed. After pushing, verify the new live commit, then re-test (1) combined cash, (2) due-date follow-up, (3) historical vs simulated funnel, (4) all five D-010 bets, (5) capacity recommendation, (6) campaign leakage, (7) channel performance/why/actions in separate turns, and (8) the same channel diagnosis in one combined message. Provider availability is still external; provider-independent database routes should remain usable during outages.

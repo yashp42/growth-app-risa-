@@ -68,5 +68,5 @@ test('[MOCKED] three-turn channel diagnosis retains context and ties recommendat
  const diagnosis=await answerBasicAnalytics('channel_why',read,acc);
  assert.match(diagnosis,/What the data proves/);assert.match(diagnosis,/What is inference/);
  const plan=await answerBasicAnalytics('channel_actions',read,acc);
- assert.match(plan,/1\./);assert.match(plan,/2\./);assert.match(plan,/3\./);assert.match(plan,/M-21/);assert.match(plan,/nothing has been created or changed/);
+ assert.match(plan,/- Review every open/);assert.match(plan,/- Run a small/);assert.match(plan,/- Audit cold-channel/);assert.match(plan,/M-21/);assert.match(plan,/no tasks or campaigns were executed/);
 });

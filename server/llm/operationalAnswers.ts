@@ -1,13 +1,14 @@
 import type { ToolRunAccumulator } from './tools.ts';
 import type { SponsorMetricId } from './sponsorMetrics.ts';
-export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}|{kind:'sponsor_receivables'}|{kind:'clarify_money'}|{kind:'cash_total'};
+export type OperationalIntent = {kind:'sponsor_ranking';metric: SponsorMetricId}|{kind:'sponsor_receivables'}|{kind:'receivable_followup'}|{kind:'clarify_money'}|{kind:'cash_total'};
 /** Recognises business concepts and paraphrases, not test IDs or fixed expected answers. */
 export function operationalIntent(question:string, hasFilters=false, previousQuestion=''):OperationalIntent|null {
  if(/\b(?:19\d{2}|20\d{2})\b|\b(?:as of|last year|last month|yesterday|between)\b/i.test(question))return null;
  if(/\b(single|individual receipt|individual payment|invoice)\b/i.test(question))return null;
  if(/\b(prospects?|research|outreach|pursue|targets?|attractiveness|accessibility)\b/i.test(question))return null;
- if(hasFilters||/\b(create|update|delete|move|log|record|confirm|assign|schedule|compare|why|likely|probability|potential|prioritise|prioritize|2025|2024|2023)\b/i.test(question))return null;
  const q=question.toLowerCase();
+ if(!hasFilters&&/\b(?:due dates?|overdue status|documented urgency|follow[- ]?up first|prioriti[sz]e follow[- ]?up)\b/i.test(q)&&/\b(?:outstanding|receivables?|balances?|cash|sponsors?)\b/i.test(q))return {kind:'receivable_followup'};
+ if(hasFilters||/\b(create|update|delete|move|log|record|confirm|assign|schedule|compare|why|likely|probability|potential|2025|2024|2023)\b/i.test(question))return null;
  if(!/\b(highest|largest|biggest|top|most)\b/.test(q)&&/\b(?:signed partnerships?|sponsors?|deals?)\b/.test(q)&&/\b(?:still|with|have|has)\b/.test(q)&&/\b(?:outstanding|unpaid|owing|receivable)\b/.test(q)&&/\b(?:which|who|show|list)\b/.test(q))return {kind:'sponsor_receivables'};
  const rank=/\b(highest|largest|biggest|maximum|most|top|leading|best[- ]paying)\b|\b(?:by|per) sponsor\b/.test(q);
  const sponsor=(/\bwho\b/.test(q)&&/\b(paid|owes?|contributed|gave)\b/.test(q))||/\b(sponsors?|contributors?|donors?|partners?|companies|company|brands?)\b/.test(q)||(/\b(from where|who|which one|them)\b/.test(q)&&/\bsponsors?\b/i.test(previousQuestion));
@@ -26,6 +27,33 @@ type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unkno
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
 const cell=(v:unknown)=>String(v??'—').replace(/[|\r\n]/g,' ');
 export async function answerOperational(intent:OperationalIntent,read:Read,acc:ToolRunAccumulator):Promise<string>{
+ if(intent.kind==='receivable_followup'){
+  const result=await read('list_records',{kind:'receivables',limit:25});
+  const metric=await read('get_metric',{metric_id:'M-07'});
+  const rows=(result.rows as Record<string,unknown>[]|undefined)??[];
+  const asOf=String(result.as_of??'the selected as-of date');
+  const total=(metric.rows as Record<string,unknown>[]|undefined)?.[0];
+  if(!rows.length)return `No receivable records were returned for ${String(result.edition_id??'the selected edition')}; due dates and urgency cannot be assessed from the available records.`;
+  const active=rows.filter(r=>Number(r.outstanding)>0).sort((a,b)=>Number(b.overdue_amount??0)-Number(a.overdue_amount??0)||Number(b.outstanding??0)-Number(a.outstanding??0));
+  const lines=[`Receivable follow-up evidence for ${String(result.edition_id??'the selected edition')} as of ${asOf}. Priority is ordered by recorded overdue amount, then remaining balance; a positive balance alone does not mean late.`];
+  if(total?.computable&&total.value!=null)lines.push('',`Canonical outstanding total: ${money(total.value)} [M-07].`);
+  lines.push('','| Sponsor / opportunity | Outstanding | Recorded overdue | Due-date evidence |','|---|---:|---:|---|');
+  for(const row of active){
+   const schedules=Array.isArray(row.payment_schedule)?row.payment_schedule as Record<string,unknown>[]:[];
+   const remaining=schedules.filter(s=>Number(s.remaining_amount)>0&&s.due_date);
+   const dueEvidence=remaining.length?remaining.map(s=>{
+    const date=String(s.due_date),amount=money(s.remaining_amount);
+    return `${date}: ${amount} remaining (${date<asOf?'overdue as of '+asOf:date===asOf?'due on '+asOf:'not yet due'})`;
+   }).join('; '):'No unpaid schedule due date returned';
+   lines.push(`| ${cell(row.sponsor_name)} / ${cell(row.opportunity_name)} | ${money(row.outstanding)} | ${Number(row.overdue_amount)>0?money(row.overdue_amount):'₹0'} | ${cell(dueEvidence)} |`);
+  }
+  if(!active.length)lines.push('| No positive outstanding balances in the returned records | ₹0 | ₹0 | No follow-up balance identified |');
+  const overdue=active.filter(r=>Number(r.overdue_amount)>0);
+  lines.push('',overdue.length?`**First follow-up:** ${cell(overdue[0].sponsor_name)} has the largest recorded overdue amount (${money(overdue[0].overdue_amount)}); use the schedule dates above and confirm receipt allocation with the owner.`:'**Urgency:** no positive overdue amount was returned. Prioritize the largest outstanding amount for a balance check, but do not label it late without overdue schedule evidence.');
+  if(active.length>=25)lines.push('The receivable list is bounded to 25 contracts, so this is not a complete ranking if additional records exist.');
+  lines.push('','If a contract has no unpaid schedule due date, its amount can be ranked by size only; its urgency cannot be established from these records.');
+  return lines.join('\n');
+ }
  if(intent.kind==='sponsor_receivables'){
   const [result,metric]=await Promise.all([read('list_records',{kind:'receivables',limit:25}),read('get_metric',{metric_id:'M-07'})]);
   const metricRow=(metric.rows as Record<string,unknown>[]|undefined)?.[0];

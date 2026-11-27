@@ -85,6 +85,7 @@ const COLUMNS_BY_KIND: Record<string, Col[]> = {
     { key: 'cash_received', label: 'Received', format: 'inr' },
     { key: 'outstanding', label: 'Outstanding', format: 'inr' },
     { key: 'overdue_amount', label: 'Overdue', format: 'inr' },
+    { key: 'payment_schedule_summary', label: 'Unpaid due-date schedule', format: 'text' },
   ],
   opportunities: [
     { key: 'name', label: 'Opportunity', format: 'text' },

@@ -68,7 +68,7 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
     const rows=rank.rows as Record<string,unknown>[]|undefined;
     lines.push('', '**Largest recorded outstanding balances:**');
     if(rows?.length){
-     for(const r of rows.slice(0,5))lines.push(`- ${cell(r.sponsor_name)} — ₹${Number(r.value).toLocaleString('en-IN')} [M-07]`);
+     for(const r of rows.slice(0,5))lines.push(`- ${cell(r.sponsor_name)} — ₹${Number(r.value).toLocaleString('en-IN')} [sponsor_metrics:M-07]`);
     }else lines.push('No positive sponsor-level outstanding balances were returned.');
     lines.push('', 'Follow up first on the highest positive outstanding balances above, validating due dates and receipt allocation with the account owner. This is a priority order from the outstanding ledger, not proof that an amount is late.');
    }else lines.push('', 'Sponsor follow-up ranking is unavailable because outstanding cash cannot be reconciled for this edition. Do not treat signed or invoiced value as collected cash.');

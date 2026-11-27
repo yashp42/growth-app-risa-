@@ -352,8 +352,9 @@ const EDIT_VERBS =
 
 const FINANCE_HUMAN_ONLY_RULES: ReadonlyArray<{ pattern: RegExp; reason: string }> = [
   {
-    // Allocation and reconciliation are matched on the verb itself.
-    pattern: /\b(allocat\w*|reconcil\w*|unallocat\w*|match(?:ing)? (?:the |this |a )?receipts?)\b/,
+    // Restrict this finance-only refusal to receipt/payment allocation. The
+    // verb "allocate" also appears in capacity-planning questions.
+    pattern: /\b(?:receipts?|payments?|bank transactions?)\b.{0,80}\b(?:allocat\w*|reconcil\w*|unallocat\w*|match(?:ing)?)\b|\b(?:allocat\w*|reconcil\w*|unallocat\w*|match(?:ing)?)\b.{0,80}\b(?:receipts?|payments?|bank transactions?)\b/i,
     reason:
       'I cannot allocate or reconcile receipts. That is done by a person (finance & collections) in Collections → Receipts, using "Allocate receipt".',
   },
@@ -553,11 +554,11 @@ function formatToolResultMarkdownSection(resObj: Record<string, unknown>): {
     }
     if (source === 'list_receivables') {
       const lines = [
-        `| Sponsor | Contract | Terms | Signed Cash | Received | Outstanding | Overdue |`,
-        `|---|---|---|---:|---:|---:|---:|`,
+        `| Sponsor | Contract | Terms | Signed Cash | Received | Outstanding | Overdue | Unpaid due-date schedule |`,
+        `|---|---|---|---:|---:|---:|---:|---|`,
         ...rows.slice(0, 20).map(
           (r) =>
-            `| ${String(r.sponsor_name ?? '—')} | ${String(r.contract_id ?? '—')} | ${String(r.payment_terms ?? '—')} | ${formatInrCompact(r.cash_signed)} | ${formatInrCompact(r.cash_received)} | ${formatInrCompact(r.outstanding)} | ${formatInrCompact(r.overdue_amount)} |`
+            `| ${String(r.sponsor_name ?? '—')} | ${String(r.contract_id ?? '—')} | ${String(r.payment_terms ?? '—')} | ${formatInrCompact(r.cash_signed)} | ${formatInrCompact(r.cash_received)} | ${formatInrCompact(r.outstanding)} | ${formatInrCompact(r.overdue_amount)} | ${String(r.payment_schedule_summary ?? 'No unpaid schedule due date returned')} |`
         ),
       ];
       return { source: 'Collections Receivables (list_receivables)', markdown: lines.join('\n') };

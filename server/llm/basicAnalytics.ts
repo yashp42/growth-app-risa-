@@ -1,12 +1,15 @@
 import type { ToolRunAccumulator } from './tools.ts';
 
-export type BasicAnalyticsIntent = 'signed' | 'campaign_conversion' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions';
+export type BasicAnalyticsIntent = 'signed' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
 export function basicAnalyticsIntent(question: string, hasFilters = false, previousQuestion = ''): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
+  const fullContext = `${question}\n${previousQuestion}`;
   if (/\b(?:three|3)\b/.test(question.toLowerCase()) && /\bactions?\b/i.test(question) && /\b(?:based on|that diagnosis|this diagnosis)\b/i.test(question) && /\bchannel\b/i.test(previousQuestion) && /\bwhy\b/i.test(previousQuestion)) return 'channel_actions';
   if (/\bwhy\b/i.test(question) && /\bchannel\b/i.test(question) && /\b(?:strongest|better|performing)\b/i.test(question) && /\bchannel\b/i.test(previousQuestion)) return 'channel_why';
+  if (/\bchannel\b/i.test(fullContext) && /\bwhy\b/i.test(fullContext) && /\b(?:three|3)\b/i.test(fullContext) && /\bactions?\b/i.test(fullContext) && /\b(?:based on|that diagnosis|this diagnosis)\b/i.test(fullContext) && /\bwhy\b/i.test(question) && /\bactions?\b/i.test(question)) return 'channel_full_diagnosis';
   if (/\bchannel\b/i.test(question) && /\b(?:strongest|best|leading|top)\b/i.test(question) && /\b(?:acquisition|results|performance|performing)\b/i.test(question)) return 'channel_performance';
   if (/\b2025\b/i.test(question) && /\b2026\b/i.test(question) && /\b(funnel|conversion|channel|acquisition)\b/i.test(question)) return 'historical_funnel_compare';
+  if (/\bcampaigns?\b/i.test(question) && /\bqualified leads?\b/i.test(question) && /\bleak(?:ing|age)?\b/i.test(question)) return 'campaign_leakage';
   if (/\b(?:19\d{2}|20(?:0\d|1\d|2[0-4]|[3-9]\d))\b/.test(question)) return null;
   const q = question.trim().replace(/[?!.]+$/, '').toLowerCase();
   if (/^(?:what(?:'s| is) (?:the |our )?(?:total )?signed sponsorship value|show (?:me )?(?:the |our )?signed total|how much have we signed)(?: (?:in|for) 202[56])?$/.test(q)) return 'signed';
@@ -22,7 +25,7 @@ type Read = (name: string, args: Record<string, unknown>) => Promise<Record<stri
 /** Fixed read plans, using the same permission-checked tools as model turns. No model requests. */
 export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: Read, acc: ToolRunAccumulator): Promise<string> {
   const lines: string[] = [];
-  if (intent === 'channel_performance' || intent === 'channel_why' || intent === 'channel_actions') {
+  if (intent === 'channel_performance' || intent === 'channel_why' || intent === 'channel_actions' || intent === 'channel_full_diagnosis') {
     const channels=['warm','inbound','cold'];
     const evidence=new Map<string,Record<string,unknown>>();
     for(const channel of channels){
@@ -32,12 +35,23 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       evidence.set(channel,row);
     }
     const ranked=channels.map(channel=>({channel,row:evidence.get(channel)!})).filter(x=>x.row.computable&&x.row.value!=null).sort((a,b)=>Number(b.row.value)-Number(a.row.value));
-    if(intent==='channel_performance'){
+    if(intent==='channel_performance' || intent==='channel_full_diagnosis'){
       lines.push('Proposal-to-win comparison by acquisition channel (M-13; opportunity grain):','', '| Channel | Confirmed wins | Proposals | Proposal-to-win rate |','|---|---:|---:|---:|');
       for(const channel of channels){const r=evidence.get(channel)!;lines.push(`| ${channel} | ${cell(r.numerator)} | ${cell(r.denominator)} | ${r.computable&&r.value!=null?(Number(r.value)*100).toFixed(1)+'%':'Unavailable: '+cell(r.reason)} |`);}
       const leader=ranked[0];
       if(leader){const tied=ranked.filter(x=>Number(x.row.value)===Number(leader.row.value)).map(x=>x.channel);const volumeLeader=[...ranked].sort((a,b)=>Number(b.row.numerator)-Number(a.row.numerator))[0];lines.push('',`Highest observed proposal-to-win rate: **${tied.join(' and ')}** (${cell(leader.row.numerator)} wins from ${cell(leader.row.denominator)} proposals).`);if(volumeLeader&&volumeLeader.channel!==leader.channel)lines.push(`By total confirmed wins, **${volumeLeader.channel}** leads with ${cell(volumeLeader.row.numerator)} vs ${cell(leader.row.numerator)}; the rate leader has a smaller sample. Compare sample sizes before treating the rate difference as durable.`);else lines.push('Compare sample sizes before treating this as a durable advantage.');}
       lines.push('','This ranks proposal conversion, not total acquisition quality or causal channel effect. A higher rate on a smaller cohort can coexist with fewer total wins.');
+      if(intent==='channel_full_diagnosis'){
+        const leader=ranked[0]?.channel;
+        lines.push('', '**What the data proves:**');
+        for(const channel of channels){const r=evidence.get(channel)!;lines.push(`- ${channel}: ${cell(r.numerator)} wins / ${cell(r.denominator)} proposals; ${r.computable&&r.value!=null?(Number(r.value)*100).toFixed(1)+'%':'not computable ('+cell(r.reason)+')'}. [M-13]`);}
+        lines.push('',`**What is inference:** ${leader??'No channel'} has the highest computable rate in this snapshot. The records do not prove why; lead mix, qualification and follow-up execution are hypotheses to test.`);
+        lines.push('', '**Three actions for this week — recommendations only:**',
+          `- Review every open ${leader??'warm or inbound'} opportunity with its owner and set a dated next step. Measure movement in M-21 open pipeline and stage counts at week end.`,
+          '- Run a small, controlled follow-up test before increasing channel volume. Compare M-12 meeting-to-proposal and M-13 proposal-to-win using the same cohort definitions.',
+          '- Audit cold-channel qualification and follow-up before assigning it more effort. Compare M-11 meeting rate and M-13 proposal-to-win on the next comparable cohort.',
+          'No tasks or campaigns were created or changed.');
+      }
     }else if(intent==='channel_why'){
       const leader=ranked[0];
       lines.push('**What the data proves:** the current M-13 numerator, denominator and rate for each channel are listed here.');
@@ -47,11 +61,11 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     }else{
       const leader=ranked[0]?.channel;
       lines.push('Recommended actions for this week — proposals only; nothing has been created or changed.');
-      lines.push(`1. Review every open ${leader??'warm/inbound'} opportunity with its owner and agree a dated next step. Reason: this uses the strongest observed proposal-conversion channel in the current cohort. Move M-21 open pipeline toward a later stage; measure by comparing the same channel’s open value and stage counts at week end.`);
-      lines.push('2. Run a small, controlled follow-up test in the strongest channel before increasing volume. Reason: observed conversion is not causal and may be a small sample. Measure M-12 proposals ÷ met brands and M-13 wins ÷ proposals for the test cohort against its starting denominators.');
+      lines.push(`- Review every open ${leader??'warm/inbound'} opportunity with its owner and agree a dated next step. Reason: this uses the strongest observed proposal-conversion channel in the current cohort. Move M-21 open pipeline toward a later stage; measure by comparing the same channel’s open value and stage counts at week end.`);
+      lines.push('- Run a small, controlled follow-up test in the strongest channel before increasing volume. Reason: observed conversion is not causal and may be a small sample. Measure M-12 proposals ÷ met brands and M-13 wins ÷ proposals for the test cohort against its starting denominators.');
       const cold=evidence.get('cold')!;
       const coldText=cold.computable?`${cell(cold.numerator)} wins from ${cell(cold.denominator)} proposals`:cell(cold.reason);
-      lines.push(`3. Audit cold-channel qualification and follow-up records before assigning more capacity there. Current evidence: ${coldText} [M-13]. Measure M-11 meeting rate and M-13 proposal-to-win on the next comparable cohort; keep or stop based on those observations, not a presumed cause.`);
+      lines.push(`- Audit cold-channel qualification and follow-up records before assigning more capacity there. Current evidence: ${coldText} [M-13]. Measure M-11 meeting rate and M-13 proposal-to-win on the next comparable cohort; keep or stop based on those observations, not a presumed cause.`);
       lines.push('', 'These are recommendations only; no tasks or campaigns were executed.');
     }
     lines.push('', 'Source: current selected edition and as-of date; all channel rates use M-13’s opportunity-level denominator.');
@@ -61,10 +75,12 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     const channels=['warm','inbound','cold'];
     const paired=new Map<string,Record<string,unknown>>();
     lines.push('Historical 2025 and simulated 2026 are evaluated as separate editions; no rows are pooled. Stage definitions and grains differ, so compare like-for-like only.');
+    let comparisonAsOf='';
     for(const edition_id of editionIds){
       lines.push('',`### ${edition_id==='ED-2025'?'2025 historical':'2026 simulated'} (${edition_id})`,'| Channel | Stage | Numerator | Denominator | Rate |','|---|---|---:|---:|---:|');
       for(const channel of channels) for(const [id,label] of stageDefs){
         const result=await read('get_metric',{metric_id:id,edition_id,filters:{channel_group:channel}});
+        if(edition_id==='ED-2026-DEMO'&&typeof result.as_of==='string')comparisonAsOf=result.as_of;
         const row=(result.rows as Record<string,unknown>[]|undefined)?.[0];
         if(!row)throw new Error(`Missing ${id} result for ${edition_id}/${channel}`);
         paired.set(`${edition_id}:${channel}:${id}`,row);
@@ -73,6 +89,7 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       }
     }
     lines.push('', '### Directional comparison');
+    const derivedEvidence:Record<string,unknown>[]=[];
     for(const channel of channels)for(const [id,label] of stageDefs){
       const old=paired.get(`ED-2025:${channel}:${id}`),current=paired.get(`ED-2026-DEMO:${channel}:${id}`);
       if(!old?.computable||!current?.computable||old.value==null||current.value==null){lines.push(`- ${channel}, ${label}: no like-for-like rate comparison because at least one edition lacks a computable observation.`);continue;}
@@ -80,10 +97,40 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       const movement=Math.abs(delta)<0.05?'is unchanged':delta>0?`improved ${delta.toFixed(1)} percentage points`:`declined ${Math.abs(delta).toFixed(1)} percentage points`;
       const n25=Number(old.denominator),n26=Number(current.denominator);
       const caution=Math.min(n25,n26)<10?'At least one denominator is under 10, so treat this as a small-sample directional signal.':'Both denominators are at least 10, but this is still descriptive, not a significance or causal test.';
+      derivedEvidence.push({channel,metric_id:id,delta_percentage_points:Number(delta.toFixed(1)),sample_caution_floor:10,rate_2025:Number(old.value),rate_2026:Number(current.value)});
       lines.push(`- ${channel}, ${label}: ${movement} (${(Number(old.value)*100).toFixed(1)}% → ${(Number(current.value)*100).toFixed(1)}%; denominators ${cell(old.numerator)}/${cell(old.denominator)} → ${cell(current.numerator)}/${cell(current.denominator)}). ${caution}`);
     }
+    if(derivedEvidence.length)acc.toolResults.push({source:'server_derived_funnel_comparison',edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:comparisonAsOf,rows:derivedEvidence});
     lines.push('', 'Interpretation limits: meeting rate is met brands ÷ touched brands; proposal rate is proposed brands ÷ met brands; proposal-to-win is won opportunities ÷ proposal-stage opportunities. These rates have different denominators and must not be combined into one funnel count. Different data availability, cohort sizes and attribution can explain apparent movement; this comparison shows association, not causation.');
     await read('search_knowledge',{query:'2025 historical channel funnel calibration data availability sample size stage denominators'});
+  } else if (intent === 'campaign_leakage') {
+    const campaigns=await read('list_records',{kind:'campaigns',limit:25});
+    const rows=campaigns.rows as Record<string,unknown>[]|undefined;
+    if(!rows?.length){lines.push('No campaigns were returned for the selected edition; qualified-lead leakage cannot be compared.');}
+    else {
+      const evaluated:Array<{name:string;qualified:unknown;leaked:unknown;leakDenominator:unknown;leakRate:unknown;handoffNum:unknown;handoffDen:unknown;handoffRate:unknown;proposalNum:unknown;proposalDen:unknown;proposalRate:unknown;sort:number}> = [];
+      for(const campaign of rows){
+        const filter={campaign_id:String(campaign.campaign_id)};
+        const [qualified,leak,handoff,proposal]=await Promise.all([
+          read('get_metric',{metric_id:'M-10',filters:filter}),read('get_metric',{metric_id:'M-17',filters:filter}),
+          read('get_metric',{metric_id:'M-18',filters:filter}),read('get_metric',{metric_id:'M-19',filters:filter}),
+        ]);
+        const q=(qualified.rows as Record<string,unknown>[]|undefined)?.[0],l=(leak.rows as Record<string,unknown>[]|undefined)?.[0],h=(handoff.rows as Record<string,unknown>[]|undefined)?.[0],p=(proposal.rows as Record<string,unknown>[]|undefined)?.[0];
+        if(!q||!l||!h||!p)throw new Error('Campaign leakage metrics are incomplete.');
+        evaluated.push({name:cell(campaign.name??campaign.campaign_id),qualified:q.value,leaked:l.numerator,leakDenominator:l.denominator,leakRate:l.value,handoffNum:h.numerator,handoffDen:h.denominator,handoffRate:h.value,proposalNum:p.numerator,proposalDen:p.denominator,proposalRate:p.value,sort:l.computable?Number(l.numerator??0):-1});
+      }
+      evaluated.sort((a,b)=>b.sort-a.sort);
+      const leaders=evaluated.filter(r=>r.sort===evaluated[0]?.sort&&r.sort>0);
+      lines.push('Qualified-lead leakage by campaign: M-17 counts qualified brands with no opportunity; M-18 counts opportunity handoff within five days; M-19 counts proposals within ten days. Rates and denominators are not interchangeable.','', '| Campaign | Qualified brands [M-10] | No opportunity n / d [M-17] | Leak rate | Opportunity within five days n / d [M-18] | Proposal within ten days n / d [M-19] |','|---|---:|---:|---:|---:|---:|');
+      for(const r of evaluated){
+        const pct=(v:unknown)=>v==null?'Unavailable':(Number(v)*100).toFixed(1)+'%';
+        lines.push(`| ${r.name} | ${cell(r.qualified)} | ${cell(r.leaked)} / ${cell(r.leakDenominator)} | ${pct(r.leakRate)} | ${cell(r.handoffNum)} / ${cell(r.handoffDen)} (${pct(r.handoffRate)}) | ${cell(r.proposalNum)} / ${cell(r.proposalDen)} (${pct(r.proposalRate)}) |`);
+      }
+      if(leaders.length)lines.push('',`Largest observed absolute leakage: **${leaders.map(r=>r.name).join(', ')}** (${cell(leaders[0].leaked)} qualified brands without an opportunity). Compare its rate and base size before interpreting it as worse performance.`);
+      else lines.push('', 'No positive M-17 leakage count was computable in the returned campaign cohort.');
+      if(rows.length>=25)lines.push('This result is limited to the first 25 campaign records returned; a complete ranking needs a larger campaign query.');
+      lines.push('', 'This is a stage-drop-off signal, not proof of why leads were lost. Review the qualified lead and its recorded next step with the campaign owner before changing investment.');
+    }
   } else if (intent === 'signed') {
     lines.push('| Measure | Value | Source |', '|---|---:|---|');
     for (const [id, label] of [['M-02','Total signed sponsorship value'],['M-03','Cash-type signed value'],['M-04','In-kind signed value'],['M-09','Confirmed partnerships (opportunities)']]) {

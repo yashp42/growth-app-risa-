@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 30819)
+Total output lines: 3362
+
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import http from 'node:http';
@@ -1773,94 +1776,7 @@ test('[MOCKED] RBAC, payload hash mismatch (409), double confirm (409), cancel (
   }
 });
 
-test('[MOCKED] End-to-end /api/ai/ask propose_changes + set_view + viewer financial redaction', async () => {
-  const store = createMock4bStore();
-  let callIndex = 0;
-
-  const mockFetch = (async (input: RequestInfo | URL) => {
-    const url = String(input);
-    if (url.endsWith('/api/v1/key')) {
-      return new Response(
-        JSON.stringify({ data: { free_model_daily_requests: { limit: 50, remaining: 48 }, limit: 50, usage: 2, is_free_tier: true } }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    if (url.endsWith('/api/v1/models')) {
-      return new Response(JSON.stringify({ data: [] }), { status: 200 });
-    }
-    callIndex += 1;
-    // Prompt 1 -> propose_changes tool call
-    if (callIndex === 1) {
-      return new Response(
-        JSON.stringify({
-          model: DEFAULT_OPENROUTER_MODEL_PRIMARY,
-          choices: [
-            {
-              message: {
-                role: 'assistant',
-                content: '',
-                tool_calls: [
-                  {
-                    id: 'tc_prop_1',
-                    type: 'function',
-                    function: {
-                      name: 'propose_changes',
-                      arguments: JSON.stringify({
-                        actions: [
-                          {
-                            type: 'change_stage',
-                            payload: { opportunity_id: 'O26-012', stage: 'negotiating' },
-                            summary: 'Move Voltyatra to negotiating',
-                          },
-                          {
-                            type: 'create_task',
-                            payload: {
-                              title: 'Follow up with Voltyatra',
-                              task_type: 'follow_up',
-                              owner_member_id: 'SIM-PART',
-                              due_at: '2026-11-27',
-                              linked_type: 'opportunity',
-                              linked_id: 'O26-012',
-                            },
-                            summary: 'Create follow-up task for Kavya due Friday',
-                          },
-                        ],
-                      }),
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-    // Prompt 2 -> set_view tool call
-    return new Response(
-      JSON.stringify({
-        model: DEFAULT_OPENROUTER_MODEL_PRIMARY,
-        choices: [
-          {
-            message: {
-              role: 'assistant',
-              content: '',
-              tool_calls: [
-                {
-                  id: 'tc_view_1',
-                  type: 'function',
-                  function: {
-                    name: 'set_view',
-                    arguments: JSON.stringify({
-                      screen: 'analytics',
-                      title: 'Signed sponsorship value by channel',
-                      pinned_metrics: ['M-02'],
-                      widgets: [
-                        {
-                          kind: 'metric_by',
-                          title: 'Signed value by channel',
-                          metric_id: 'M-02',
-                          group_by: 'channel_group',
+test('[MOCKED] End-to-en…819 tokens truncated…l_group',
                         },
                       ],
                     }),
@@ -2037,6 +1953,7 @@ test('[MOCKED] 2.2: human-only finance writes are refused and name the Collectio
     'What payments did we receive post-fest last year?',
     'Show contracts with outstanding cash',
     'Create a task to chase the Bramble invoice',
+    'Based on current pipeline performance, where should we allocate the next available 5 person-weeks?',
   ];
   for (const q of allowed) {
     assert.equal(isHumanOnlyWriteRequest(q).refuse, false, `should not refuse: ${q}`);
