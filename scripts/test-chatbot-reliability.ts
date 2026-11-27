@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { planQuestion, relevantToolNames } from '../server/llm/questionPlan.ts';
 import { prospectIntent } from '../server/llm/prospectAnswers.ts';
 import { verifyScopedAnswer, verifiedFactsFallback } from '../server/llm/claimGrounding.ts';
+import { isGeneralAdvice, deterministicGeneralAdvice } from '../server/llm/advice.ts';
+import { basicAnalyticsIntent } from '../server/llm/basicAnalytics.ts';
+import { financialIntent } from '../server/llm/financialAnswers.ts';
 const scope={editionId:'ED-2026-DEMO',recordClass:'simulated',asOf:'2026-11-27'};
 const bundle=(results:unknown[],question='')=>({toolResults:results,knowledgeTexts:[],userQuestion:question});
 const metric=(id:string,value:number)=>({source:'metrics.get_metric',edition_id:scope.editionId,record_class:scope.recordClass,as_of:scope.asOf,rows:[{metric_id:id,value,unit:'INR',computable:true}]});
@@ -23,6 +26,14 @@ test('[MOCKED] product-help wording is never treated as write authorisation or b
  assert.equal(relevantToolNames(plan).size,0);
  assert.equal(relevantToolNames(planQuestion('Give me general advice')).size,0);
  assert.equal(relevantToolNames(planQuestion('Create a task for Alpha')).has('propose_changes'),true);
+});
+test('[MOCKED] operating-review advice is useful without provider or database access',()=>{
+ const q='I have a 15-minute weekly review with four campaign owners. How should I structure it so we spot risks and leave with clear owners and next steps?';
+ assert.equal(isGeneralAdvice(q),true);assert.match(deterministicGeneralAdvice(q),/15-minute campaign review/);
+});
+test('[MOCKED] natural campaign and historical-cash wording has deterministic evidence routes',()=>{
+ assert.equal(basicAnalyticsIntent('In the current simulated edition, which campaign has the weakest proposal-to-win conversion? Compare the proposals and confirmed wins.'),'campaign_conversion');
+ assert.equal(financialIntent('For the 2025 edition, which sponsors paid late and what was the actual cash collection rate?'),'collection_status');
 });
 test('[MOCKED] follow-up retrieves prior task wording without importing old numeric evidence',()=>{
  const p=planQuestion('What about their verified routes?','Which prospects should we pursue first?');assert.equal(p.task,'prospects');assert.match(p.retrievalQuery,/prospects.*routes/);

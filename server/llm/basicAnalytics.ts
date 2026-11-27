@@ -9,6 +9,7 @@ export function basicAnalyticsIntent(question: string, hasFilters = false): Basi
   if (/^(?:compare|show|give me) (?:the )?proposal[- ]to[- ]win conversion (?:across|by|for each) campaigns?$/.test(q)) return 'campaign_conversion';
   if (/^(?:how much sponsorship value did we sign(?: in \d{4})?|(?:what is (?:the |our )?)?(?:signed sponsorship value|signed total|total signed)(?: in \d{4})?)$/.test(q)) return 'signed';
   if (/^(?:what is |show (?:me )?)?(?:the )?proposal[- ]to[- ]win conversion (?:for each|by) campaign$/.test(q)) return 'campaign_conversion';
+  if (/\b(?:weakest|lowest|worst|best|highest)\b.*\bproposal[- ]to[- ]win conversion\b.*\bcampaign\b|\bcampaign\b.*\bproposal[- ]to[- ]win conversion\b/i.test(q)) return 'campaign_conversion';
   return null;
 }
 const cell = (v: unknown) => String(v ?? '—').split('|').join(String.fromCharCode(92) + '|').replace(/[\r\n]/g, ' ');
@@ -32,13 +33,19 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     const campaigns = await read('list_records', { kind: 'campaigns', limit: 25 });
     const rows = campaigns.rows as Record<string, unknown>[] | undefined;
     if (!rows || rows.length >= 25) throw new Error('Campaign listing may be truncated; narrow the scope before comparing campaigns.');
+    const conversions:Array<{name:string;wins:unknown;proposals:unknown;value:number}>=[];
     lines.push('| Campaign | Wins (numerator) | Proposals (denominator) | Conversion (source value) | Source |', '|---|---:|---:|---:|---|');
     for (const campaign of rows) {
       if (!campaign.campaign_id) throw new Error('Campaign source omitted its identifier');
       const result = await read('get_metric', { metric_id: 'M-13', filters: { campaign_id: String(campaign.campaign_id) } });
       const row = (result.rows as Record<string, unknown>[] | undefined)?.[0];
       if (!row) throw new Error('Campaign metric source returned no row');
+      if (row.computable && Number.isFinite(Number(row.value))) conversions.push({name:cell(campaign.name ?? campaign.campaign_id),wins:row.numerator,proposals:row.denominator,value:Number(row.value)});
       lines.push('| ' + cell(campaign.name ?? campaign.campaign_id) + ' | ' + cell(row.numerator) + ' | ' + cell(row.denominator) + ' | ' + (row.computable ? cell(row.value) + ' ' + cell(row.unit) : 'Not computable: ' + cell(row.reason)) + ' | [M-13] |');
+    }
+    if (conversions.length) {
+      const weakest=[...conversions].sort((a,b)=>a.value-b.value)[0];
+      lines.unshift(`**Weakest proposal-to-win conversion:** ${weakest.name} — ${cell(weakest.wins)} wins from ${cell(weakest.proposals)} proposals (${weakest.value}${weakest.value<=1?' ratio':''}). Review the owner’s next follow-up and proposal quality before changing the campaign. [M-13]`, '');
     }
     if (!rows.length) lines.push('', 'No campaigns were returned for this edition.');
     lines.push('', 'The metric uses an opportunity-level denominator; brand-level counts are a different grain.');
