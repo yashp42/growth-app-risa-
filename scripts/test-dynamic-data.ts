@@ -58,7 +58,7 @@ test('[MOCKED] uploaded dataset reads bind actor and edition and compute summari
  let bound:unknown[]=[];
  const pool={query:async<T>(_sql:string,params?:unknown[])=>{bound=params??[];return {rows:[{entity_id:'UPLOAD-MOCK',created_at:'2026-11-01',after:{name:'Custom',columns:['Sponsor','Amount'],row_count:3,rows:[{Sponsor:'A',Amount:'₹1,000'},{Sponsor:'A',Amount:'2000'},{Sponsor:'B',Amount:'900'}]}}] as T[]};}};
  const r=await uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',filter:{Sponsor:'a'},limit:1});
- assert.deepEqual(bound,['MOCK-A','simulated','MOCK-ED','UPLOAD-MOCK','']);assert.equal(r.matched_count,2);assert.equal(r.truncated,true);assert.deepEqual((r.numeric_summary as any).Amount,{count:2,sum:3000,min:1000,max:2000});
+ assert.deepEqual(bound,['MOCK-A','simulated','MOCK-ED','UPLOAD-MOCK','']);assert.equal(r.matched_count,2);assert.equal(r.truncated,true);assert.deepEqual((r.numeric_summary as any).Amount,{count:2,sum:3000,average:1500,min:1000,max:2000});
  await assert.rejects(()=>uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',filter:{unknown:'x'}}),/Unknown/);
 });
 test('[MOCKED] absent dataset is explicitly unavailable, never an empty operational pipeline',async()=>{
@@ -80,4 +80,11 @@ test('[MOCKED] uploaded ranking finds a maximum outside the preview and paginati
  const next=await uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',sort_by:'Amount',descending:true,offset:1,limit:1});
  assert.deepEqual(next.rows,[{Sponsor:'Synthetic 38',Amount:'3800'}]);
  await assert.rejects(()=>uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',sort_by:'missing'}),/Unknown/);
+});
+test('[MOCKED] uploaded-dataset aggregates cover every matched row, not the preview page',async()=>{
+ const rows=Array.from({length:40},(_,i)=>({Sponsor:i%2?'A':'B',Amount:String(i*100)}));
+ const pool={query:async<T>()=>({rows:[{entity_id:'UPLOAD-MOCK',created_at:'2026-11-01',after:{name:'Grouped',columns:['Sponsor','Amount'],row_count:40,rows}}] as T[]})};
+ const result=await uploadedDatasetTool(pool,scope,{dataset_id:'UPLOAD-MOCK',group_by:['Sponsor'],aggregates:[{operation:'sum',field:'Amount'},{operation:'count'}],limit:1});
+ assert.equal(result.row_coverage,'40/40');
+ assert.deepEqual(result.aggregate_rows,[{Sponsor:'B',row_count:20,sum_Amount:38000,sum_Amount_coverage:'20/20',count:20},{Sponsor:'A',row_count:20,sum_Amount:40000,sum_Amount_coverage:'20/20',count:20}]);
 });

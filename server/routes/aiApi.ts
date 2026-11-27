@@ -1419,7 +1419,7 @@ export function createAiApiRouter(
       const allTools: OpenRouterToolDefinition[] = [
         ...READ_TOOL_DEFINITIONS,
         ...activeExtraTools,
-      ].filter(t=>!toolNames || toolNames.has(t.function.name));
+      ].filter(t=>toolNames.has(t.function.name));
 
       const llmMessages: OpenRouterChatMessage[] = [
         {

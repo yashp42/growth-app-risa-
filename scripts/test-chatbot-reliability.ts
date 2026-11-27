@@ -17,6 +17,13 @@ test('[MOCKED] prioritisation never mistakes operational collections for future 
  assert.equal(prospectIntent('Create a task to approach the most promising sponsor'),null);
  assert.equal(planQuestion('Create a task for Alpha').task,'action');
 });
+test('[MOCKED] product-help wording is never treated as write authorisation or broad retrieval',()=>{
+ const plan=planQuestion('How do I create a campaign?');
+ assert.equal(plan.task,'product_help');
+ assert.equal(relevantToolNames(plan).size,0);
+ assert.equal(relevantToolNames(planQuestion('Give me general advice')).size,0);
+ assert.equal(relevantToolNames(planQuestion('Create a task for Alpha')).has('propose_changes'),true);
+});
 test('[MOCKED] follow-up retrieves prior task wording without importing old numeric evidence',()=>{
  const p=planQuestion('What about their verified routes?','Which prospects should we pursue first?');assert.equal(p.task,'prospects');assert.match(p.retrievalQuery,/prospects.*routes/);
  assert.equal(planQuestion('How much cash have we collected?','Which prospects should we pursue first?').task,'finance');
