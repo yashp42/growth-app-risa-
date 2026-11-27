@@ -13,6 +13,8 @@ import {
 export const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 export const OPENROUTER_CHAT_TIMEOUT_MS = 60_000;
+// Leave room for a different free provider within the existing three-attempt cap.
+export const PROVIDER_ATTEMPT_TIMEOUT_MS = 18_000;
 export const OPENROUTER_REVERIFY_INTERVAL_MS = 6 * 60 * 60 * 1000;
 export const OPENROUTER_QUOTA_RESET_NOTE = '05:30 IST';
 export const QUOTA_EXHAUSTED_MESSAGE =
@@ -718,7 +720,7 @@ export function createOpenRouterClient(
     const controller = new AbortController();
     const timer = setTimeout(
       () => controller.abort(),
-      OPENROUTER_CHAT_TIMEOUT_MS
+      PROVIDER_ATTEMPT_TIMEOUT_MS
     );
 
     const headers: Record<string, string> = {
@@ -744,13 +746,13 @@ export function createOpenRouterClient(
       const isAbort = err instanceof Error && err.name === 'AbortError';
       throw new OpenRouterError(
         isAbort
-          ? 'Growth Analyst timed out waiting for the model response (60s).'
+          ? 'Growth Analyst timed out waiting for this provider (18s).'
           : err instanceof Error
             ? err.message
             : `Network error calling ${entry.provider}.`,
         504,
         isAbort ? 'OPENROUTER_TIMEOUT' : 'OPENROUTER_NETWORK_ERROR',
-        !isAbort
+        true
       );
     } finally {
       clearTimeout(timer);
@@ -896,6 +898,9 @@ export function createOpenRouterClient(
           temperature,
           reasoningSupported
         );
+        if (!result.message.content?.trim() && !result.message.tool_calls?.length) {
+          throw new OpenRouterError('Provider returned no answer or tool call.', 502, 'AI_EMPTY_RESPONSE', true);
+        }
         return {
           ...result,
           requestAttempts: attempts,
@@ -904,10 +909,13 @@ export function createOpenRouterClient(
       } catch (err) {
         if(err instanceof OpenRouterError)err.requestAttempts=attempts;
         lastErr = err;
+        if (err instanceof OpenRouterError && err.retryable) {
+          const key=entry.provider+':'+entry.model;
+          cooldowns.set(key, Math.max(cooldowns.get(key)??0, Date.now()+10_000));
+        }
         const canContinue =
           err instanceof OpenRouterError &&
           (err.code === 'AI_TOOL_ARGUMENTS' || err.code === 'AI_TOOL_PROTOCOL' || err.status === 429 || err.status >= 500) &&
-          err.status !== 504 &&
           i + 1 < chain.length;
         if (!canContinue) {
           throw err;

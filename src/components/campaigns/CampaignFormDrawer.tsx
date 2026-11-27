@@ -1,11 +1,10 @@
 import { fetchTeamRoster, type TeamDirectoryMember } from '../../services/tasksApi';
+import { fetchCampaignReferences, type CampaignChannel, type CampaignBet } from '../../services/campaignReferences';
 import { AlertCircle } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import {
   CAMPAIGN_EDITION_BY_CLASS,
   CAMPAIGN_STATUS_OPTIONS,
-  CANONICAL_BETS,
-  CANONICAL_CHANNELS,
   CampaignApiError,
   createCampaign,
   getDefaultEditionForClass,
@@ -49,7 +48,10 @@ export function CampaignFormDrawer({
     activeRecordClass
   );
   const [editionId, setEditionId] = useState(activeEditionId);
-  const [channelId, setChannelId] = useState(CANONICAL_CHANNELS[0].channel_id);
+  const [channelId, setChannelId] = useState('');
+  const [channels,setChannels]=useState<CampaignChannel[]>([]);
+  const [bets,setBets]=useState<CampaignBet[]>([]);
+  const [referencesReady,setReferencesReady]=useState(false);
   const [betId, setBetId] = useState('');
   const [ownerMemberId, setOwnerMemberId] = useState('');
   const [status, setStatus] = useState<CampaignStatus>('planned');
@@ -71,7 +73,7 @@ export function CampaignFormDrawer({
         editingCampaign.edition_id || getDefaultEditionForClass(nextClass)
       );
       setChannelId(
-        editingCampaign.channel_id || CANONICAL_CHANNELS[0].channel_id
+        editingCampaign.channel_id || ''
       );
       setBetId(editingCampaign.bet_id ?? '');
       setOwnerMemberId(editingCampaign.owner_member_id ?? '');
@@ -86,7 +88,7 @@ export function CampaignFormDrawer({
       setName('');
       setRecordClass(activeRecordClass);
       setEditionId(defaultEdition);
-      setChannelId(CANONICAL_CHANNELS[0].channel_id);
+      setChannelId('');
       setBetId('');
       setOwnerMemberId('');
       setStatus('planned');
@@ -99,11 +101,19 @@ export function CampaignFormDrawer({
   useEffect(() => {
     if(!open)return;
     const controller=new AbortController();
+    setReferencesReady(false);
+    setChannels([]);setBets([]);
+    fetchCampaignReferences(editionId,recordClass,controller.signal).then(({channels,bets})=>{
+      if(controller.signal.aborted)return;
+      setChannels(channels);setBets(bets);
+      setChannelId(current=>channels.some(c=>c.channel_id===current)?current:editingCampaign?'':channels.find(c=>c.is_active)?.channel_id??'');
+      setReferencesReady(true);
+    }).catch(err=>{if(!controller.signal.aborted)setFormError(err instanceof Error?err.message:'Could not load campaign options.');});
     fetchTeamRoster(editionId,recordClass,controller.signal).then(setOwners).catch(()=>setOwners([]));
     return ()=>controller.abort();
-  },[open,editionId,recordClass]);
+  },[open,editionId,recordClass,editingCampaign]);
 
-  const selectedChannel = CANONICAL_CHANNELS.find(
+  const selectedChannel = channels.find(
     (c) => c.channel_id === channelId
   );
   const isColdInactiveChannel = selectedChannel ? !selectedChannel.is_active : false;
@@ -117,7 +127,7 @@ export function CampaignFormDrawer({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (readOnly || submitting) return;
+    if (readOnly || submitting || !referencesReady) return;
 
     const trimmedName = name.trim();
     const trimmedOwner = ownerMemberId.trim();
@@ -128,6 +138,9 @@ export function CampaignFormDrawer({
     if (!channelId) {
       setFormError('Channel is required.');
       return;
+    }
+    if(!channels.some(c=>c.channel_id===channelId)||betId&&!bets.some(b=>b.bet_id===betId)){
+      setFormError('Select a channel and strategic bet available in this workspace.');return;
     }
     if (plannedStart && plannedEnd && plannedEnd < plannedStart) {
       setFormError('Planned end date cannot be earlier than planned start date.');
@@ -273,7 +286,8 @@ export function CampaignFormDrawer({
               onChange={(e) => setChannelId(e.target.value)}
               className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
-              {CANONICAL_CHANNELS.map((ch) => (
+              <option value="">{referencesReady?'Select channel':'Loading channels...'}</option>
+              {channels.map((ch) => (
                 <option key={ch.channel_id} value={ch.channel_id}>
                   {ch.is_active ? ch.label : `${ch.label} — inactive`}
                 </option>
@@ -301,7 +315,7 @@ export function CampaignFormDrawer({
               className="mt-1 h-9 w-full rounded-md border border-[var(--color-border)] bg-white px-3 text-[14px] text-[var(--color-ink)] focus:border-[var(--color-accent)] focus:outline-none disabled:bg-[var(--color-surface-subtle)]"
             >
               <option value="">None linked</option>
-              {CANONICAL_BETS.map((bet) => (
+              {bets.map((bet) => (
                 <option key={bet.bet_id} value={bet.bet_id}>
                   {bet.bet_id} · {bet.name}
                 </option>
@@ -413,7 +427,7 @@ export function CampaignFormDrawer({
           {!readOnly ? (
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !referencesReady}
               className="h-9 rounded-md bg-[var(--color-accent)] px-4 text-[14px] font-medium text-white transition-colors duration-150 hover:bg-[var(--color-accent-hover)] disabled:opacity-60"
             >
               {submitting
