@@ -13,7 +13,7 @@ export async function currentOutlook(ctx:ToolExecutionContext):Promise<Record<st
  COUNT(*) FILTER (WHERE support_type<>'cash') AS excluded_non_cash_deals
  FROM metrics.opp_state($1,$2,metrics.eod($3::date)) WHERE stage IN ('prospecting','contacted','proposal_sent','negotiating')`,[recordClass,editionId,asOf]);
  const openCash=Number(rows.rows[0]?.open_cash??0);
- const ready=collected!==null&&signed!==null&&collectionRate!==null&&winRate!==null&&collectionRate>=0&&collectionRate<=1&&winRate>=0&&winRate<=1;
+ const ready=collected!==null&&signed!==null&&collected>=0&&signed>=0&&Number.isFinite(openCash)&&openCash>=0&&collectionRate!==null&&winRate!==null&&collectionRate>=0&&collectionRate<=1&&winRate>=0&&winRate<=1;
  const incremental=ready?Math.max(0,signed!-collected!)*collectionRate!+openCash*winRate!*collectionRate!:null;
  return {source:'current_outlook',kind:'outlook',available:ready,edition_id:editionId,record_class:recordClass,as_of:asOf,
   method:'Observed-rate what-if, not an approved forecast or calibrated prediction',

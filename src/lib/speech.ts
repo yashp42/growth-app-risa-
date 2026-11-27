@@ -9,7 +9,7 @@ export function isSpeechSynthesisSupported(): boolean {
 
 /** Answer text only: drops markdown tables, code blocks and formatting marks. */
 export function answerTextForSpeech(raw: string): string {
-  const lines = raw.split(/\r?\n/);
+  const lines = raw.replace(/(?:^|\n)Source notes:\s*\n[\s\S]*$/i, '').split(/\r?\n/);
   const kept: string[] = [];
   let inCode = false;
   for (const line of lines) {
@@ -92,5 +92,3 @@ export function saveAutoReadPreference(on: boolean): void {
     // Storage unavailable (private window): the toggle still works this session.
   }
 }
-
-

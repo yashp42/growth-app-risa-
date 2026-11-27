@@ -3,6 +3,12 @@ import test from 'node:test';
 import { parseCsv, suggestMapping, mappedRows } from '../src/lib/csvImport.ts';
 import { isGeneralAdvice } from '../server/llm/advice.ts';
 import { uploadedDatasetTool, readUploads } from '../server/uploadedDatasets.ts';
+import { answerTextForSpeech } from '../src/lib/speech.ts';
+
+test('[MOCKED] voice reads the answer and rationale without hidden source-note appendices',()=>{
+ const answer='Prioritise warm leads. They have a verified contact route.\n\nSource notes:\n> [KB-MOCK] A long retrieved source that is not part of the answer.';
+ assert.equal(answerTextForSpeech(answer),'Prioritise warm leads. They have a verified contact route.');
+});
 
 test('[MOCKED] CSV parses BOM, CRLF, quoted commas, escaped quotes and multiline cells',()=>{
  const d=parseCsv('\uFEFFBrand,Notes,Amount\r\n"Acme, Ltd","Say ""hello""\nnext",1200\r\n');
