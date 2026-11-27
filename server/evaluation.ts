@@ -10,6 +10,7 @@ export interface EvaluationRun {
   started_at: string; updated_at: string; current_case: string | null; error?: string;
   results: CaseResult[]; conversations: Record<string, string>; requests_used: number;
   paused_case?: { test_id: string; response_status: number; reason: string; code?: string; message?: string };
+  deferred_cases?: Record<string, NonNullable<EvaluationRun['paused_case']>>;
   remaining: string[]; attempts?: Record<string, number>; retry_after_seconds?: number;
 }
 const critical = new Set(['Permissions','Action execution','Missing information']);
@@ -78,7 +79,8 @@ export function reportMarkdown(run: EvaluationRun): string {
     '| Category | Pass | Total | Pass rate |','|---|---:|---:|---:|',...Object.entries(s.categories).map(([name,c])=>'| '+name+' | '+c.passed+' | '+c.total+' | '+(c.pass_rate*100).toFixed(1)+'% |'),'',
     ...run.results.filter(r=>r.status!=='PASS').flatMap(r=>['## '+r.test_id+' — '+r.status,r.reasons.join('; '),'',r.answer,r.error_detail ? 'HTTP diagnostic: '+JSON.stringify(r.error_detail) : '','']),
     ...(run.paused_case ? ['Paused case: '+run.paused_case.test_id+'; HTTP '+run.paused_case.response_status+'; '+run.paused_case.reason, 'Provider diagnostic: '+[run.paused_case.code, run.paused_case.message].filter(Boolean).join(' — ')] : []),
-    'Not yet run: '+(run.remaining.join(', ')||'none'),run.error??'','', 'This partial strict-check report is not an accuracy estimate. Automatic numeric/citation checks do not replace qualitative review. Test fixtures and expected answers were not modified.'].join('\n');
+    ...Object.values(run.deferred_cases??{}).map(c=>'Pending availability: '+c.test_id+' · '+c.reason+' · HTTP '+c.response_status),
+    'Pending: '+(run.remaining.join(', ')||'none'),run.error??'','', 'This partial strict-check report is not an accuracy estimate. Automatic numeric/citation checks do not replace qualitative review. Test fixtures and expected answers were not modified.'].join('\n');
 }
 export interface EvaluationDependencies {
   ask(c: EvalCase, conversation?: string): Promise<{status:number;body:Record<string,any>;retryAfter?:number}>;
@@ -100,11 +102,14 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
         run.remaining=run.remaining.filter(id=>id!==c.test_id);await save();continue;
       }
       if(c.follow_up_of&&!run.conversations[c.follow_up_of]){
+        // Keep dependent cases pending while the originating question is pending.
+        if (run.remaining.includes(c.follow_up_of)) continue;
         run.results.push({test_id:c.test_id,category:c.category,status:'NEEDS_HUMAN',reasons:['Parent conversation unavailable'],answer:'',attempts:0,model_requests:0});
         run.remaining=run.remaining.filter(id=>id!==c.test_id);await save();continue;
       }
       run.attempts ??= {};
       if((run.attempts[c.test_id] ?? 0)>=2){
+        if (run.set === 'full' && run.deferred_cases?.[c.test_id]) continue;
         run.state='paused';run.error='Provider retry limit reached for '+c.test_id+'. No further requests were sent. Resolve the provider issue and start a new evaluation; this case remains unscored.';await save();break;
       }
       const before=await deps.snapshot();
@@ -122,16 +127,28 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
       if(res.status===429||res.body.route==='quota_exhausted'||String(res.body.answer??'').includes("Today's free AI quota is used up")){
         run.paused_case=pauseDetail;run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';await save();break;
       }
+      if (run.set === 'full' && res.status === 200 && res.body.generation_fallback_reason === 'unavailable') {
+        // Some supported questions only need the database. Continue to those
+        // while retaining the unavailable response as pending, with no score.
+        (run.deferred_cases ??= {})[c.test_id] = pauseDetail;
+        await save();
+        continue;
+      }
       if(res.status>=500 || ['quota','unavailable'].includes(String(res.body.generation_fallback_reason ?? ''))) {
         run.paused_case=pauseDetail;run.state='paused';run.error='AI provider could not complete this case; saved progress. Review provider errors before resuming.';await save();break;
       }
       run.paused_case=undefined;
+      if (run.deferred_cases) delete run.deferred_cases[c.test_id];
       const scored=scoreAnswer(c,res.body,safe,run.attempts[c.test_id]);
       if(res.status!==200){scored.status='FAIL';scored.reasons.push('HTTP '+res.status);scored.response_status=res.status;scored.error_detail=res.body.error??res.body;}
       run.results.push(scored);if(scored.conversation_id)run.conversations[c.test_id]=scored.conversation_id;
       run.remaining=run.remaining.filter(id=>id!==c.test_id);await save();
     }
     if(!run.remaining.length)run.state='completed';
+    else if (run.state === 'running') {
+      run.state = 'paused';
+      run.error = 'Some cases are pending because generation was unavailable or an earlier conversation turn is pending.';
+    }
   }catch(err){run.state='error';run.error=err instanceof Error?err.message:'Evaluation failed';}
   finally{run.current_case=null;await save();}
 }

@@ -78,3 +78,23 @@ test('[MOCKED] receipt-free reference assumptions conflict with populated curren
  const result=scoreAnswer(c,body,true,1);assert.equal(result.status,'NEEDS_HUMAN');assert.ok(result.reasons.some(r=>r.includes('Fixture assumes no receipts')));
  const broken=scoreAnswer(c,{...body,answer_check_passed:false},true,1);assert.equal(broken.status,'FAIL');
 });
+
+test('full evaluation defers unavailable answers and their follow-ups while scoring independent cases', async () => {
+  const state = run(['A','B','C']);
+  state.set = 'full';
+  const asked: string[] = [];
+  await runEvaluationCases([{...simple,test_id:'A'}, {...simple,test_id:'B',follow_up_of:'A'}, {...simple,test_id:'C'}], state, {
+    ask: async c => {
+      asked.push(c.test_id);
+      return {status:200,body:c.test_id === 'A' ? {generation_fallback_reason:'unavailable'} : {route:'refuse',answer:'Cannot delete',answer_check_passed:true}};
+    },
+    snapshot: async () => 'same',
+    cleanup: async () => true,
+    persist: () => {},
+  });
+  assert.deepEqual(asked, ['A','C']);
+  assert.deepEqual(state.remaining, ['A','B']);
+  assert.equal(state.results[0].status, 'PASS');
+  assert.equal(state.state, 'paused');
+  assert.equal(evaluationSummary(state).release_gates_met, false);
+});

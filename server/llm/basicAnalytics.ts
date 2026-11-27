@@ -1,6 +1,6 @@
 import type { ToolRunAccumulator } from './tools.ts';
 
-export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
+export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
 export function basicAnalyticsIntent(question: string, hasFilters = false, previousQuestion = ''): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
   const fullContext = `${question}\n${previousQuestion}`;
@@ -12,6 +12,10 @@ export function basicAnalyticsIntent(question: string, hasFilters = false, previ
   if (/\b(?:campaigns?|channels?)\b/i.test(question) && /\bqualified\s+(?:(?:sponsorship\s+)?(?:leads?|opportunities|prospects?)|brands?)\b/i.test(question) && /\b(?:leak(?:ing|age)?|los(?:e|ing|t)|drop[- ]?off|before\s+(?:they\s+)?(?:become|turn\s+into))\b/i.test(question)) return 'campaign_leakage';
   if (/\b(?:19\d{2}|20(?:0\d|1\d|2[0-4]|[3-9]\d))\b/.test(question)) return null;
   const q = question.trim().replace(/[?!.]+$/, '').toLowerCase();
+  if (/^(?:how many|count|number of|show (?:me )?(?:the )?(?:number of)?)\b/.test(q) &&
+      /\bconfirmed\b/.test(q) && /\b(?:deals|partnerships|opportunities|sponsors|brands)\b/.test(q) &&
+      !/\b(?:by|per|campaign|channel|owner|compare|target)\b/.test(q)) return 'partnership_counts';
+  if (/^(?:what (?:is|was) (?:our |the )?|show (?:me )?(?:our |the )?)?(?:typical|average|mean|median) (?:won |signed )?deal size(?: in 202[56])?$/.test(q)) return 'deal_size';
   if (/^(?:and )?how much of (?:that|it) was cash(?:[- ]type)?$/.test(q) &&
       basicAnalyticsIntent(previousQuestion) === 'signed') return 'signed_cash_followup';
   if (/^(?:what(?:'s| is) (?:the |our )?(?:total )?signed sponsorship value|show (?:me )?(?:the |our )?signed total|how much have we signed)(?: (?:in|for) 202[56])?$/.test(q)) return 'signed';
@@ -22,6 +26,7 @@ export function basicAnalyticsIntent(question: string, hasFilters = false, previ
   return null;
 }
 const cell = (v: unknown) => String(v ?? '—').split('|').join(String.fromCharCode(92) + '|').replace(/[\r\n]/g, ' ');
+const firstRow = (result: Record<string, unknown>) => (result.rows as Record<string, unknown>[] | undefined)?.[0];
 const money = (v: unknown) => v === null || v === undefined ? 'Not computable' : '₹' + Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 type Read = (name: string, args: Record<string, unknown>) => Promise<Record<string, unknown>>;
 /** Fixed read plans, using the same permission-checked tools as model turns. No model requests. */
@@ -148,6 +153,35 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       const channelLeaks=channels.map(channel=>({channel,row:channelEvidence.get(channel)?.['M-17']})).filter(x=>x.row?.computable).sort((a,b)=>Number(b.row?.numerator??0)-Number(a.row?.numerator??0));
       if(channelLeaks.length)lines.push('',`Largest channel loss by count is **${channelLeaks[0].channel}**: ${cell(channelLeaks[0].row?.numerator)} qualified brands did not reach an opportunity (M-17). Treat this as volume, not proof of worse rate; compare the denominators above.`);
       lines.push('', '**What the records prove:** M-17 identifies qualified brands that have no opportunity; M-18 and M-19 show the timely handoff and proposal rates defined by those metrics; M-13 describes proposal-to-win at opportunity grain. These measures have distinct denominators. The largest absolute M-17 loss is not automatically the worst rate or the cause of the loss.', '', '**Recommended actions for this week:**', '- Review the campaign with the highest M-17 loss count with its owner; inspect the affected qualified-brand records and set documented next steps. Measure M-17 numerator and rate at week end.', '- For the lowest comparable M-18 campaign/channel, audit qualification-to-opportunity handoff delays. Measure its numerator ÷ denominator on the next cohort.', '- Review proposals stalled before the M-19 window with owners; measure M-19 numerator ÷ denominator and keep M-13 proposal-to-win separate. These are recommendations only; nothing has been changed.');
+    }
+  } else if (intent === 'partnership_counts' || intent === 'deal_size') {
+    const summarize = (confirmed: boolean) => read('list_records', {
+      kind: 'opportunities', summarize: 'opportunity_cohort',
+      ...(confirmed ? {filters:{state:'confirmed'}} : {}),
+    });
+    const metric = async (id: string) => firstRow(await read('get_metric', {metric_id:id}));
+    const confirmed = firstRow(await summarize(true));
+    if (intent === 'partnership_counts') {
+      const [canonical, all] = await Promise.all([metric('M-09'), summarize(false).then(firstRow)]);
+      if (canonical?.computable && Number(canonical.value) === Number(confirmed?.opportunities)) {
+        lines.push(`**${cell(canonical.value)} confirmed partnerships across ${cell(confirmed?.sponsors)} distinct sponsors.** [M-09]`);
+      } else {
+        lines.push(`In the opportunities you can view, ${cell(confirmed?.opportunities)} are confirmed across ${cell(confirmed?.sponsors)} distinct sponsors.`);
+      }
+      lines.push(`Across all stages in your scope, ${cell(all?.opportunities)} opportunities span ${cell(all?.sponsors)} distinct sponsors. Multiple deals can belong to one sponsor.`);
+      await read('search_knowledge', {query:'confirmed partnerships distinct sponsors brands opportunities pipeline historical funnel'});
+    } else {
+      const [mean, median] = await Promise.all([metric('M-15'), metric('M-16')]);
+      if (mean?.computable && median?.computable) {
+        lines.push(`Median signed deal size was **${money(median.value)}** [M-16]. Mean signed deal size was **${money(mean.value)}** [M-15].`);
+        if (confirmed?.min_signed_value != null && confirmed.max_signed_value != null) {
+          lines.push(`Signed values span ${money(confirmed.min_signed_value)} to ${money(confirmed.max_signed_value)} across ${cell(confirmed.opportunities)} confirmed deals in scope.`);
+        }
+        lines.push('Deal sizes measure signed value. Cash receipts are tracked separately.');
+      } else {
+        lines.push('A signed deal size could not be computed for this scope. ' + cell(median?.reason ?? mean?.reason));
+      }
+      await read('search_knowledge', {query:'typical won deal size median mean signed value historical deal range'});
     }
   } else if (intent === 'signed' || intent === 'signed_cash_followup') {
     const measures = [['M-02','Total signed sponsorship value'],['M-03','Cash-type signed value'],['M-04','In-kind signed value'],['M-09','Confirmed partnerships (opportunities)']];

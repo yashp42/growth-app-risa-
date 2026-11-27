@@ -224,6 +224,7 @@ export const ListRecordsArgsSchema = z
       'contacts',
       'team_members',
     ]),
+    summarize: z.literal('opportunity_cohort').optional(),
     state: z.enum(['open', 'confirmed', 'lost', 'signed', 'won']).optional(),
     filters: z
       .object({
@@ -411,6 +412,7 @@ export const READ_TOOL_DEFINITIONS: OpenRouterToolDefinition[] = [
               'team_members',
             ],
           },
+          summarize: { type: 'string', enum: ['opportunity_cohort'], description: 'Aggregate the entire filtered opportunities cohort. Returns counts of opportunities and distinct sponsors, and the signed value range when permitted.' },
           filters: {
             type: 'object',
             properties: {
@@ -1352,6 +1354,7 @@ export async function executeReadTool(
       ...(args.state && !args.filters?.state ? { state: args.state } : {}),
     };
 
+    if (args.summarize && args.kind !== 'opportunities') throw new Error('Cohort summary requires opportunities.');
     let rows: Record<string, unknown>[] = [];
 
     if (args.kind === 'opportunities') {
@@ -1359,9 +1362,9 @@ export async function executeReadTool(
         throw new Error('Your role does not permit viewing opportunities.');
       }
       const asOfDate =
-        ed.edition_id === 'ED-2025' ? '2025-04-20' : ctx.userSeason.asOf;
+        ed.edition_id === 'ED-2025' && ed.edition_id !== ctx.userSeason.editionId ? '2025-04-20' : ctx.userSeason.asOf;
       const eodCutoff = `${asOfDate}T23:59:59.999+05:30`;
-      const params: unknown[] = [ed.edition_id, ed.record_class, limit, eodCutoff];
+      const params: unknown[] = [ed.edition_id, ed.record_class, eodCutoff];
       const where = [
         'o.edition_id = $1',
         'o.record_class = $2',
@@ -1418,7 +1421,35 @@ export async function executeReadTool(
         );
       }
 
-      const qRes = await ctx.pool.query<Record<string, unknown>>(
+      const cohort = `           FROM public.opportunity o
+           JOIN public.sponsor sp ON sp.sponsor_id = o.sponsor_id
+           LEFT JOIN public.campaign c ON c.campaign_id = o.originating_campaign_id AND NOT c.is_deleted
+           LEFT JOIN public.channel ch ON ch.channel_id = c.channel_id
+           LEFT JOIN LATERAL (
+             SELECT * FROM public.opportunity_stage_version osv
+              WHERE osv.opportunity_id = o.opportunity_id
+                AND osv.valid_from <= $3::timestamptz
+                AND NOT osv.is_deleted
+              ORDER BY osv.valid_from DESC, osv.history_id DESC LIMIT 1
+           ) sv ON true
+           LEFT JOIN public.team_member tm ON tm.member_id = sv.owner_member_id
+          WHERE ${where.join(' AND ')}
+`;
+      if (args.summarize) {
+        const summary = await ctx.pool.query<Record<string, unknown>>(
+          `SELECT COUNT(*)::int AS opportunities, COUNT(DISTINCT o.sponsor_id)::int AS sponsors,
+                  MIN(sv.confirmed_value) FILTER (WHERE sv.stage = 'partner_confirmed') AS min_signed_value,
+                  MAX(sv.confirmed_value) FILTER (WHERE sv.stage = 'partner_confirmed') AS max_signed_value
+             ${cohort}`, params);
+        rows = summary.rows.map(row => ({
+          opportunities: row.opportunities,
+          sponsors: row.sponsors,
+          min_signed_value: profile.redactFinancials ? null : toNum(row.min_signed_value),
+          max_signed_value: profile.redactFinancials ? null : toNum(row.max_signed_value),
+        }));
+      } else {
+        params.push(limit);
+        const qRes = await ctx.pool.query<Record<string, unknown>>(
         `SELECT o.opportunity_id, o.name, o.sponsor_id, sp.display_name AS sponsor_name,
                 o.originating_campaign_id AS campaign_id, o.bet_id, o.support_type,
                 sv.stage,
@@ -1430,28 +1461,17 @@ export async function executeReadTool(
                 sv.proposed_value, sv.confirmed_value,
                 sv.owner_member_id, tm.full_name AS owner_name,
                 sv.valid_from AS stage_since, o.created_at
-           FROM public.opportunity o
-           JOIN public.sponsor sp ON sp.sponsor_id = o.sponsor_id
-           LEFT JOIN public.campaign c ON c.campaign_id = o.originating_campaign_id AND NOT c.is_deleted
-           LEFT JOIN public.channel ch ON ch.channel_id = c.channel_id
-           LEFT JOIN LATERAL (
-             SELECT * FROM public.opportunity_stage_version osv
-              WHERE osv.opportunity_id = o.opportunity_id
-                AND osv.valid_from <= $4::timestamptz
-                AND NOT osv.is_deleted
-              ORDER BY osv.valid_from DESC, osv.history_id DESC LIMIT 1
-           ) sv ON true
-           LEFT JOIN public.team_member tm ON tm.member_id = sv.owner_member_id
-          WHERE ${where.join(' AND ')}
+           ${cohort}
           ORDER BY sv.valid_from DESC NULLS LAST, o.created_at DESC
-          LIMIT $3`,
+          LIMIT $${params.length}`,
         params
       );
-      rows = qRes.rows.map((r) => ({
-        ...r,
-        proposed_value: toNum(r.proposed_value),
-        confirmed_value: toNum(r.confirmed_value),
-      }));
+        rows = qRes.rows.map((r) => ({
+          ...r,
+          proposed_value: toNum(r.proposed_value),
+          confirmed_value: toNum(r.confirmed_value),
+        }));
+      }
     } else if (args.kind === 'tasks') {
       if (profile.tasksScope === 'none') {
         throw new Error('Your role does not permit viewing tasks.');
