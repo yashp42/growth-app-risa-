@@ -4,6 +4,8 @@ const LABELS: Record<string,string> = {
 };
 /** Plain-language fallback from exact source values, never a substitute for model reasoning. */
 export function metricFallback(results: unknown[]): string | null {
+  // A list question still needs its records; do not replace receivables or deals with a total.
+  if(results.some(raw=>raw&&typeof raw==='object'&&Array.isArray((raw as any).rows)&&(raw as any).rows.some((row:any)=>!row?.metric_id)))return null;
   const lines: string[]=[];
   const seen=new Set<string>();
   for(const raw of results){

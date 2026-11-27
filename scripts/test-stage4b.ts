@@ -2445,6 +2445,22 @@ test('[MOCKED] §C: tool results handed to the model stay valid JSON within the 
   assert.ok(out2.length <= 9800);
 });
 
+test('[MOCKED] signed-versus-collected explanation preloads cash-only outstanding and needs one synthesis', async () => {
+  let calls=0;
+  const mockFetch:typeof fetch=async(input,init)=>{
+    if(!String(input).endsWith('/chat/completions'))return new Response(JSON.stringify({data:{free_model_daily_requests:{limit:50,remaining:45}}}),{status:200});
+    calls++;
+    const payload=JSON.parse(String(init?.body));
+    assert.equal(payload.tools,undefined);
+    const evidence=payload.messages.filter((m:any)=>m.role==='tool').map((m:any)=>m.content).join(' ');
+    for(const id of ['M-01','M-02','M-03','M-07'])assert.ok(evidence.includes(id),id);
+    assert.match(payload.messages[0].content,/Outstanding is M-07, never M-02 minus M-01/);
+    return new Response(JSON.stringify({choices:[{message:{role:'assistant',content:'Signed commitments are distinct from cash collected. Review outstanding cash before prioritising collections.'}}]}),{status:200});
+  };
+  const {status,body}=await askOnce(createMock4bStore(),mockFetch,'Compare signed sponsorship value and cash collected, explain the distinction and suggest the next operational step.');
+  assert.equal(status,200);assert.equal(calls,1);assert.equal(body.token_usage.model_requests,1);
+});
+
 test('[MOCKED] §C: system prompt stays within ~600 tokens and every model call uses temperature 0', async () => {
   const sp = buildSystemPrompt({
     editionId: 'ED-2026-DEMO',

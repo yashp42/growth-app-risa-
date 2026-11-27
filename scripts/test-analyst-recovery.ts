@@ -23,6 +23,7 @@ test('[MOCKED] unavailable metric synthesis uses source values without raw techn
   const summary=metricFallback([{rows:[{metric_id:'M-01',value:12345,unit:'INR',computable:true}]},{rows:[{metric_id:'M-02',value:98765,unit:'INR',computable:true}]}]);
   assert.match(summary!,/12,345/);assert.match(summary!,/98,765/);assert.match(summary!,/not collected cash/);assert.doesNotMatch(summary!,/numerator|denominator|metric_id|\|/);
   assert.equal(metricFallback([{rows:[{metric_id:'M-01',value:12345,unit:'INR',computable:false}]}]),null);
+  assert.equal(metricFallback([{rows:[{metric_id:'M-07',value:12345,unit:'INR',computable:true}]},{rows:[{sponsor_name:'Current sponsor',outstanding:12345}]}]),null,'List questions must retain the actual sponsor records');
 });
 
 test('[MOCKED] campaign reference IDs come from the server; failures do not restore hard-coded IDs',async()=>{
