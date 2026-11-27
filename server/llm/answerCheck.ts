@@ -204,6 +204,38 @@ function collectNumbersFromUnknown(node: unknown, out: Set<number>): void {
   }
 }
 
+/** Add only like-for-like rate deltas that can be recomputed from scoped metric rows. */
+function collectComparableRateDeltas(node: unknown, out: Set<number>): void {
+  const snapshots: Array<{ metric: string; edition: string; filters: string; value: number }> = [];
+  const visit = (value: unknown): void => {
+    if (Array.isArray(value)) { value.forEach(visit); return; }
+    if (!value || typeof value !== 'object') return;
+    const payload = value as Record<string, unknown>;
+    if (payload.source === 'metrics.get_metric' && Array.isArray(payload.rows)) {
+      for (const raw of payload.rows) {
+        if (!raw || typeof raw !== 'object') continue;
+        const row = raw as Record<string, unknown>;
+        const edition = String(row.edition_id ?? payload.edition_id ?? '');
+        const metric = String(row.metric_id ?? '');
+        const numerator = Number(row.numerator), denominator = Number(row.denominator), rate = Number(row.value);
+        if (row.computable !== true || !edition || !metric || !Number.isFinite(rate) || !Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) continue;
+        // Validate each rate against its own numerator/denominator before using it.
+        if (Math.abs(rate - numerator / denominator) > 0.00011) continue;
+        snapshots.push({ metric, edition, filters: JSON.stringify(row.applied_filters ?? {}), value: rate });
+      }
+    }
+    Object.values(payload).forEach(visit);
+  };
+  visit(node);
+  for (let i = 0; i < snapshots.length; i += 1) {
+    for (let j = i + 1; j < snapshots.length; j += 1) {
+      const a = snapshots[i], b = snapshots[j];
+      if (a.metric !== b.metric || a.filters !== b.filters || a.edition === b.edition) continue;
+      out.add(Math.abs(a.value - b.value) * 100);
+    }
+  }
+}
+
 function approxEqualAtDecimals(
   candidate: number,
   claimVal: number,
@@ -289,6 +321,7 @@ export function verifyAnswerNumbers(
 
   const groundNumbers = new Set<number>();
   collectNumbersFromUnknown(bundle.toolResults, groundNumbers);
+  collectComparableRateDeltas(bundle.toolResults, groundNumbers);
   for (const txt of bundle.knowledgeTexts) {
     for (const c of extractNumericClaims(txt)) {
       groundNumbers.add(c.normalizedValue);

@@ -8,7 +8,7 @@ import { currentOutlook } from '../server/llm/outlook.ts';
 import { loadServerConfig } from '../server/config.ts';
 import type { ToolExecutionContext } from '../server/llm/tools.ts';
 
-async function harness(roles=['coordination_lead','admin','finance_collections']){
+async function harness(roles=['coordination_lead','admin','finance_collections'],scriptedCompletion?:(input:any,call:number)=>any){
  const queries:{sql:string;params:unknown[]}[]=[],audits:any[]=[];
  let version=91;
  const query=async(sql:string,params:unknown[]=[])=>{
@@ -19,6 +19,7 @@ async function harness(roles=['coordination_lead','admin','finance_collections']
   else if(sql.includes('FROM public.role_assignment'))rows=roles.map(role=>({role}));
   else if(sql.includes('FROM public.festival_edition'))rows=[{edition_id:params[0],record_class:params[0]==='ED-2025'?'historical_synthetic':'simulated'}];
   else if(sql.includes('SELECT data_version FROM public.app_state'))rows=[{data_version:version}];
+  else if(sql.includes('FROM public.opportunity o')&&sql.includes('JOIN public.sponsor sp'))rows=[{opportunity_id:'O-WARM-1',name:'Warm Open Deal',sponsor_id:'S-WARM-1',sponsor_name:'Warm Sponsor',campaign_id:'C-WARM-1',stage:'proposal_sent',state:'open',proposed_value:50000,confirmed_value:null,owner_member_id:'MEMBER-7',owner_name:'Warm Owner',stage_since:'2026-11-20',created_at:'2026-11-01'}];
   else if(sql.includes('INSERT INTO public.audit_event'))audits.push({entity_id:params[5],after:JSON.parse(String(params[7])),created_at:'2026-11-27'});
   else if(sql.includes("entity='uploaded_dataset'"))rows=audits.filter(a=>!params[3]||a.entity_id===params[3]);
   return {rows,rowCount:rows.length};
@@ -28,7 +29,7 @@ async function harness(roles=['coordination_lead','admin','finance_collections']
  const auth={dbState:db,defaultEditionId:'ED-2026-DEMO',authConfigured:true,supabaseClient:{auth:{getUser:async()=>({data:{user:{id:'MOCK-AUTH',email:'mock@example.invalid',email_confirmed_at:'2026-01-01'}},error:null})}}} as any;
  const config={...loadServerConfig({}),appEnv:'demo',editionIdDefault:'ED-2026-DEMO'};
  let modelCalls=0;const modelInputs:any[]=[];
- const model={fetchQuota:async()=>({exhausted:false}),createChatCompletion:async(input:any)=>{modelCalls++;modelInputs.push(input);return {model:'MOCK-FREE',message:{role:'assistant',content:'Start with a clear audience fit, offer a specific benefit, and agree on a practical next step.'},usage:{prompt_tokens:10,completion_tokens:20,total_tokens:30},requestAttempts:1};},getHealthSnapshot:async()=>({}),stop(){}} as any;
+ const model={fetchQuota:async()=>({exhausted:false}),createChatCompletion:async(input:any)=>{modelCalls++;modelInputs.push(input);return scriptedCompletion?scriptedCompletion(input,modelCalls):{model:'MOCK-FREE',message:{role:'assistant',content:'Start with a clear audience fit, offer a specific benefit, and agree on a practical next step.'},usage:{prompt_tokens:10,completion_tokens:20,total_tokens:30},requestAttempts:1};},getHealthSnapshot:async()=>({}),stop(){}} as any;
  const app=express();app.use(express.json({limit:'1mb'}));app.use('/api',createImportApiRouter(config,db,auth));app.use('/api',createAiApiRouter(config,db,auth,{openrouter:model}).router);app.use('/api',apiErrorHandler);
  const server=await new Promise<any>(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});
  const url='http://127.0.0.1:'+server.address().port;
@@ -70,6 +71,19 @@ test('[MOCKED] general how-to answer makes one completion without tools or busin
  const h=await harness();try{const r=await h.post('/api/ai/chat',{message:'How do I approach a sponsor?',edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:'2026-11-27'});
   assert.equal(r.status,200);assert.match(r.body.answer,/audience fit/);assert.equal(h.modelCalls,1);assert.equal(h.modelInputs[0].tools,undefined);
   assert.equal(h.queries.filter(q=>/metrics\.get_metric|knowledge_chunk|entity='uploaded_dataset'/.test(q.sql)).length,0);
+ }finally{await h.close();}
+});
+test('[MOCKED] draft-only task request can investigate current records while write tool stays unavailable',async()=>{
+ const h=await harness(['coordination_lead'],(_input,call)=>call===1?{model:'MOCK-FREE',finishReason:'tool_calls',message:{role:'assistant',content:null,tool_calls:[{id:'read-open-warm',type:'function',function:{name:'list_records',arguments:JSON.stringify({kind:'opportunities',filters:{channel_group:'warm',state:'open'},limit:25})}}]},usage:{prompt_tokens:10,completion_tokens:10,total_tokens:20},requestAttempts:1}:{model:'MOCK-FREE',finishReason:'stop',message:{role:'assistant',content:'The open warm opportunity is Warm Sponsor — Warm Open Deal. Its recorded owner is Warm Owner and the linked record is O-WARM-1. No due date was returned, so I have not created a task; tell me the deadline you want.'},usage:{prompt_tokens:10,completion_tokens:20,total_tokens:30},requestAttempts:1});
+ try{
+  const prompt='Based on the warm-channel result, prepare a follow-up task for the highest-priority open opportunity. Show its owner and linked record; do not create it yet.';
+  const r=await h.post('/api/ai/chat',{message:prompt,edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:'2026-11-27',conversation_id:'TEST-WARM-FOLLOWUP'});
+  assert.equal(r.status,200);assert.match(r.body.answer,/Warm Owner/);assert.match(r.body.answer,/No due date/);assert.deepEqual(r.body.action_ids,[]);
+  const opportunityQuery=h.queries.find(q=>q.sql.includes('FROM public.opportunity o'));
+  assert.ok(opportunityQuery);assert.match(opportunityQuery!.sql,/ch\.channel_group = \$\d+/);assert.ok(opportunityQuery!.params.includes('warm'));
+  assert.equal(h.modelInputs[0].tools.some((t:any)=>t.function.name==='propose_changes'),false);
+  assert.equal(h.queries.some(q=>q.sql.includes('INSERT INTO public.task')),false);
+  assert.match(h.modelInputs[0].messages.find((m:any)=>m.role==='system'&&String(m.content).includes('Never invent task dates'))?.content,/Never invent task dates/);
  }finally{await h.close();}
 });
 test('[MOCKED] outlook changes with pipeline and cash records while keeping approved targets untouched',async()=>{
