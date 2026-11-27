@@ -25,7 +25,7 @@ jobs:
       - run: npm ci
       - name: Read-only deployed Analyst provider health (zero inference)
         if: github.head_ref == 'codex/analyst-availability'
-        run: node scripts/diagnose-analyst-live.ts
+        run: node scripts/diagnose-analyst-live.ts --probe
       - run: npm run lint
       - run: npm run build
       - run: npx tsx scripts/render-voice-preview.ts

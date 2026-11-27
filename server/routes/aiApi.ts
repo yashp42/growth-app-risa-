@@ -1,3 +1,4 @@
+import { metricFallback } from '../llm/metricFallback.ts';
 import { readUploads } from '../uploadedDatasets.ts';
 import { usesUploadedContext } from '../llm/uploadedContext.ts';
 import { isGeneralAdvice, GENERAL_ADVICE_PROMPT } from '../llm/advice.ts';
@@ -603,6 +604,10 @@ function buildDeterministicToolFallback(
   acc: ToolRunAccumulator,
   mode: 'cap' | 'quota' | 'unavailable'
 ): string {
+  if (mode !== 'cap') {
+    const summary = metricFallback(acc.toolResults);
+    if (summary) return summary;
+  }
   for(const raw of acc.toolResults) {
     const p=raw as Record<string,unknown>;
     if(p?.kind==='outlook' && p.available===true) return 'Current observed-rate cash what-if: **'+formatInrCompact(p.indicative_total_cash)+'**. This applies recorded win and collection rates to remaining signed cash and cash-only open pipeline. It recalculates as records change; it is not a calibrated prediction or a pre-event guarantee. Approved targets are unchanged.';
@@ -1317,12 +1322,13 @@ export function createAiApiRouter(
       try {
         const result = await openrouter.createChatCompletion({
           messages: [{role:'system',content:GENERAL_ADVICE_PROMPT},{role:'user',content:question}],
-          maxAttempts: 2, temperature: 0,
+          maxAttempts: 3, temperature: 0,
         });
         trackCompletionUsage(result); modelUsed = result.model;
         finalAnswer = (result.message.content ?? '').trim() || 'Please describe the process you want help with.';
       } catch (err) {
         trackFailure(err);
+        generationFallbackReason = err instanceof OpenRouterError && err.code === 'AI_QUOTA_EXHAUSTED' ? 'quota' : 'unavailable';
         finalAnswer = 'General advice is temporarily unavailable from the free AI provider. Your data is unchanged. Please retry later; database-backed questions can still work.';
       }
     } else if (operationalQuery || basicIntent || prospectQuery || financialQuery) {
