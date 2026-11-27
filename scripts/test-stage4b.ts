@@ -2458,7 +2458,7 @@ test('[MOCKED] signed-versus-collected explanation preloads cash-only outstandin
     return new Response(JSON.stringify({choices:[{message:{role:'assistant',content:'Signed commitments are distinct from cash collected. Review outstanding cash before prioritising collections.'}}]}),{status:200});
   };
   const {status,body}=await askOnce(createMock4bStore(),mockFetch,'Compare signed sponsorship value and cash collected, explain the distinction and suggest the next operational step.');
-  assert.equal(status,200);assert.equal(calls,1);assert.equal(body.token_usage.model_requests,1);
+  assert.equal(status,200);assert.equal(calls,1);assert.equal((body.token_usage as {model_requests:number}).model_requests,1);
 });
 
 test('[MOCKED] §C: system prompt stays within ~600 tokens and every model call uses temperature 0', async () => {
