@@ -158,7 +158,7 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
 export function caseEdition(c: EvalCase): 'ED-2025' | 'ED-2026-DEMO' {
   if (/\b2025\b/.test(c.user_query)) return 'ED-2025';
   if (c.test_id.startsWith('X-') || c.category === 'Action execution') return 'ED-2026-DEMO';
-  if (c.category === 'Basic analytics' || /(?:core\.|stg\.|eda\.)/.test(c.required_data_sources ?? '')) return 'ED-2025';
+  if (c.category === 'Basic analytics' || /(?:core\.|stg\.|eda\.|val\.handoff_register|KB-06\.7)/.test(c.required_data_sources ?? '')) return 'ED-2025';
   return 'ED-2026-DEMO';
 }
 

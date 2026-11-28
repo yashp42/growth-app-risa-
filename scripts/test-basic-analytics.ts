@@ -74,3 +74,23 @@ test('[MOCKED] three-turn channel diagnosis retains context and ties recommendat
  const plan=await answerBasicAnalytics('channel_actions',read,acc);
  assert.match(plan,/- Review every open/);assert.match(plan,/- Run a small/);assert.match(plan,/- Audit cold-channel/);assert.match(plan,/M-21/);assert.match(plan,/no tasks or campaigns were executed/);
 });
+
+test('a named campaign diagnosis reads response and closing counts independently',async()=>{
+ const question='Is North Campus struggling at outreach or closing?';
+ assert.equal(basicAnalyticsIntent(question),'named_campaign_funnel');
+ const a=accumulator();
+ const reads:string[]=[];
+ const out=await answerBasicAnalytics('named_campaign_funnel', async(name,args)=>{
+  if(name==='list_records') return {rows:[{campaign_id:'C1',name:'North Campus'}]};
+  if(name==='search_knowledge') return {};
+  assert.deepEqual(args.filters,{campaign_id:'C1'});
+  const id=String(args.metric_id);
+  reads.push(id);
+  const [numerator,denominator]=id==='M-23'?[11,20]:id==='M-11'?[8,20]:[0,6];
+  return {rows:[{computable:true,value:numerator/denominator,numerator,denominator}]};
+ },a,{question});
+ assert.deepEqual(reads,['M-23','M-11','M-13']);
+ assert.match(out,/20 brands touched, 11 responded/);
+ assert.match(out,/0 wins from 6 proposals/);
+ assert.match(out,/Closing is the clearest observed bottleneck/);
+});

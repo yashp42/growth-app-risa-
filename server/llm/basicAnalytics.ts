@@ -1,7 +1,7 @@
 import { isValidIsoDate } from '../gates.ts';
 import type { ToolRunAccumulator } from './tools.ts';
 
-export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'target_pacing' | 'campaign_conversion' | 'campaign_leakage' | 'funnel_bottleneck' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
+export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'target_pacing' | 'campaign_conversion' | 'campaign_leakage' | 'funnel_bottleneck' | 'handoff_explanation' | 'named_campaign_funnel' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
 const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
 export function historicalPacingDate(question: string): string | undefined {
   if (!/\b(?:against|versus|vs|progress|pacing|on track)\b/i.test(question) ||
@@ -13,6 +13,9 @@ export function historicalPacingDate(question: string): string | undefined {
   const date = iso ?? (named && month ? `2025-${String(month).padStart(2,'0')}-${named[1].padStart(2,'0')}` : '');
   if (isValidIsoDate(date)) return date;
 }
+function namedCampaignFunnelSubject(question: string): string | undefined {
+  return question.match(/^\s*(?:is|was)\s+(.{2,100}?)\s+(?:failing|struggling|weaker)\s+(?:at|on|with)\s+(?:reach|outreach|responses?)\s+or\s+(?:at\s+)?(?:closing|wins?|conversion)[?!.]*\s*$/i)?.[1];
+}
 export function basicAnalyticsIntent(question: string, hasFilters = false, previousQuestion = ''): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
   if (historicalPacingDate(question)) return 'target_pacing';
@@ -22,6 +25,9 @@ export function basicAnalyticsIntent(question: string, hasFilters = false, previ
   if (/\bchannel\b/i.test(fullContext) && /\bwhy\b/i.test(fullContext) && /\b(?:three|3)\b/i.test(fullContext) && /\bactions?\b/i.test(fullContext) && /\b(?:based on|that diagnosis|this diagnosis)\b/i.test(fullContext) && /\bwhy\b/i.test(question) && /\bactions?\b/i.test(question)) return 'channel_full_diagnosis';
   if (/\bchannel\b/i.test(question) && /\b(?:strongest|best|leading|top)\b/i.test(question) && /\b(?:acquisition|results|performance|performing)\b/i.test(question)) return 'channel_performance';
   if (/\b2025\b/i.test(question) && /\b2026\b/i.test(question) && /\b(funnel|conversion|channel|acquisition)\b/i.test(question)) return 'historical_funnel_compare';
+  if (/^why\b/i.test(question) && /\b(?:handoff|qualified leads?|qualified brands?)\b/i.test(fullContext) &&
+      /\b(?:leak\w*|drop\w*|lost|stalled)\b/i.test(question)) return 'handoff_explanation';
+  if (namedCampaignFunnelSubject(question)) return 'named_campaign_funnel';
   const leakage = /\b(?:leak(?:ing|s|age)?|los(?:e|ing|t)|drop[- ]?off|bottlenecks?)\b/i.test(question);
   if (leakage && /\b(?:funnel|handoff)\b/i.test(question) && !/\b(?:why|compare|update|change|create)\b/i.test(question)) {
     return /\bcampaigns?\b/i.test(question) ? 'campaign_leakage' : 'funnel_bottleneck';
@@ -47,7 +53,7 @@ const firstRow = (result: Record<string, unknown>) => (result.rows as Record<str
 const money = (v: unknown) => v === null || v === undefined ? 'Not computable' : '₹' + Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 type Read = (name: string, args: Record<string, unknown>) => Promise<Record<string, unknown>>;
 /** Fixed read plans, using the same permission-checked tools as model turns. No model requests. */
-export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: Read, acc: ToolRunAccumulator): Promise<string> {
+export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: Read, acc: ToolRunAccumulator, options: {question?: string; historical?: boolean} = {}): Promise<string> {
   const lines: string[] = [];
   if (intent === 'channel_performance' || intent === 'channel_why' || intent === 'channel_actions' || intent === 'channel_full_diagnosis') {
     const channels=['warm','inbound','cold'];
@@ -127,6 +133,37 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     if(derivedEvidence.length)acc.toolResults.push({source:'server_derived_funnel_comparison',edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:comparisonAsOf,rows:derivedEvidence});
     lines.push('', 'Interpretation limits: meeting rate is met brands ÷ touched brands; proposal rate is proposed brands ÷ met brands; proposal-to-win is won opportunities ÷ proposal-stage opportunities. These rates have different denominators and must not be combined into one funnel count. Different data availability, cohort sizes and attribution can explain apparent movement; this comparison shows association, not causation.');
     await read('search_knowledge',{query:'2025 historical channel funnel calibration data availability sample size stage denominators'});
+  } else if (intent === 'named_campaign_funnel') {
+    const subject=namedCampaignFunnelSubject(options.question ?? '');
+    if (!subject) return 'Which campaign would you like to diagnose?';
+    const result=await read('list_records',{kind:'campaigns',limit:25,filters:{search:subject}});
+    const candidates=(result.rows as Record<string,unknown>[]|undefined) ?? [];
+    const exact=candidates.filter(c=>String(c.name).toLowerCase()===subject.toLowerCase());
+    const campaign=exact.length===1 && candidates.length<25 ? exact[0] : candidates.length===1 ? candidates[0] : undefined;
+    if (!campaign) {
+      return candidates.length ? 'Several campaigns match. Which campaign do you mean?' : 'No matching campaign was found in the selected edition.';
+    }
+    const filters={campaign_id:String(campaign.campaign_id)};
+    const [reach,meet,close]=await Promise.all(['M-23','M-11','M-13'].map(async metric_id=>firstRow(await read('get_metric',{metric_id,filters}))));
+    lines.push('**'+cell(campaign.name)+'**', '');
+    if (reach?.computable) lines.push(`- Reach: ${cell(reach.denominator)} brands touched, ${cell(reach.numerator)} responded (${Math.round(Number(reach.value)*100)}%). [M-23]`);
+    else lines.push('- Reach and response: unavailable. [M-23]');
+    if (meet?.computable) lines.push(`- Meetings: ${cell(meet.numerator)} brands met. [M-11]`);
+    if (close?.computable) lines.push(`- Closing: ${cell(close.numerator)} wins from ${cell(close.denominator)} proposals. [M-13]`);
+    else lines.push('- Closing: no comparable proposal-to-win result. [M-13]');
+    if (Number(reach?.numerator)>0 && Number(close?.denominator)>0 && close?.computable && Number(close.numerator)===0) {
+      lines.push('', 'Closing is the clearest observed bottleneck. The campaign reached and engaged brands and sent proposals, but recorded zero wins. The cause of the failure is unknown from these counts.');
+    } else lines.push('', 'These stages have different denominators. A stronger conclusion needs comparable campaigns and evidence about why individual deals stalled.');
+    await read('search_knowledge',{query:'historical campaign results brands touched responded met proposals wins '+String(campaign.name).slice(0,100)});
+  } else if (intent === 'handoff_explanation') {
+    await read('search_knowledge',{query:'handoff leak late qualification season clustering owner workload recorded fit drop reason unknown',related_kpi:'K-F-05'});
+    const note=acc.citations.find(c=>c.id==='KB-06.7' && !c.history);
+    lines.push('The records do not establish why qualified leads dropped out. Check owner notes and missing drop reasons before attributing the leak to a person or channel.');
+    if(options.historical && typeof note?.text==='string') {
+      const finding=note.text.match(/The records rule out [\s\S]+$/)?.[0];
+      if(finding) lines.push('', 'The synthetic 2025 analysis reports: “'+cell(finding)+'” [KB-06.7]');
+    } else if(note) lines.push('', 'The historical study can suggest checks, but it does not establish a cause for the selected edition. [KB-06.7]');
+    lines.push('Track each qualified lead through the approved handoff deadline and require a reason when a lead is dropped.');
   } else if (intent === 'funnel_bottleneck') {
     const [handoff, cold] = await Promise.all([
       read('get_metric',{metric_id:'M-17'}),
@@ -140,7 +177,10 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       lines.push(`Cold proposal-to-win: **${cell(win.numerator)} wins from ${cell(win.denominator)} proposals** (${Math.round(Number(win.value)*100)}%). [M-13]`);
     } else lines.push('Cold proposal-to-win conversion is unavailable for this scope. [M-13]');
     lines.push('The handoff rate counts brands and the close rate counts opportunities. Review the work queue at each stage before comparing loss volumes. The cause of the leak is unknown from these counts.');
-    await read('search_knowledge',{query:'warm inbound handoff leak qualified brands no opportunity cold proposal wins historical funnel diagnosis'});
+    await Promise.all([
+      read('search_knowledge',{query:'qualified brands never had an opportunity handoff cause unknown',related_kpi:'K-F-05'}),
+      read('search_knowledge',{query:'conversion bimodal warm inbound every brand proposal won cold won none deal origin first touch',related_kpi:'K-F-03'}),
+    ]);
   } else if (intent === 'campaign_leakage') {
     const campaigns=await read('list_records',{kind:'campaigns',limit:25});
     const rows=campaigns.rows as Record<string,unknown>[]|undefined;
@@ -184,6 +224,10 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       const channelLeaks=channels.map(channel=>({channel,row:channelEvidence.get(channel)?.['M-17']})).filter(x=>x.row?.computable).sort((a,b)=>Number(b.row?.numerator??0)-Number(a.row?.numerator??0));
       if(channelLeaks.length)lines.push('',`Largest channel loss by count is **${channelLeaks[0].channel}**: ${cell(channelLeaks[0].row?.numerator)} qualified brands did not reach an opportunity (M-17). Treat this as volume, not proof of worse rate; compare the denominators above.`);
       lines.push('', '**What the records prove:** M-17 identifies qualified brands that have no opportunity; M-18 and M-19 show the timely handoff and proposal rates defined by those metrics; M-13 describes proposal-to-win at opportunity grain. These measures have distinct denominators. The largest absolute M-17 loss is not automatically the worst rate or the cause of the loss.', '', '**Recommended actions for this week:**', '- Review the campaign with the highest M-17 loss count with its owner; inspect the affected qualified-brand records and set documented next steps. Measure M-17 numerator and rate at week end.', '- For the lowest comparable M-18 campaign/channel, audit qualification-to-opportunity handoff delays. Measure its numerator ÷ denominator on the next cohort.', '- Review proposals stalled before the M-19 window with owners; measure M-19 numerator ÷ denominator and keep M-13 proposal-to-win separate. These are recommendations only; nothing has been changed.');
+    }
+    if (options.historical) {
+      await read('search_knowledge',{query:'qualified brands handoff creator referrals partner introductions no opportunity',related_kpi:'K-F-05'});
+      lines.push('These are small samples. The cause of the observed handoff losses is unknown.');
     }
   } else if (intent === 'target_pacing') {
     const [qualifiedResult, confirmedResult, gate] = await Promise.all([

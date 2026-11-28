@@ -1341,7 +1341,7 @@ export function createAiApiRouter(
     const collectedActions: Array<Record<string, unknown>> = [];
     const pendingActionInserts: PendingAiActionInsert[] = [];
     let viewSpec: Record<string, unknown> | undefined;
-    let routeOverride: 'sql' | 'hybrid' | 'action' | undefined;
+    let routeOverride: 'sql' | 'hybrid' | 'rag' | 'action' | undefined;
 
     const tokenUsage = {
       prompt_tokens: 0,
@@ -1498,7 +1498,7 @@ export function createAiApiRouter(
         finalAnswer = deterministicGeneralAdvice(question);
       }
     } else if (!flexibleInvestigation && (campaignLookup || operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQueries.length)) {
-      routeOverride = basicIntent === 'funnel_bottleneck' ? 'hybrid'
+      routeOverride = basicIntent === 'handoff_explanation' ? 'rag' : basicIntent === 'funnel_bottleneck' ? 'hybrid'
         : operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
       usedMetrics = Boolean(basicIntent || financialQuery || strategyQueries.length);
       usedKnowledge = !operationalQuery || financialQuery === 'cash_position' || strategyQueries.length > 0;
@@ -1532,7 +1532,7 @@ export function createAiApiRouter(
       } else if (financialQuery === 'cash_position') {
         finalAnswer = await answerFinancial(financialQuery, readDeterministic, acc, { includeReceivableDetails: operationalQuery?.kind === 'receivable_followup' });
       } else if (operationalQuery) finalAnswer = await answerOperational(operationalQuery, readDeterministic, acc);
-      else if (basicIntent) finalAnswer = await answerBasicAnalytics(basicIntent, readDeterministic, acc);
+      else if (basicIntent) finalAnswer = await answerBasicAnalytics(basicIntent, readDeterministic, acc, {question,historical:recordClass==='historical_synthetic'});
       else if (financialQuery) finalAnswer = await answerFinancial(financialQuery, readDeterministic, acc);
       else finalAnswer = await answerProspects(prospectQuery!, readDeterministic, acc);
       } catch { finalAnswer = fallbackFromTools(acc, 'unavailable'); }
