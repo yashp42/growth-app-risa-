@@ -98,3 +98,11 @@ test('full evaluation defers unavailable answers and their follow-ups while scor
   assert.equal(state.state, 'paused');
   assert.equal(evaluationSummary(state).release_gates_met, false);
 });
+
+test('a source forbidden as current is still allowed when explicitly cited as superseded',()=>{
+ const c={...simple,must_not_cite:'KB-15.1 as current',expected_citation:'KB-15.1'};
+ const body={route:'refuse',answer:'Superseded comparison only: old baseline. [KB-15.1]',answer_check_passed:true,citations:[{id:'KB-15.1',history:true}]};
+ assert.equal(scoreAnswer(c,body,true,1).status,'PASS');
+ assert.equal(scoreAnswer(c,{...body,answer:'The current baseline is documented here. [KB-15.1]'},true,1).status,'FAIL');
+ assert.equal(scoreAnswer({...c,must_not_cite:'KB-15.1'},body,true,1).status,'FAIL');
+});

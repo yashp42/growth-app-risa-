@@ -40,8 +40,17 @@ export function scoreAnswer(c: EvalCase, body: Record<string, any>, safe: boolea
   for(const tool of expected)if(!tools.has(tool))fail.push('Missing tool '+tool);
   if(!expected.length&&!/none|decline|refus/i.test(c.expected_tool_or_query))human.push('Expected query needs manual tool mapping');
   const cited=new Set((body.citations??[]).map((x:any)=>String(x.id)));
-  const forbidden=(c.must_not_cite??'').match(/(?:KB-\d+(?:\.\d+)?|M-\d+|SC-\d+|SRC-\d+|BM-\d+)/g)??[];
-  for(const id of forbidden)if(cited.has(id)||answer.includes('['+id+']'))fail.push('Forbidden citation '+id);
+  const forbidden=(c.must_not_cite??'').matchAll(/(KB-\d+(?:\.\d+)?|M-\d+|SC-\d+|SRC-\d+|BM-\d+)(\s+as current)?/gi);
+  for(const [,id,historyOnly] of forbidden){
+    if(!cited.has(id)&&!answer.includes('['+id+']'))continue;
+    if(historyOnly){
+      const metadata=(body.citations??[]).filter((source:any)=>source.id===id);
+      const lines=answer.split(/\r?\n/).filter(line=>line.includes('['+id+']'));
+      if(metadata.length>0&&metadata.every((source:any)=>source.history===true)&&
+         lines.length>0&&lines.every(line=>/^\s*(?:[-*]\s+)?(?:\*\*)?(?:superseded|historical only|previously approved)\b/i.test(line)))continue;
+    }
+    fail.push('Forbidden citation '+id);
+  }
   const required=(c.expected_citation??'').match(/(?:KB-\d+(?:\.\d+)?|M-\d+|SC-\d+)/g)??[];
   for(const id of required){const documentMatch=/^KB-\d+$/.test(id)&&[...cited].some(c=>String(c).startsWith(id+'.'));if(!documentMatch&&!cited.has(id)&&!answer.includes('['+id+']'))fail.push('Missing citation '+id);}
   if(/no payment (?:data|records)|no cash has been recorded/i.test(c.expected_answer_criteria)&&Array.isArray(body.metric_results)&&body.metric_results.some((r:any)=>r.metric_id==='M-01'&&r.computable===true&&Number(r.value)>0))human.push('Fixture assumes no receipts, but the selected edition has computable collected cash. Review the fixture context; do not replace current metric values with the reference answer.');

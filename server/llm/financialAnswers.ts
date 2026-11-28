@@ -5,7 +5,7 @@ import { isExplicitWriteRequest } from './actionIntent.ts';
 import { compareReceivableUrgency, documentedOverdueAmount } from './receivableTiming.ts';
 const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)+'|').replace(/[\r\n]/g,' ');
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
-export type FinancialIntent='activation_inventory'|'scenario_comparison'|'scenario_probability'|'forecast_actual'|'collection_status'|'cash_position';
+export type FinancialIntent='activation_inventory'|'scenario_comparison'|'scenario_version'|'scenario_probability'|'forecast_actual'|'collection_status'|'cash_position';
 export function financialIntent(question:string,hasFilters=false):FinancialIntent|null {
  if(hasFilters||isExplicitWriteRequest(question))return null;
  if(/\b(?:change|update|set|revise|replace)\b.{0,60}\b(?:forecast|expected|stretch|projection|projected)\b/i.test(question))return null;
@@ -15,6 +15,7 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  if(/\bbudget\b/i.test(question)&&! /\b(?:spend|expenses?|operating costs?|budget target|approved target)\b/i.test(question)&&(/\b(?:sponsorship|sponsor|our|current|season|202[56])\b/i.test(question)||/^\s*(?:what(?:'s| is)\s+)?budget\s*[?.!]*\s*$/i.test(question)))return 'cash_position';
  if(/\bactivations?\b/i.test(question)&&/\b(slots?|price|prices|pricing|cost|costs|inventory|how many)\b/i.test(question))return 'activation_inventory';
  if(/\b(forecast|expected|stretch|projection|projected)\b/i.test(question)&&/\b(collected|received|receipts|actual|already paid)\b/i.test(question))return 'forecast_actual';
+ if(scenarioVersionQuestion(question))return 'scenario_version';
  if(scenarioProbabilityThreshold(question)!==undefined) return 'scenario_probability';
  if(/\b(?:difference|compare|comparison|versus|vs)\b/i.test(question) &&
     /\bbase\b/i.test(question) && /\b(?:plan|stretch)\b/i.test(question) &&
@@ -22,6 +23,13 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  if(/\b(complete picture|cash position|how much is signed|cash-type signed|remains outstanding|largest outstanding balances)\b/i.test(question)||(/\b(signed|commitments?)\b/i.test(question)&&/\b(collected|cash collected|received)\b/i.test(question)&&/\b(compare|distinction|difference|separate|outstanding|receivable|unpaid|due dates?|overdue)\b/i.test(question)))return 'cash_position';
  if(/\b(paid late|late payment|outstanding|cash collection rate|collection rate|cash collected)\b|\b(?:cash|money) did we (?:collect|receive)\b/i.test(question))return 'collection_status';
  return null;
+}
+function scenarioVersionQuestion(question: string): {scenario: string; amount: number} | undefined {
+ const target=question.match(/\b(base|plan|stretch)\b/i)?.[1]?.toLowerCase();
+ const amount=question.match(/(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lakh(?:s)?|lac(?:s)?|l\b)/i);
+ if(!target||!amount||!/\b(?:earlier|old|deck|right|correct|current|superseded|target)\b/i.test(question)||
+    /\b(?:compare|vs|versus|actual|collected|chance|probability|odds|cash position)\b/i.test(question))return;
+ return {scenario:target,amount:Number(amount[1])};
 }
 function scenarioProbabilityThreshold(question: string): number | undefined {
  if (!/\b(?:chance|probability|odds)\b/i.test(question) ||
@@ -42,7 +50,30 @@ export async function getInventory(pool:QueryablePool,id:string|undefined,ctx:Re
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;
 export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolRunAccumulator,options:{includeReceivableDetails?:boolean; question?:string}={}):Promise<string>{
  const lines:string[]=[];
- if(intent==='scenario_comparison'||intent==='scenario_probability'){
+ if(intent==='scenario_version'){
+  const request=scenarioVersionQuestion(options.question??'');
+  if(!request)return 'Which approved scenario figure would you like to check?';
+  const catalogue=await read('get_scenario',{});
+  const entries=((catalogue.scenarios??[]) as Record<string,unknown>[])
+    .filter(s=>['SC-01','SC-02','SC-03'].includes(String(s.scenario_id)));
+  const selected=entries.find(s=>String(s.name).trim().toLowerCase()===request.scenario);
+  if(!selected||selected.expected_cash==null)return 'The approved figure for this scenario is unavailable.';
+  const amount=formatScenarioCash(selected.expected_cash);
+  lines.push(`The approved D-009 ${cell(selected.name)} forecast is **${amount}** [${cell(selected.scenario_id)}].`);
+  const matches=(s: Record<string,unknown>)=>s.expected_cash!=null &&
+    Math.abs(Number(s.expected_cash)-request.amount)<=0.05;
+  const alternative=entries.find(s=>s!==selected&&matches(s));
+  if(alternative)lines.push(`${formatScenarioCash(alternative.expected_cash)} is the approved ${cell(alternative.name)} forecast [${cell(alternative.scenario_id)}].`);
+  if(!matches(selected)){
+   await read('search_knowledge',{query:`${request.scenario} ${request.amount} superseded forecast earlier model decision D-005 D-009`,include_history:true,related_kpi:'K-NS-01'});
+   const correction=acc.citations.find(c=>c.history&&c.id==='KB-15.1');
+   const past=typeof correction?.text==='string' ? correction.text.match(/^SUPERSEDED:\s*([\s\S]{1,380}?)\s+CURRENT:/i)?.[1] : undefined;
+   if(past&&past.includes(formatScenarioCash(request.amount))){
+    lines.push(`Superseded D-005 comparison only: ${past} [KB-15.1]`);
+   }else lines.push('I could not verify the origin of the other figure in the available history.');
+  }
+  lines.push('The approved figure is a forecast of pre-festival cash. Measured receipts are tracked separately.');
+ }else if(intent==='scenario_comparison'||intent==='scenario_probability'){
   const catalogue=await read('get_scenario',{});
   const scenarios=((catalogue.scenarios??[]) as Record<string,unknown>[])
     .filter(row=>['SC-01','SC-02','SC-03'].includes(String(row.scenario_id)));
@@ -50,10 +81,14 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
   await read('search_knowledge',{query:'approved financial scenarios base plan stretch pre season premium capacity model probability expected cash',related_kpi:'K-NS-01'});
   const approved=acc.citations.find(c=>c.id==='KB-07.1'&&c.decision_status==='approved'&&!c.history);
   if(intent==='scenario_comparison'){
+   await Promise.all([
+    read('search_knowledge',{query:'base versus stretch what differs capacity only premium inventory sequential bridge attribution of record'}),
+    read('search_knowledge',{query:'exact Shapley values each approved scenario handoff renewals creator premium inventory attribution of record'}),
+   ]);
    lines.push('Approved model forecasts for cash before the festival.','',
      '| Scenario | Expected cash | P10–P90 | Window person-weeks | Pre-season person-weeks |','|---|---:|---:|---:|---:|');
    for(const s of scenarios) lines.push(`| ${cell(s.name)} [${cell(s.scenario_id)}] | ${formatScenarioCash(s.expected_cash)} | ${formatScenarioCash(s.p10)}–${formatScenarioCash(s.p90)} | ${cell(s.window_pw)} | ${cell(s.preseason_pw)} |`);
-   if(approved) lines.push('', 'Base focuses on the handoff, cash discipline and renewals. Plan adds gated introductions and creator outreach. Stretch adds premium inventory and pre-season capacity. [KB-07.1]');
+   if(approved) lines.push('', 'Base focuses on the handoff, cash discipline and renewals. Plan adds gated introductions and creator outreach. Stretch adds premium inventory and pre-season capacity. Its additional cash depends on premium sales and available staff. [KB-07.1]');
   } else {
    const threshold=options.question ? scenarioProbabilityThreshold(options.question) : undefined;
    let reported=0;
@@ -156,6 +191,13 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
   }else{
    const rate=s.computable&&s.value!=null?Number(s.value):null;
    lines.push(`Recorded collected cash: ₹${Number(c.value).toLocaleString('en-IN')} [M-01]. Outstanding cash: ₹${Number(o.value).toLocaleString('en-IN')} [M-07].${rate===null?' A collection rate cannot be computed because signed cash is unavailable.':` Collection against signed cash is ${(rate*100).toFixed(1)}% [M-06].`} Late-payment identification requires dated receipt and due-date records.`);
+  }
+  if (!c.computable && /\b(?:how much|actual receipts)\b/i.test(options.question??'') &&
+      (collected.record_class==='historical_synthetic'||c.record_class==='historical_synthetic')) {
+   await read('search_knowledge',{query:'North Star 2025 cash collected no receipts assumed last year model output',related_kpi:'K-NS-01'});
+   const note=acc.citations.find(c=>c.id==='KB-12.1'&&!c.history);
+   const example=String(note?.text??'').match(/≈\s*(₹[\d.]+L)/)?.[1];
+   if(example)lines.push(`For planning, ${example} was a model assumption. The historical dataset does not establish that this amount was received. [KB-12.1]`);
   }
   await read('search_knowledge',{query:'historical 2025 missing data no payment receipts reconciliation collection rate outstanding cash late payment assumptions'});
  }

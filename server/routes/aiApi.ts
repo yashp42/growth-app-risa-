@@ -1421,7 +1421,17 @@ export function createAiApiRouter(
     } else if (greeting) {
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
-      finalAnswer = refusalCheck.reason! + ' [KB-18.2]';
+      const reason=refusalCheck.reason!;
+      const policyNotes:string[]=[];
+      if(reason.startsWith('I cannot modify approved')) {
+        policyNotes.push('Forecast revisions preserve the approved scenario and keep a separate date and version. [KB-13.7]');
+        if(/\b(?:targets?|thresholds?|rules?)\b/i.test(question))policyNotes.push('Decision thresholds are versioned so they can be reconstructed after results are observed. [KB-11.4]');
+      } else if(reason.includes('full history is retained')) {
+        policyNotes.push('Use the supported review and audit workflow for any operational record change. [KB-18.4]');
+      } else if(/\bmark\b.+\b(?:received|collected)\b/i.test(question)){
+        policyNotes.push('A prospect’s estimated value cannot be booked as a receipt. [KB-03.5]');
+      }
+      finalAnswer = [reason + ' [KB-18.2]',...policyNotes].join('\n\n');
     } else if ((explicitWriteIntent || taskDraftOnly) && (directFollowUpTarget || directFollowUpChannel)) {
       if (profile.opportunitiesScope === 'none' || (directFollowUpChannel && profile.redactFinancials)) {
         throw new AppApiError(403,'FORBIDDEN','Your role does not have access to the opportunity evidence needed for this follow-up.');
@@ -1516,7 +1526,7 @@ export function createAiApiRouter(
         finalAnswer = deterministicGeneralAdvice(question);
       }
     } else if (!flexibleInvestigation && (campaignLookup || operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQueries.length)) {
-      routeOverride = financialQuery === 'scenario_probability' ? 'lookup' : basicIntent === 'handoff_explanation' ? 'rag' : basicIntent === 'funnel_bottleneck' ? 'hybrid'
+      routeOverride = financialQuery === 'scenario_probability' ? 'lookup' : financialQuery === 'scenario_version' ? 'rag' : basicIntent === 'handoff_explanation' ? 'rag' : basicIntent === 'funnel_bottleneck' ? 'hybrid'
         : operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
       usedMetrics = Boolean(basicIntent || financialQuery || strategyQueries.length);
       usedKnowledge = !operationalQuery || financialQuery === 'cash_position' || strategyQueries.length > 0;
