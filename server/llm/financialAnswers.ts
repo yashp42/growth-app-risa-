@@ -16,7 +16,7 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  if(/\bactivations?\b/i.test(question)&&/\b(slots?|price|prices|pricing|cost|costs|inventory|how many)\b/i.test(question))return 'activation_inventory';
  if(/\b(forecast|expected|stretch|projection|projected)\b/i.test(question)&&/\b(collected|received|receipts|actual|already paid)\b/i.test(question))return 'forecast_actual';
  if(/\b(complete picture|cash position|how much is signed|cash-type signed|remains outstanding|largest outstanding balances)\b/i.test(question)||(/\b(signed|commitments?)\b/i.test(question)&&/\b(collected|cash collected|received)\b/i.test(question)&&/\b(compare|distinction|difference|separate|outstanding|receivable|unpaid|due dates?|overdue)\b/i.test(question)))return 'cash_position';
- if(/\b(paid late|late payment|outstanding|cash collection rate|collection rate|cash collected)\b/i.test(question))return 'collection_status';
+ if(/\b(paid late|late payment|outstanding|cash collection rate|collection rate|cash collected)\b|\b(?:cash|money) did we (?:collect|receive)\b/i.test(question))return 'collection_status';
  return null;
 }
 export async function getInventory(pool:QueryablePool,id:string|undefined,ctx:ReferenceContext):Promise<Record<string,unknown>> {
@@ -103,19 +103,26 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
    lines.push('', 'Signed value, cash-type signed value, collected cash and outstanding cash are separate measures. In-kind is included only in M-02, not M-03 or M-01. A late-payment/T−7 conclusion requires dated due-date and receipt records.');
    return lines.join('\n');
   }
-  const collected=await read('get_metric',{metric_id:'M-01'});
-  const outstanding=await read('get_metric',{metric_id:'M-07'});
-  const signedCash=await read('get_metric',{metric_id:'M-03'});
-  const c=(collected.rows as Record<string,unknown>[]|undefined)?.[0],o=(outstanding.rows as Record<string,unknown>[]|undefined)?.[0],s=(signedCash.rows as Record<string,unknown>[]|undefined)?.[0];
+  const [collected, outstanding, collectionRate]=await Promise.all(
+   ['M-01','M-07','M-06'].map(metric_id=>read('get_metric',{metric_id})));
+  const c=(collected.rows as Record<string,unknown>[]|undefined)?.[0],o=(outstanding.rows as Record<string,unknown>[]|undefined)?.[0],s=(collectionRate.rows as Record<string,unknown>[]|undefined)?.[0];
   if(!c||!o||!s)throw new Error('Collection sources returned no metric row.');
   if(!c.computable||!o.computable){
-   lines.push('I cannot determine late payers, outstanding cash at T−7, or an actual collection rate for this edition because the receipt and reconciliation ledger is unavailable. Signed commitments are not evidence of collected cash.', '', `Collected cash [M-01]: ${cell(c.reason??'not computable')}`, `Outstanding cash [M-07]: ${cell(o.reason??'not computable')}`);
+   lines.push('The data is insufficient to determine late payers, outstanding cash at T−7, or the actual collection rate [M-06]. This edition has no usable receipt and reconciliation ledger. Signed commitments are not evidence of collected cash.', '', `Collected cash [M-01]: ${cell(c.reason??'not computable')}`, `Outstanding cash [M-07]: ${cell(o.reason??'not computable')}`);
+   if (collected.record_class === 'historical_synthetic' || c.record_class === 'historical_synthetic') {
+    const signed = await Promise.all(['M-02','M-03'].map(metric_id=>read('get_metric',{metric_id})));
+    signed.forEach((result,index)=>{
+     const row=(result.rows as Record<string,unknown>[]|undefined)?.[0];
+     if(row?.computable && row.value!=null) lines.push((index===0?'Total signed value':'Cash-type signed value')+': '+formatScenarioCash(Number(row.value)/100000)+' ['+(index===0?'M-02':'M-03')+'].');
+    });
+   }
   }else{
-   const rate=s.computable&&Number(s.value)>0?Number(c.value)/Number(s.value):null;
-   lines.push(`Recorded collected cash: ₹${Number(c.value).toLocaleString('en-IN')} [M-01]. Outstanding cash: ₹${Number(o.value).toLocaleString('en-IN')} [M-07].${rate===null?' A collection rate cannot be computed because signed cash is unavailable.':` Collection against signed cash is ${(rate*100).toFixed(1)}% [M-03, M-01].`} Late-payment identification requires dated receipt and due-date records.`);
+   const rate=s.computable&&s.value!=null?Number(s.value):null;
+   lines.push(`Recorded collected cash: ₹${Number(c.value).toLocaleString('en-IN')} [M-01]. Outstanding cash: ₹${Number(o.value).toLocaleString('en-IN')} [M-07].${rate===null?' A collection rate cannot be computed because signed cash is unavailable.':` Collection against signed cash is ${(rate*100).toFixed(1)}% [M-06].`} Late-payment identification requires dated receipt and due-date records.`);
   }
-  await read('search_knowledge',{query:'historical receipts reconciliation collection rate outstanding cash late payment ledger'});
+  await read('search_knowledge',{query:'historical 2025 missing data no payment receipts reconciliation collection rate outstanding cash late payment assumptions'});
  }
- const seen=new Set<string>();for(const c of acc.citations){if(c.type==='knowledge'&&!c.history&&!seen.has(c.id)){seen.add(c.id);lines.push('','> ['+cell(c.id)+'] '+cell(c.text));}}
+ const references=[...new Set(acc.citations.filter(c=>c.type==='knowledge'&&!c.history).map(c=>c.id))].filter(id=>/^KB-[\w.-]+$/.test(id));
+ if(references.length) lines.push('', 'Supporting references: '+references.map(id=>'['+id+']').join(', ')+'.');
  return lines.join('\n');
 }

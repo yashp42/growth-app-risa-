@@ -7,7 +7,7 @@ import { deterministicGeneralAdvice, isGeneralAdvice, GENERAL_ADVICE_PROMPT } fr
 import { planQuestion, relevantToolNames } from '../llm/questionPlan.ts';
 import { verifyScopedAnswer, verifiedFactsFallback } from '../llm/claimGrounding.ts';
 import { answerOperational } from '../llm/operationalAnswers.ts';
-import { answerFinancial } from '../llm/financialAnswers.ts';
+import { answerFinancial, financialIntent } from '../llm/financialAnswers.ts';
 import { answerProspects } from '../llm/prospectAnswers.ts';
 import { answerBasicAnalytics, historicalPacingDate } from '../llm/basicAnalytics.ts';
 import { answerStrategy } from '../llm/strategyAnswers.ts';
@@ -1170,8 +1170,11 @@ export function createAiApiRouter(
 
     const pool = ensurePool();
     const historicalDate = historicalPacingDate(parsed.data.message);
+    const historicalFinance = financialIntent(parsed.data.message) === 'collection_status' &&
+      /\b(?:2025|historical|last year)\b/i.test(parsed.data.message) &&
+      !/\b(?:2026|current|compare|versus)\b/i.test(parsed.data.message);
     const requestedEditionId =
-      (historicalDate ? 'ED-2025' : undefined) ?? parsed.data.edition_id ??
+      (historicalDate || historicalFinance ? 'ED-2025' : undefined) ?? parsed.data.edition_id ??
       (parsed.data.record_class === 'historical_synthetic'
         ? 'ED-2025'
         : parsed.data.record_class === 'live'
@@ -1317,7 +1320,11 @@ export function createAiApiRouter(
     }
 
     // Check human-only refusal BEFORE allowing any proposal or model loop
-    const refusalCheck = isHumanOnlyWriteRequest(question);
+    const historicalWrite = isExplicitWriteRequest(question) &&
+      (recordClass === 'historical_synthetic' || /\b(?:2025|historical edition)\b/i.test(question));
+    const refusalCheck = historicalWrite
+      ? {refuse:true, reason:'The 2025 historical edition is read only. Change records through the current workspace.'}
+      : isHumanOnlyWriteRequest(question);
     const acc: ToolRunAccumulator = createToolAccumulator();
     const toolTrace: Array<Record<string, unknown>> = [];
     let finalAnswer = '';
@@ -1413,7 +1420,7 @@ export function createAiApiRouter(
     } else if (greeting) {
       finalAnswer = 'Hi! Ask me about sponsorship metrics, campaign performance, open deals or strategy notes. I can also prepare changes for your confirmation.';
     } else if (refusalCheck.refuse) {
-      finalAnswer = refusalCheck.reason!;
+      finalAnswer = refusalCheck.reason! + ' [KB-18.2]';
     } else if ((explicitWriteIntent || taskDraftOnly) && (directFollowUpTarget || directFollowUpChannel)) {
       if (profile.opportunitiesScope === 'none' || (directFollowUpChannel && profile.redactFinancials)) {
         throw new AppApiError(403,'FORBIDDEN','Your role does not have access to the opportunity evidence needed for this follow-up.');

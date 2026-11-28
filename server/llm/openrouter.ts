@@ -785,12 +785,12 @@ export function createOpenRouterClient(
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
       const toolProtocolFailure = !tools?.length && res.status === 400 && /tool choice is none|tool_use_failed/i.test(errText);
-      const toolArgumentFailure = Boolean(tools?.length) && res.status === 400 && /tool call validation failed|parameters[\s\S]*did not match schema/i.test(errText);
+      const toolArgumentFailure = Boolean(tools?.length) && res.status === 400 && /tool_use_failed|tool call validation failed|parameters[\s\S]*did not match schema/i.test(errText);
       const retryable = toolArgumentFailure || toolProtocolFailure || res.status === 429 || res.status >= 500;
       const retryAfterMs = retryable
         ? parseRetryAfterMs(res.headers.get('retry-after'))
         : 0;
-      if(retryable)cooldowns.set(entry.provider+':'+entry.model,Date.now()+Math.max(retryAfterMs,res.status===429?60_000:toolArgumentFailure?60_000:10_000));
+      if(retryable && !toolArgumentFailure && !toolProtocolFailure)cooldowns.set(entry.provider+':'+entry.model,Date.now()+Math.max(retryAfterMs,res.status===429?60_000:10_000));
       // Do not block the user's request or immediately retry a cooling provider.
       throw new OpenRouterError(
         `${entry.provider} returned HTTP ${res.status}${errText ? `: ${errText.slice(0, 220)}` : ''}`,
@@ -913,7 +913,7 @@ export function createOpenRouterClient(
       } catch (err) {
         if(err instanceof OpenRouterError)err.requestAttempts=attempts;
         lastErr = err;
-        if (err instanceof OpenRouterError && err.retryable) {
+        if (err instanceof OpenRouterError && err.retryable && !['AI_TOOL_ARGUMENTS','AI_TOOL_PROTOCOL'].includes(err.code)) {
           const key=entry.provider+':'+entry.model;
           cooldowns.set(key, Math.max(cooldowns.get(key)??0, Date.now()+10_000));
         }

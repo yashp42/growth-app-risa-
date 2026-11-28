@@ -60,7 +60,7 @@ export function speakAnswer(
   if (!text) return false;
   stopSpeaking();
   const utterance = new SpeechSynthesisUtterance(text);
-  const voice = preferredEnglishVoice(window.speechSynthesis.getVoices());
+  const voice = preferredEnglishVoice(window.speechSynthesis.getVoices?.() ?? []);
   if (voice) utterance.voice = voice;
   utterance.lang = voice?.lang ?? 'en-IN';
   utterance.rate = 0.94;
