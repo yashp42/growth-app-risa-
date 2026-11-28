@@ -195,14 +195,22 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
   if(plan?.expected_cash!=null)lines.push(`The Base forecast of **${formatScenarioCash(plan.expected_cash)}** is for pre-festival cash. Use actual collections to assess that forecast. [SC-01]`);
  }else if(intent==='forecast_actual'){
   const scenarios=await read('get_scenario',{});
-  lines.push('Approved scenario values are forecasts of pre-festival cash, not actual collected cash.','', '| Scenario | Forecast cash | P10 | P50 | P90 |','|---|---:|---:|---:|---:|');
-  for(const row of (scenarios.scenarios as Record<string,unknown>[]??[]))lines.push('| ['+cell(row.scenario_id)+'] '+cell(row.name)+' | '+formatScenarioCash(row.expected_cash)+' | '+formatScenarioCash(row.p10)+' | '+formatScenarioCash(row.p50)+' | '+formatScenarioCash(row.p90)+' |');
+  const plans=((scenarios.scenarios??[]) as Record<string,unknown>[]).filter(r=>['SC-01','SC-02','SC-03'].includes(String(r.scenario_id)));
+  lines.push('Approved scenario values are forecasts of pre-festival cash, not actual collected cash.','', '| Scenario | Expected cash | Modelled signed value | P10 | P50 | P90 |','|---|---:|---:|---:|---:|---:|');
+  for(const row of plans){
+   const out=/\bsigned\b/i.test(options.question??'') ? await read('get_dataset',{dataset_id:'data_foundation.curated_data.scenario_outputs',filter:{status:`APPROVED: ${row.name} (D-009)`},limit:2}) : {};
+   const matches=(out.rows??[]) as Record<string,unknown>[];
+   const signed=matches.length===1&&Number(matches[0].cash_expected)===Number(row.expected_cash)?matches[0].signed_expected:null;
+   lines.push('| ['+cell(row.scenario_id)+'] '+cell(row.name)+' | '+formatScenarioCash(row.expected_cash)+' | '+formatScenarioCash(signed)+' | '+formatScenarioCash(row.p10)+' | '+formatScenarioCash(row.p50)+' | '+formatScenarioCash(row.p90)+' |');
+  }
+  lines.push('P10 and P90 are the lower and upper model percentiles displayed here. Signed commitments include value that may not turn into cash.');
   const collected=await read('get_metric',{metric_id:'M-01'});
   const row=(collected.rows as Record<string,unknown>[]|undefined)?.[0];
   if(!row)throw new Error('Cash-collected source returned no row.');
   lines.push('',row.computable&&row.value!==null?'Recorded collected cash for the selected edition: ₹'+Number(row.value).toLocaleString('en-IN',{maximumFractionDigits:2})+' [M-01].':'Collected cash is not computable for the selected edition: '+cell(row.reason)+' [M-01].');
   lines.push('A forecast does not establish receipt or collection. Use the edition and as-of date shown with these sources.');
-  await read('search_knowledge',{query:'approved stretch scenario expected cash forecast not actual collected receipts missing payment data'});
+  await read('search_knowledge',{query:'approved base plan stretch handoff SLA cash discipline renewals introductions creator scale-up premium inventory person weeks',related_kpi:'K-NS-01'});
+  if(acc.citations.some(c=>c.id==='KB-07.1'&&!c.history))lines.push('Base assumes 50 in-window person-weeks for handoff, cash discipline and renewals. Plan keeps that capacity and adds gated introductions and creator outreach. Stretch adds premium inventory and assumes 60 in-window plus 10 pre-season person-weeks. [KB-07.1]');
  }else{
   if(intent==='cash_position'){
    const metrics:Record<string,Record<string,unknown>>={};
@@ -257,8 +265,9 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
   const c=(collected.rows as Record<string,unknown>[]|undefined)?.[0],o=(outstanding.rows as Record<string,unknown>[]|undefined)?.[0],s=(collectionRate.rows as Record<string,unknown>[]|undefined)?.[0];
   if(!c||!o||!s)throw new Error('Collection sources returned no metric row.');
   if(!c.computable||!o.computable){
-   lines.push('The data is insufficient to determine late payers, outstanding cash at T−7, or the actual collection rate [M-06]. This edition has no usable receipt and reconciliation ledger. Signed commitments are not evidence of collected cash.', '', `Collected cash [M-01]: ${cell(c.reason??'not computable')}`, `Outstanding cash [M-07]: ${cell(o.reason??'not computable')}`);
+   lines.push('The data is insufficient to determine late payers, outstanding cash at T−7, or the actual collection rate [M-06]. The selected records have no usable receipt and reconciliation ledger. To answer, we need signed cash commitments, dated payment schedules, allocated and reconciled receipts, and the festival cutoff. Signed commitments are not evidence of collected cash.', '', `Collected cash [M-01]: ${cell(c.reason??'not computable')}`, `Outstanding cash [M-07]: ${cell(o.reason??'not computable')}`);
    if (collected.record_class === 'historical_synthetic' || c.record_class === 'historical_synthetic') {
+    lines.unshift('**2025 historical edition (ED-2025)**','');
     const signed = await Promise.all(['M-02','M-03'].map(metric_id=>read('get_metric',{metric_id})));
     signed.forEach((result,index)=>{
      const row=(result.rows as Record<string,unknown>[]|undefined)?.[0];

@@ -24,11 +24,11 @@ export async function answerProspects(intent:ProspectIntent,read:Read,acc:ToolRu
  const rows=register.rows as Record<string,unknown>[]|undefined;
  if(register.available!==true||!rows)throw new Error('The visible prospect research register is unavailable.');
  const lines=['Prospect research targets — separate from operational pipeline, signed commitments and cash forecasts. A verifiable route is not an introduction.'];
- if(intent.kind==='prioritise')lines.push('All source rows marked Pursue now are listed, ordered by the stored priority index. Cash and in-kind tracks remain separate. Research face values are not forecasts.');
+ if(intent.kind==='prioritise')lines.push('The five explained below use the stored priority order. The source table includes the other eligible alternatives. Cash and in-kind tracks remain separate. Research face values are not forecasts. The priority index combines attractiveness and access. Comparable close dates and sponsor-specific conversion probabilities are unavailable; this ranking does not independently score those factors.');
  if(intent.kind==='prioritise' && rows.length){
   const find=(r:Record<string,unknown>,pattern:RegExp)=>Object.entries(r).find(([key])=>pattern.test(key))?.[1];
   lines.push('','Start with the highest-priority eligible research targets below. Validate the route and cash feasibility before treating any target as a deal.');
-  for(const row of rows.slice(0,3)){
+  for(const row of rows.slice(0,5)){
    const name=find(row,/^(company|company_name|brand|brand_name|sponsor|prospect)$/i);
    const approach=find(row,/(next_action|key_approach|recommended_approach|pitch|approach|activation_idea)/i);
    const route=find(row,/(route_class|intro_route|route_classification)/i);

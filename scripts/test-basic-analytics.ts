@@ -34,7 +34,7 @@ test('[MOCKED] campaign summary preserves source numerator, denominator and rati
   if(name==='search_knowledge')return {};
   seen.push(args.filters);const out={rows:[{value:0.375,numerator:3,denominator:8,unit:'ratio',computable:true}]};acc.toolResults.push(out);return out;
  },acc);
- assert.deepEqual(seen,[{campaign_id:'C-MOCK'}]);assert.match(answer,/3 \| 8 \| 0.375 ratio/);assert.ok(answer.includes('Example ' + String.fromCharCode(92) + '| channel'));
+ assert.deepEqual(seen,[{campaign_id:'C-MOCK'}]);assert.match(answer,/3 \| 8 \| 37.5%/);assert.ok(answer.includes('Example ' + String.fromCharCode(92) + '| channel'));
  assert.equal(verifyAnswerNumbers(answer,{toolResults:acc.toolResults,knowledgeTexts:[],userQuestion:''}).passed,true);
  assert.doesNotMatch(answer,/KB-06.2/);
 });

@@ -1126,7 +1126,7 @@ test('[MOCKED] signed analytics bypass model quota and retain permission-checked
   for(const id of ['M-02','M-03','M-04','M-09'])assert.ok(body.tool_calls.some((t:any)=>t.status==='ok'&&t.summary===id));
   assert.match(body.answer,/Cash-type signed value/);assert.match(body.answer,/Confirmed partnerships/);
   const campaignResponse=await fetch(srv.baseUrl+'/api/ai/ask',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer tok'},body:JSON.stringify({question:'What is the proposal-to-win conversion for each campaign?',edition_id:'ED-2025',as_of:'2025-04-20'})});
-  const campaignBody=await campaignResponse.json();assert.equal(campaignResponse.status,200,JSON.stringify(campaignBody));assert.equal(campaignBody.answer_check_passed,true);assert.equal(campaignBody.token_usage.model_requests,0);assert.equal(modelCalls,0);assert.match(campaignBody.answer,/Mock campaign \| 2 \| 5 \| 0.4 ratio/);
+  const campaignBody=await campaignResponse.json();assert.equal(campaignResponse.status,200,JSON.stringify(campaignBody));assert.equal(campaignBody.answer_check_passed,true);assert.equal(campaignBody.token_usage.model_requests,0);assert.equal(modelCalls,0);assert.match(campaignBody.answer,/Mock campaign \| 2 \| 5 \| 40.0%/);
  }finally{client.stop();await srv.close();}
 });
 

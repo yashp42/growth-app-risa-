@@ -383,12 +383,14 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       const row = (result.rows as Record<string, unknown>[] | undefined)?.[0];
       if (!row) throw new Error('Campaign metric source returned no row');
       if (row.computable && Number.isFinite(Number(row.value))) conversions.push({name:cell(campaign.name ?? campaign.campaign_id),wins:row.numerator,proposals:row.denominator,value:Number(row.value)});
-      lines.push('| ' + cell(campaign.name ?? campaign.campaign_id) + ' | ' + cell(row.numerator) + ' | ' + cell(row.denominator) + ' | ' + (row.computable ? cell(row.value) + ' ' + cell(row.unit) : 'Not computable: ' + cell(row.reason)) + ' | [M-13] |');
+      lines.push('| ' + cell(campaign.name ?? campaign.campaign_id) + ' | ' + cell(row.numerator) + ' | ' + cell(row.denominator) + ' | ' + (row.computable ? (Number(row.value)*100).toFixed(1) + '%' : 'Not computable: ' + cell(row.reason)) + ' | [M-13] |');
     }
     if (conversions.length) {
       const weakest=[...conversions].sort((a,b)=>a.value-b.value)[0];
-      lines.unshift(`**Weakest proposal-to-win conversion:** ${weakest.name} — ${cell(weakest.wins)} wins from ${cell(weakest.proposals)} proposals (${weakest.value}${weakest.value<=1?' ratio':''}). Review the owner’s next follow-up and proposal quality before changing the campaign. [M-13]`, '');
+      lines.unshift(`**Weakest proposal-to-win conversion:** ${weakest.name} — ${cell(weakest.wins)} wins from ${cell(weakest.proposals)} proposals (${(weakest.value*100).toFixed(1)}%). Review the owner’s next follow-up and proposal quality before changing the campaign. [M-13]`, '');
     }
+    const unwon=conversions.filter(r=>Number(r.proposals)>0).map(r=>({...r,count:Number(r.proposals)-Number(r.wins)})).sort((a,b)=>b.count-a.count);
+    if(unwon[0]?.count>0)lines.push('',`Largest count of proposals without a confirmed win: ${unwon.filter(r=>r.count===unwon[0].count).map(r=>r.name).join(', ')}. This includes proposals that may still be open. Compare sample sizes before acting on rate differences.`);
     if (!rows.length) lines.push('', 'No campaigns were returned for this edition.');
     lines.push('', 'The metric uses an opportunity-level denominator; brand-level counts are a different grain.');
     await read('search_knowledge', { query: 'proposal win conversion campaign opportunity brand level warm introductions upsell' });

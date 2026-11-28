@@ -1432,6 +1432,42 @@ export function createAiApiRouter(
         policyNotes.push('A prospect’s estimated value cannot be booked as a receipt. [KB-03.5]');
       }
       finalAnswer = [reason + ' [KB-18.2]',...policyNotes].join('\n\n');
+    } else if (/\b(?:overdue|stalled|aging|aged)\b/i.test(question) && /\bproposals?\b/i.test(question) &&
+      !/\b(?:receivables?|invoices?|payments?)\b/i.test(question) && /\b(?:identify|find|which|show|follow[- ]?up)\b/i.test(question)) {
+      const data=await readTool('list_records',{kind:'opportunities',filters:{stage:'proposal_sent'},limit:25},{
+        pool,actorMemberId:actor.memberId,roles,defaultEditionId:config.editionIdDefault,userSeason:{editionId,recordClass,asOf},
+      },acc);
+      toolTrace.push({tool_call_id:'proposal-aging',tool_name:'list_records',status:'ok',summary:'Open proposals',record_class:recordClass,data_version:dataVersion});
+      routeOverride='sql';
+      const cutoff=Date.parse(asOf+'T23:59:59+05:30')-5*86400000;
+      const stale=((data.rows??[]) as Record<string,unknown>[]).filter(row=>Date.parse(String(row.stage_since))<cutoff)
+        .sort((a,b)=>Date.parse(String(a.stage_since))-Date.parse(String(b.stage_since)));
+      const selected=stale.find(row=>row.owner_member_id&&row.owner_name&&row.opportunity_id);
+      const definition='No proposal deadline is used here. For this review, an open proposal is flagged when its Proposal Sent stage has been unchanged for more than five days. This is a follow-up heuristic.';
+      if(!stale.length){
+        finalAnswer=definition+' No matching proposal with a qualifying recorded stage date was found in the returned records.';
+      }else if(!selected){
+        finalAnswer=definition+' Aged proposals were found for '+stale.map(row=>String(row.sponsor_name)).join(', ')+'. The responsible owner is missing from the returned evidence. Please assign or identify an owner before drafting a task.';
+      }else{
+        const title='Follow up with '+String(selected.sponsor_name);
+        const description=title+' on '+String(selected.name??selected.opportunity_id)+' and confirm the decision date or next step.';
+        finalAnswer=definition+'\n\n'+description+' Owner: '+String(selected.owner_name)+'. Linked opportunity: '+String(selected.opportunity_id)+'. Sponsor record: '+String(selected.sponsor_id??'unavailable')+'.';
+        if(/\b(?:prepare|draft|create|set up)\b/i.test(question)&&/\btask\b/i.test(question)){
+          if(!requestedTaskDeadline)finalAnswer+=' Please supply a task deadline.';
+          else if(/\b(?:do not create|draft only|no task yet)\b/i.test(question)){
+            finalAnswer+=' Requested deadline: '+requestedTaskDeadline+'. Draft only.';
+          }else{
+            const proposal=await prepareProposeChanges({actions:[{
+              type:'create_task',payload:{title,task_type:'follow_up',owner_member_id:selected.owner_member_id,due_at:requestedTaskDeadline,
+                linked_type:'opportunity',linked_id:selected.opportunity_id},summary:description,
+            }],reason:'Follow up on an aging open proposal.'},{actorMemberId:actor.memberId,roles,editionId,recordClass,asOf,queryId,pool,question});
+            finalAnswer+='\n\n'+proposal.answer;
+            collectedActions.push(...proposal.actions);pendingActionInserts.push(...proposal.pendingInserts);
+            toolTrace.push({tool_call_id:'proposal-follow-up',tool_name:'propose_changes',status:'ok',summary:'Task preview',record_class:recordClass,data_version:dataVersion});
+            routeOverride='action';
+          }
+        }
+      }
     } else if ((explicitWriteIntent || taskDraftOnly) && (directFollowUpTarget || directFollowUpChannel)) {
       if (profile.opportunitiesScope === 'none' || (directFollowUpChannel && profile.redactFinancials)) {
         throw new AppApiError(403,'FORBIDDEN','Your role does not have access to the opportunity evidence needed for this follow-up.');
