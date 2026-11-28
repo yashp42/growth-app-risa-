@@ -5,7 +5,7 @@ import { isExplicitWriteRequest } from './actionIntent.ts';
 import { compareReceivableUrgency, documentedOverdueAmount } from './receivableTiming.ts';
 const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)+'|').replace(/[\r\n]/g,' ');
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
-export type FinancialIntent='activation_inventory'|'inventory_policy'|'scenario_comparison'|'scenario_version'|'scenario_probability'|'forecast_actual'|'collection_status'|'cash_position';
+export type FinancialIntent='activation_inventory'|'inventory_policy'|'scenario_comparison'|'scenario_version'|'scenario_probability'|'base_pacing'|'forecast_actual'|'collection_status'|'cash_position';
 export function financialIntent(question:string,hasFilters=false):FinancialIntent|null {
  if(hasFilters||isExplicitWriteRequest(question))return null;
  if(/\b(?:change|update|set|revise|replace)\b.{0,60}\b(?:forecast|expected|stretch|projection|projected)\b/i.test(question))return null;
@@ -16,6 +16,8 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  if(inventoryPolicyIntent(question))return 'inventory_policy';
  if(/\bactivations?\b/i.test(question)&&/\b(slots?|price|prices|pricing|cost|costs|inventory|how many)\b/i.test(question))return 'activation_inventory';
  if(/\b(forecast|expected|stretch|projection|projected)\b/i.test(question)&&/\b(collected|received|receipts|actual|already paid)\b/i.test(question))return 'forecast_actual';
+ if(/\b(?:signed|signings|commitments?)\b/i.test(question)&&/\bbase\b/i.test(question)&&
+    /\b(?:goal|target|gate|pacing)\b/i.test(question)&&/\b(?:vs|versus|against|compare|track)\b/i.test(question))return 'base_pacing';
  if(scenarioVersionQuestion(question))return 'scenario_version';
  if(scenarioProbabilityThreshold(question)!==undefined) return 'scenario_probability';
  if(/\b(?:difference|compare|comparison|versus|vs)\b/i.test(question) &&
@@ -174,6 +176,23 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
    for(const row of rows)lines.push('| '+columns.map(k=>cell(row[k])).join(' | ')+' |');
   }
   await read('search_knowledge',{query:'activation slots realised pricing low mode high upfront asking price ratios approved stretch sales'});
+ }else if(intent==='base_pacing'){
+  const [signed,gates,base]=await Promise.all([
+   read('get_metric',{metric_id:'M-02'}),read('get_register',{kind:'gate'}), read('get_scenario',{scenario_id:'SC-01'}),
+  ]);
+  const total=(signed.rows as Record<string,unknown>[]|undefined)?.[0];
+  const checkpoint=((gates.weekly_pacing??[]) as Record<string,unknown>[])
+    .filter(r=>r.passed===true&&r.computable===true&&r.base_target!=null&&r.actual_value!=null)
+    .sort((a,b)=>String(b.week_end).localeCompare(String(a.week_end)))[0];
+  const plan=(base.scenarios as Record<string,unknown>[]|undefined)?.[0];
+  if(total?.computable&&total.value!=null)lines.push(`Signed sponsorship value as of the selected date is **${money(total.value)}** [M-02].`);
+  else lines.push('Total signed value is unavailable for this scope. [M-02]');
+  if(checkpoint){
+   const onBase=Number(checkpoint.actual_value)>=Number(checkpoint.base_target);
+   lines.push(`The latest completed pacing checkpoint, **${cell(checkpoint.period)}**, recorded **${money(checkpoint.actual_value)}** in eligible signed value against the approved Base gate of **${money(checkpoint.base_target)}**. The checkpoint was ${onBase?'at or above':'below'} Base. [M-08; K-G-01]`);
+   lines.push('The pacing measure excludes pre-season premium commitments and uses the checkpoint date.');
+  }else lines.push('There is no completed, comparable Base signed-value checkpoint in this scope. [K-G-01]');
+  if(plan?.expected_cash!=null)lines.push(`The Base forecast of **${formatScenarioCash(plan.expected_cash)}** is for pre-festival cash. Use actual collections to assess that forecast. [SC-01]`);
  }else if(intent==='forecast_actual'){
   const scenarios=await read('get_scenario',{});
   lines.push('Approved scenario values are forecasts of pre-festival cash, not actual collected cash.','', '| Scenario | Forecast cash | P10 | P50 | P90 |','|---|---:|---:|---:|---:|');

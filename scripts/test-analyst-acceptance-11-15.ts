@@ -204,3 +204,20 @@ test('inventory price rows exclude lead times from the same source note', async(
  assert.match(answer,/digital \| 0.3 \/ 0.6 \/ 1.0 \|/);
  assert.doesNotMatch(answer,/4 \/ 8 \/ 14/);
 });
+
+test('the Base pacing answer compares the completed signed checkpoint with its matching gate',async()=>{
+ const question='What is our signed value vs the approved base target?';
+ assert.equal(financialIntent(question),'base_pacing');
+ const acc:ToolRunAccumulator={citations:[],toolResults:[],metricResults:[],knowledgeTexts:[]};
+ const answer=await answerFinancial('base_pacing',async name=>{
+  if(name==='get_metric')return {rows:[{computable:true,value:850000}]};
+  if(name==='get_scenario')return {scenarios:[{expected_cash:20}]};
+  return {weekly_pacing:[
+   {period:'W4',week_end:'2026-11-01',passed:true,computable:true,base_target:500000,actual_value:420000},
+   {period:'W5',week_end:'2026-11-08',passed:false,computable:true,base_target:700000,actual_value:820000},
+  ]};
+ },acc,{question});
+ assert.match(answer,/W4.*₹4,20,000.*₹5,00,000/);
+ assert.doesNotMatch(answer,/W5/);
+ assert.match(answer,/₹20L.*pre-festival cash/);
+});
