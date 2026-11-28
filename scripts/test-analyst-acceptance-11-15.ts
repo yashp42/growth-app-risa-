@@ -191,3 +191,16 @@ test('scenario probabilities come from the published threshold, without extrapol
  assert.match(await answerFinancial('scenario_probability',read,acc,{question}),/Base: \*\*12%.*[\s\S]*Stretch: \*\*35%/);
  assert.match(await answerFinancial('scenario_probability',read,acc,{question:'What are the odds of reaching 31 lakh?'}),/cannot be calculated/);
 });
+
+test('inventory price rows exclude lead times from the same source note', async()=>{
+ const question='What sponsorship packages can we offer a fintech brand?';
+ const acc:ToolRunAccumulator={citations:[],toolResults:[],metricResults:[],knowledgeTexts:[]};
+ const answer=await answerFinancial('inventory_policy',async()=>{
+  acc.citations.push({type:'knowledge',id:'KB-04.3',decision_status:'approved',
+   text:'Realised-price triangles (₹ lakh, low / mode / high): title 2.0 / 3.0 / 4.8; digital 0.3 / 0.6 / 1.0. Close per meeting: title 0.25. Lead times (weeks): title 4 / 8 / 14.'});
+  return {};
+ },acc,{question});
+ assert.match(answer,/title \| 2.0 \/ 3.0 \/ 4.8/);
+ assert.match(answer,/digital \| 0.3 \/ 0.6 \/ 1.0 \|/);
+ assert.doesNotMatch(answer,/4 \/ 8 \/ 14/);
+});

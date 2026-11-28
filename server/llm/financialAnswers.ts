@@ -81,7 +81,7 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
   }else if(policy==='title_timing'){
    const when=options.question?.match(/\b(?:week\s+|w)(\d+)\b/i);
    const timing=note('KB-04.3')?.match(/Lead times \(weeks\): title (\d+) \/ (\d+) \/ (\d+) with sell-by W(\d+)/i);
-   const gate=note('KB-11.3')?.match(/Title: ([^;]+;[^.]+)\./i)?.[1];
+   const gate=note('KB-11.3')?.match(/(?:^|[.]\s+)Title: ([^.]+)/i)?.[1];
    if(!timing||!when)return 'The approved title timeline could not be verified for the requested week.';
    const [,low,,high,stop]=timing;
    lines.push(`Title lead time is an assumption of ${low}–${high} weeks, with a sell-by date in week ${stop}. [KB-04.3]`);
@@ -97,11 +97,11 @@ export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolR
    if(upside)lines.push(cell(upside)+' [KB-04.4]');
    if(acc.citations.some(c=>c.id==='KB-15.4'&&c.history))lines.push('Historical only: the log wording described the desired negotiating outcome. [KB-15.4]');
   }else{
-   const pricing=note('KB-04.3')?.split('; Close per meeting:')[0];
+   const pricing=note('KB-04.3')?.match(/Realised-price triangles[^:]*:\s*([\s\S]+?)(?:[.;]\s*Close per meeting:|$)/i)?.[1];
    if(!pricing)return 'The approved inventory pricing assumptions could not be verified.';
    lines.push('Package pricing uses model assumptions based on asking-price ratios. Confirm live availability before making an offer.','',
     '| Package | Modelled realised price, low / most likely / high (₹ lakh) |','|---|---:|');
-   for(const m of pricing.matchAll(/\b(title|presenting|activation|digital) ([\d.]+) \/ ([\d.]+) \/ ([\d.]+)/gi)){
+   for(const m of pricing.matchAll(/\b(title|presenting|activation|digital) (\d+(?:\.\d+)?) \/ (\d+(?:\.\d+)?) \/ (\d+(?:\.\d+)?)/gi)){
     lines.push(`| ${m[1]} | ${m[2]} / ${m[3]} / ${m[4]} |`);
    }
    lines.push('', 'Pricing assumptions: [KB-04.3].');
