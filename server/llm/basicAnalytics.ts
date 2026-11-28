@@ -1,7 +1,7 @@
 import { isValidIsoDate } from '../gates.ts';
 import type { ToolRunAccumulator } from './tools.ts';
 
-export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'target_pacing' | 'campaign_conversion' | 'campaign_leakage' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
+export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'target_pacing' | 'campaign_conversion' | 'campaign_leakage' | 'funnel_bottleneck' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
 const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
 export function historicalPacingDate(question: string): string | undefined {
   if (!/\b(?:against|versus|vs|progress|pacing|on track)\b/i.test(question) ||
@@ -22,6 +22,10 @@ export function basicAnalyticsIntent(question: string, hasFilters = false, previ
   if (/\bchannel\b/i.test(fullContext) && /\bwhy\b/i.test(fullContext) && /\b(?:three|3)\b/i.test(fullContext) && /\bactions?\b/i.test(fullContext) && /\b(?:based on|that diagnosis|this diagnosis)\b/i.test(fullContext) && /\bwhy\b/i.test(question) && /\bactions?\b/i.test(question)) return 'channel_full_diagnosis';
   if (/\bchannel\b/i.test(question) && /\b(?:strongest|best|leading|top)\b/i.test(question) && /\b(?:acquisition|results|performance|performing)\b/i.test(question)) return 'channel_performance';
   if (/\b2025\b/i.test(question) && /\b2026\b/i.test(question) && /\b(funnel|conversion|channel|acquisition)\b/i.test(question)) return 'historical_funnel_compare';
+  const leakage = /\b(?:leak(?:ing|s|age)?|los(?:e|ing|t)|drop[- ]?off|bottlenecks?)\b/i.test(question);
+  if (leakage && /\b(?:funnel|handoff)\b/i.test(question) && !/\b(?:why|compare|update|change|create)\b/i.test(question)) {
+    return /\bcampaigns?\b/i.test(question) ? 'campaign_leakage' : 'funnel_bottleneck';
+  }
   if (/\b(?:campaigns?|channels?)\b/i.test(question) && /\bqualified\s+(?:(?:sponsorship\s+)?(?:leads?|opportunities|prospects?)|brands?)\b/i.test(question) && /\b(?:leak(?:ing|age)?|los(?:e|ing|t)|drop[- ]?off|before\s+(?:they\s+)?(?:become|turn\s+into))\b/i.test(question)) return 'campaign_leakage';
   if (/\b(?:19\d{2}|20(?:0\d|1\d|2[0-4]|[3-9]\d))\b/.test(question)) return null;
   const q = question.trim().replace(/[?!.]+$/, '').toLowerCase();
@@ -123,6 +127,20 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     if(derivedEvidence.length)acc.toolResults.push({source:'server_derived_funnel_comparison',edition_id:'ED-2026-DEMO',record_class:'simulated',as_of:comparisonAsOf,rows:derivedEvidence});
     lines.push('', 'Interpretation limits: meeting rate is met brands ÷ touched brands; proposal rate is proposed brands ÷ met brands; proposal-to-win is won opportunities ÷ proposal-stage opportunities. These rates have different denominators and must not be combined into one funnel count. Different data availability, cohort sizes and attribution can explain apparent movement; this comparison shows association, not causation.');
     await read('search_knowledge',{query:'2025 historical channel funnel calibration data availability sample size stage denominators'});
+  } else if (intent === 'funnel_bottleneck') {
+    const [handoff, cold] = await Promise.all([
+      read('get_metric',{metric_id:'M-17'}),
+      read('get_metric',{metric_id:'M-13',filters:{channel_group:'cold'}}),
+    ]);
+    const leak=firstRow(handoff), win=firstRow(cold);
+    if (leak?.computable && leak.value != null) {
+      lines.push(`Warm and inbound handoff: **${cell(leak.numerator)} of ${cell(leak.denominator)} qualified brands** had no opportunity (${Math.round(Number(leak.value)*100)}%). [M-17]`);
+    } else lines.push('The warm and inbound handoff rate is unavailable for this scope. [M-17]');
+    if (win?.computable && win.value != null) {
+      lines.push(`Cold proposal-to-win: **${cell(win.numerator)} wins from ${cell(win.denominator)} proposals** (${Math.round(Number(win.value)*100)}%). [M-13]`);
+    } else lines.push('Cold proposal-to-win conversion is unavailable for this scope. [M-13]');
+    lines.push('The handoff rate counts brands and the close rate counts opportunities. Review the work queue at each stage before comparing loss volumes. The cause of the leak is unknown from these counts.');
+    await read('search_knowledge',{query:'warm inbound handoff leak qualified brands no opportunity cold proposal wins historical funnel diagnosis'});
   } else if (intent === 'campaign_leakage') {
     const campaigns=await read('list_records',{kind:'campaigns',limit:25});
     const rows=campaigns.rows as Record<string,unknown>[]|undefined;
@@ -226,6 +244,12 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       if (!row) throw new Error('Metric source returned no row: ' + id);
       const value = row.computable && row.value !== null ? (id === 'M-09' ? cell(row.value) : money(row.value)) : 'Not computable: ' + cell(row.reason);
       lines.push('| ' + label + ' | ' + value + ' | [' + id + '] |');
+    }
+    if (intent === 'signed_cash_followup') {
+      const cohort=firstRow(await read('list_records',{kind:'opportunities',summarize:'opportunity_cohort',filters:{state:'confirmed'}}));
+      if(cohort?.cash_opportunities!=null && cohort.in_kind_opportunities!=null) {
+        lines.push(`In the confirmed opportunities you can view, ${cell(cohort.cash_opportunities)} deals are cash-type and ${cell(cohort.in_kind_opportunities)} are in-kind.`);
+      }
     }
     lines.push('', 'Signed commitments are distinct from cash collected.');
     await read('search_knowledge', { query: 'signed sponsorship cash type in kind synthetic dataset payment records' });

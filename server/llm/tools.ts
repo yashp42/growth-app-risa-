@@ -1441,12 +1441,16 @@ export async function executeReadTool(
       if (args.summarize) {
         const summary = await ctx.pool.query<Record<string, unknown>>(
           `SELECT COUNT(*)::int AS opportunities, COUNT(DISTINCT o.sponsor_id)::int AS sponsors,
+                  (COUNT(*) FILTER (WHERE sv.stage = 'partner_confirmed' AND o.support_type = 'cash'))::int AS cash_opportunities,
+                  (COUNT(*) FILTER (WHERE sv.stage = 'partner_confirmed' AND o.support_type = 'in_kind'))::int AS in_kind_opportunities,
                   MIN(sv.confirmed_value) FILTER (WHERE sv.stage = 'partner_confirmed') AS min_signed_value,
                   MAX(sv.confirmed_value) FILTER (WHERE sv.stage = 'partner_confirmed') AS max_signed_value
              ${cohort}`, params);
         rows = summary.rows.map(row => ({
           opportunities: row.opportunities,
           sponsors: row.sponsors,
+          cash_opportunities: row.cash_opportunities,
+          in_kind_opportunities: row.in_kind_opportunities,
           min_signed_value: profile.redactFinancials ? null : toNum(row.min_signed_value),
           max_signed_value: profile.redactFinancials ? null : toNum(row.max_signed_value),
         }));

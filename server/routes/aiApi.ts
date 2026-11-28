@@ -1498,7 +1498,8 @@ export function createAiApiRouter(
         finalAnswer = deterministicGeneralAdvice(question);
       }
     } else if (!flexibleInvestigation && (campaignLookup || operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQueries.length)) {
-      routeOverride = operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
+      routeOverride = basicIntent === 'funnel_bottleneck' ? 'hybrid'
+        : operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
       usedMetrics = Boolean(basicIntent || financialQuery || strategyQueries.length);
       usedKnowledge = !operationalQuery || financialQuery === 'cash_position' || strategyQueries.length > 0;
       const readDeterministic = async (name: string, args: Record<string, unknown>) => {
