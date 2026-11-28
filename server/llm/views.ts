@@ -131,6 +131,20 @@ export const SetViewArgsSchema = z
   })
   .strict();
 
+/** Recognize explicit read-only view requests for common supported dimensions. */
+export function requestedDashboardView(question: string) {
+  const q=question.trim().toLowerCase().replace(/[?!.]+$/, '');
+  const filter=q.match(/^(?:show(?: me)?|filter to) (?:only )?(warm|inbound|renewal|premium|cold) campaigns$/);
+  if (filter) return {screen:'campaigns',filters:{channel_group:filter[1]}};
+  const chart=q.match(/^(?:(?:show(?: me)?|plot|chart|graph) (?:the )?)(cash collected|signed value|open pipeline value|proposal[- ]to[- ]win (?:conversion|rate)) by (campaigns?|channels?|bets?)(?: as a (?:bar )?(?:chart|graph))?$/);
+  if (!chart) return;
+  const [,measure,dimension]=chart;
+  const metric_id=measure==='cash collected'?'M-01':measure==='signed value'?'M-02':measure==='open pipeline value'?'M-21':'M-13';
+  const group_by=dimension.startsWith('campaign')?'campaign':dimension.startsWith('channel')?'channel_group':'bet';
+  const title=`${measure[0].toUpperCase()+measure.slice(1)} by ${dimension.replace(/s$/,'')}`;
+  return {screen:'analytics',title,widgets:[{kind:'metric_by',metric_id,group_by,title}]};
+}
+
 export const SET_VIEW_TOOL_DEFINITION: OpenRouterToolDefinition = {
   type: 'function',
   function: {

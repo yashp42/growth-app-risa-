@@ -51,7 +51,7 @@ import {
   type QueryablePool,
   type ToolRunAccumulator,
 } from '../llm/tools.ts';
-import { executeSetView, SET_VIEW_TOOL_DEFINITION } from '../llm/views.ts';
+import { executeSetView, requestedDashboardView, SET_VIEW_TOOL_DEFINITION } from '../llm/views.ts';
 import { buildAnswerBlocks, extractBlockChoice, type AnswerBlock } from '../llm/answerBlocks.ts';
 import type { CanonicalRole } from '../permissions.ts';
 import { ensureUiImportBatch, generatePrefixedId } from '../writeUtils.ts';
@@ -1341,7 +1341,7 @@ export function createAiApiRouter(
     const collectedActions: Array<Record<string, unknown>> = [];
     const pendingActionInserts: PendingAiActionInsert[] = [];
     let viewSpec: Record<string, unknown> | undefined;
-    let routeOverride: 'sql' | 'hybrid' | 'rag' | 'action' | undefined;
+    let routeOverride: 'sql' | 'hybrid' | 'rag' | 'lookup' | 'action' | undefined;
 
     const tokenUsage = {
       prompt_tokens: 0,
@@ -1402,7 +1402,8 @@ export function createAiApiRouter(
     const {operational:operationalQuery,analytics:basicIntent,financial:financialQuery,strategy:strategyQueries,prospect:prospectQuery}=evidencePlan.facets;
     const explicitWriteIntent = isExplicitWriteRequest(question);
     const taskDraftOnly = isReadOnlyTaskDraftRequest(question);
-    const explicitViewIntent = isExplicitViewChangeRequest(question);
+    const requestedView = !explicitWriteIntent && !usesUpload && requestedDashboardView(question);
+    const explicitViewIntent = Boolean(requestedView) || isExplicitViewChangeRequest(question);
     const campaignNameIn = (text: string) => text.match(/\bcampaign\s+(?:(?:named|called)\s+)?["“]([^"”]{1,160})["”]/i)?.[1];
     const statusLookup = /\b(owner|owns|status)\b/i.test(question);
     const statusFollowup = /^(?:what(?:'s| is)|who is|who owns)\s+(?:its|that campaign['’]s|it\b)/i.test(question);
@@ -1483,6 +1484,23 @@ export function createAiApiRouter(
         finalAnswer=directFollowUpChannel?`I selected the highest-ranked open ${directFollowUpChannel} opportunity by stage maturity, then proposed value: ${row.sponsor_name} — ${row.opportunity_name??row.opportunity_id}, ${row.stage}, ${row.proposed_value==null?'value not recorded':'₹'+Number(row.proposed_value).toLocaleString('en-IN')}. ${prep.answer}`:prep.answer;collectedActions.push(...prep.actions);pendingActionInserts.push(...prep.pendingInserts);routeOverride='action';
         toolTrace.push({tool_call_id:'direct-follow-up',tool_name:'propose_changes',status:'ok',summary:`Resolved ${row.sponsor_name} → ${row.owner_name??row.owner_member_id}`,record_class:recordClass,data_version:dataVersion});
       }
+    } else if (requestedView) {
+      reportStep('Building the dashboard preview from current metrics.');
+      const result=await executeSetView(requestedView,{
+        actorMemberId:actor.memberId,roles,editionId,recordClass,asOf,pool,
+      });
+      finalAnswer=result.answer;
+      viewSpec=result.viewSpec;
+      routeOverride='sql';
+      usedMetrics=result.metricResults.length>0;
+      for (const m of result.metricResults) {
+        acc.metricResults.push(m);
+        acc.citations.push({
+          type:'metric',id:m.metric_id,title:`${m.metric_id} (${m.edition_id}, as of ${m.as_of})`,
+          record_class:m.record_class,data_version:m.data_version??dataVersion,definition_version:m.definition_version,
+        });
+      }
+      toolTrace.push({tool_call_id:'dashboard-preview',tool_name:'set_view',status:'ok',record_class:recordClass,data_version:dataVersion,summary:'Resolved read-only dashboard preview'});
     } else if (adviceOnly) {
       reportStep('Preparing practical advice.');
       try {
@@ -1498,7 +1516,7 @@ export function createAiApiRouter(
         finalAnswer = deterministicGeneralAdvice(question);
       }
     } else if (!flexibleInvestigation && (campaignLookup || operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQueries.length)) {
-      routeOverride = basicIntent === 'handoff_explanation' ? 'rag' : basicIntent === 'funnel_bottleneck' ? 'hybrid'
+      routeOverride = financialQuery === 'scenario_probability' ? 'lookup' : basicIntent === 'handoff_explanation' ? 'rag' : basicIntent === 'funnel_bottleneck' ? 'hybrid'
         : operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
       usedMetrics = Boolean(basicIntent || financialQuery || strategyQueries.length);
       usedKnowledge = !operationalQuery || financialQuery === 'cash_position' || strategyQueries.length > 0;
@@ -1533,7 +1551,7 @@ export function createAiApiRouter(
         finalAnswer = await answerFinancial(financialQuery, readDeterministic, acc, { includeReceivableDetails: operationalQuery?.kind === 'receivable_followup' });
       } else if (operationalQuery) finalAnswer = await answerOperational(operationalQuery, readDeterministic, acc);
       else if (basicIntent) finalAnswer = await answerBasicAnalytics(basicIntent, readDeterministic, acc, {question,historical:recordClass==='historical_synthetic'});
-      else if (financialQuery) finalAnswer = await answerFinancial(financialQuery, readDeterministic, acc);
+      else if (financialQuery) finalAnswer = await answerFinancial(financialQuery, readDeterministic, acc, {question});
       else finalAnswer = await answerProspects(prospectQuery!, readDeterministic, acc);
       } catch { finalAnswer = fallbackFromTools(acc, 'unavailable'); }
       const shouldSynthesize=(basicIntent!==null&&['campaign_leakage','historical_funnel_compare','channel_performance','channel_why','channel_actions','channel_full_diagnosis'].includes(basicIntent))||strategyQueries.length>0;

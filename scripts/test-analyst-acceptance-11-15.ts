@@ -1,3 +1,4 @@
+import type { ToolRunAccumulator } from '../server/llm/tools.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { financialIntent, answerFinancial } from '../server/llm/financialAnswers.ts';
@@ -172,4 +173,21 @@ test('[MOCKED] follow-up priority request reads due-date evidence and states whe
  },acc);
  assert.match(answer,/2026-11-20: ₹30,000 remaining \(overdue as of 2026-11-27\)/);assert.match(answer,/No unpaid schedule due date returned/);assert.match(answer,/Late Sponsor/);assert.match(answer,/urgency cannot be established/);
  const verification=verifyScopedAnswer(answer,{toolResults:acc.toolResults,knowledgeTexts:[],userQuestion:q},{editionId:'ED-2026-DEMO',recordClass:'simulated',asOf:'2026-11-27'});assert.equal(verification.passed,true,JSON.stringify(verification));
+});
+
+
+test('scenario probabilities come from the published threshold, without extrapolation',async()=>{
+ const question='What is the chance we cross ₹30L?';
+ assert.equal(financialIntent(question),'scenario_probability');
+ const acc:ToolRunAccumulator={citations:[],toolResults:[],metricResults:[],knowledgeTexts:[]};
+ const read=async(name:string)=>{
+  if(name==='get_scenario') return {scenarios:[{scenario_id:'SC-01',name:'Base'},{scenario_id:'SC-03',name:'Stretch'}]};
+  if(name==='search_knowledge') {
+   acc.citations.push({type:'knowledge',id:'KB-07.1',decision_status:'approved',text:'Base (SC-01): P(≥ ₹30L) 12%. Stretch (SC-03): P(≥ ₹30L) 35%.'});
+   return {};
+  }
+  throw Error('Unexpected source');
+ };
+ assert.match(await answerFinancial('scenario_probability',read,acc,{question}),/Base: \*\*12%.*[\s\S]*Stretch: \*\*35%/);
+ assert.match(await answerFinancial('scenario_probability',read,acc,{question:'What are the odds of reaching 31 lakh?'}),/cannot be calculated/);
 });

@@ -5,7 +5,7 @@ import { isExplicitWriteRequest } from './actionIntent.ts';
 import { compareReceivableUrgency, documentedOverdueAmount } from './receivableTiming.ts';
 const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)+'|').replace(/[\r\n]/g,' ');
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
-export type FinancialIntent='activation_inventory'|'forecast_actual'|'collection_status'|'cash_position';
+export type FinancialIntent='activation_inventory'|'scenario_comparison'|'scenario_probability'|'forecast_actual'|'collection_status'|'cash_position';
 export function financialIntent(question:string,hasFilters=false):FinancialIntent|null {
  if(hasFilters||isExplicitWriteRequest(question))return null;
  if(/\b(?:change|update|set|revise|replace)\b.{0,60}\b(?:forecast|expected|stretch|projection|projected)\b/i.test(question))return null;
@@ -15,9 +15,19 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  if(/\bbudget\b/i.test(question)&&! /\b(?:spend|expenses?|operating costs?|budget target|approved target)\b/i.test(question)&&(/\b(?:sponsorship|sponsor|our|current|season|202[56])\b/i.test(question)||/^\s*(?:what(?:'s| is)\s+)?budget\s*[?.!]*\s*$/i.test(question)))return 'cash_position';
  if(/\bactivations?\b/i.test(question)&&/\b(slots?|price|prices|pricing|cost|costs|inventory|how many)\b/i.test(question))return 'activation_inventory';
  if(/\b(forecast|expected|stretch|projection|projected)\b/i.test(question)&&/\b(collected|received|receipts|actual|already paid)\b/i.test(question))return 'forecast_actual';
+ if(scenarioProbabilityThreshold(question)!==undefined) return 'scenario_probability';
+ if(/\b(?:difference|compare|comparison|versus|vs)\b/i.test(question) &&
+    /\bbase\b/i.test(question) && /\b(?:plan|stretch)\b/i.test(question) &&
+    /\b(?:scenario|forecast|assumptions?)s?\b/i.test(question)) return 'scenario_comparison';
  if(/\b(complete picture|cash position|how much is signed|cash-type signed|remains outstanding|largest outstanding balances)\b/i.test(question)||(/\b(signed|commitments?)\b/i.test(question)&&/\b(collected|cash collected|received)\b/i.test(question)&&/\b(compare|distinction|difference|separate|outstanding|receivable|unpaid|due dates?|overdue)\b/i.test(question)))return 'cash_position';
  if(/\b(paid late|late payment|outstanding|cash collection rate|collection rate|cash collected)\b|\b(?:cash|money) did we (?:collect|receive)\b/i.test(question))return 'collection_status';
  return null;
+}
+function scenarioProbabilityThreshold(question: string): number | undefined {
+ if (!/\b(?:chance|probability|odds)\b/i.test(question) ||
+     !/\b(?:(?:cross|reach|exceed|collect|hit)(?:ing|es|s)?|above|over|at least)\b/i.test(question)) return;
+ const match=question.match(/(?:₹\s*)?(\d+(?:\.\d+)?)\s*(?:lakh(?:s)?|lac(?:s)?|l\b)/i);
+ return match ? Number(match[1]) : undefined;
 }
 export async function getInventory(pool:QueryablePool,id:string|undefined,ctx:ReferenceContext):Promise<Record<string,unknown>> {
  const datasets=[];
@@ -30,9 +40,36 @@ export async function getInventory(pool:QueryablePool,id:string|undefined,ctx:Re
  return {source:'inventory_reference',kind:'inventory',available:datasets.some(d=>d.available===true),datasets};
 }
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;
-export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolRunAccumulator,options:{includeReceivableDetails?:boolean}={}):Promise<string>{
+export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolRunAccumulator,options:{includeReceivableDetails?:boolean; question?:string}={}):Promise<string>{
  const lines:string[]=[];
- if(intent==='activation_inventory'){
+ if(intent==='scenario_comparison'||intent==='scenario_probability'){
+  const catalogue=await read('get_scenario',{});
+  const scenarios=((catalogue.scenarios??[]) as Record<string,unknown>[])
+    .filter(row=>['SC-01','SC-02','SC-03'].includes(String(row.scenario_id)));
+  if(!scenarios.length) return 'The approved scenario catalogue is unavailable for this request.';
+  await read('search_knowledge',{query:'approved financial scenarios base plan stretch pre season premium capacity model probability expected cash',related_kpi:'K-NS-01'});
+  const approved=acc.citations.find(c=>c.id==='KB-07.1'&&c.decision_status==='approved'&&!c.history);
+  if(intent==='scenario_comparison'){
+   lines.push('Approved model forecasts for cash before the festival.','',
+     '| Scenario | Expected cash | P10–P90 | Window person-weeks | Pre-season person-weeks |','|---|---:|---:|---:|---:|');
+   for(const s of scenarios) lines.push(`| ${cell(s.name)} [${cell(s.scenario_id)}] | ${formatScenarioCash(s.expected_cash)} | ${formatScenarioCash(s.p10)}–${formatScenarioCash(s.p90)} | ${cell(s.window_pw)} | ${cell(s.preseason_pw)} |`);
+   if(approved) lines.push('', 'Base focuses on the handoff, cash discipline and renewals. Plan adds gated introductions and creator outreach. Stretch adds premium inventory and pre-season capacity. [KB-07.1]');
+  } else {
+   const threshold=options.question ? scenarioProbabilityThreshold(options.question) : undefined;
+   let reported=0;
+   if(threshold!==undefined&&typeof approved?.text==='string'){
+    for(const s of scenarios){
+     const id=String(s.scenario_id);
+     const segment=approved.text.split('('+id+'):')[1]?.split(/(?:Base|Plan|Stretch) \(SC-0[123]\):/)[0];
+     const p=segment && [...segment.matchAll(/P\(≥ ₹(\d+(?:\.\d+)?)L\)\s*(\d+(?:\.\d+)?)%/g)].find(m=>Number(m[1])===threshold);
+     if(p){lines.push(`- ${cell(s.name)}: **${p[2]}%** [${id}; KB-07.1]`);reported++;}
+    }
+   }
+   if(reported) lines.unshift(`Approved probability of reaching at least ${formatScenarioCash(threshold)}:`,'');
+   if(reported<scenarios.length||reported===0) lines.push('A probability for this threshold is unavailable for every scenario that is not listed. It cannot be calculated from the published percentiles alone.');
+  }
+  lines.push('', 'These are model outputs conditional on the approved assumptions. Actual collected cash is a separate measure.');
+ }else if(intent==='activation_inventory'){
   const result=await read('get_register',{kind:'inventory',id:'activation'});
   if(result.available!==true)throw new Error('Inventory sources are unavailable.');
   lines.push('Activation inventory and pricing — source values below. Prices are model assumptions derived from asking-price ratios, not guaranteed realised prices. Preserve the units in each source column.');
