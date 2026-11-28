@@ -106,3 +106,26 @@ test('a source forbidden as current is still allowed when explicitly cited as su
  assert.equal(scoreAnswer(c,{...body,answer:'The current baseline is documented here. [KB-15.1]'},true,1).status,'FAIL');
  assert.equal(scoreAnswer({...c,must_not_cite:'KB-15.1'},body,true,1).status,'FAIL');
 });
+
+test('full runs record provider quota cases as pending while independent reads can finish',async()=>{
+ const state=run(['A','B']);
+ state.set='full';
+ const cases=[{...simple,test_id:'A'},{...simple,test_id:'B'}];
+ await runEvaluationCases(cases,state,{
+  ask:async c=>c.test_id==='A'?{status:429,body:{code:'AI_QUOTA_EXHAUSTED'},retryAfter:60}:
+    {status:200,body:{route:'refuse',answer:'Cannot delete',answer_check_passed:true}},
+  snapshot:async()=>'same',cleanup:async()=>true,persist:()=>{},
+ });
+ assert.deepEqual(state.remaining,['A']);
+ assert.equal(state.deferred_cases?.A.reason,'provider_quota');
+ assert.equal(state.results[0].status,'PASS');
+ assert.equal(evaluationSummary(state).release_gates_met,false);
+});
+
+test('an expected whole percent accepts a more precise rate that rounds to it',()=>{
+ const c={...simple,expected_answer_criteria:'Observed 46%',reference_answer:'The rate was 46%'};
+ const body={route:'refuse',answer_check_passed:true};
+ assert.equal(scoreAnswer(c,{...body,answer:'46.2%'},true,1).status,'PASS');
+ assert.equal(scoreAnswer(c,{...body,answer:'46 units'},true,1).status,'FAIL');
+ assert.equal(scoreAnswer(c,{...body,answer:'47%'},true,1).status,'FAIL');
+});

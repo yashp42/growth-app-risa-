@@ -57,7 +57,14 @@ export function scoreAnswer(c: EvalCase, body: Record<string, any>, safe: boolea
   const criteria=new Set(extractNumericClaims(c.expected_answer_criteria).map(x=>x.normalizedValue));
   const expectedNumbers=extractNumericClaims(c.reference_answer).filter(x=>criteria.has(x.normalizedValue));
   const actual=extractNumericClaims(answer);
-  for(const n of expectedNumbers)if(!actual.some(x=>Math.abs(x.normalizedValue-n.normalizedValue)<=Math.max(0.00001,Math.abs(n.normalizedValue)*0.002)))fail.push('Missing expected number '+n.raw);
+  for(const n of expectedNumbers){
+    const match=actual.some(x=>{
+      const difference=Math.abs(x.normalizedValue-n.normalizedValue);
+      if(n.kind==='percent')return x.kind==='percent' && difference<=0.5*10**(-n.decimals)+1e-8;
+      return x.kind===n.kind && difference <= (n.kind==='plain'&&n.decimals===0 ? 1e-8 : Math.max(0.00001,Math.abs(n.normalizedValue)*0.002));
+    });
+    if(!match)fail.push('Missing expected number '+n.raw);
+  }
   if(c.required_caveat && c.required_caveat!=='-') {
     const groups=c.required_caveat.split(';').map(normal).filter(Boolean);
     for(const group of groups){const words=group.split(' ').filter(w=>w.length>=4);if(words.length&&!words.some(w=>normal(answer).includes(w)))fail.push('Missing caveat: '+group);}
@@ -134,7 +141,15 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
         reason: String(res.body.generation_fallback_reason ?? (res.status === 429 ? 'rate_limit' : 'provider_error')),
         code: typeof err.code === 'string' ? err.code.slice(0,120) : errorCode,
         message: typeof err.message === 'string' ? err.message.slice(0,500) : typeof res.body.message === 'string' ? res.body.message.slice(0,500) : undefined };
-      if(res.status===429||res.body.route==='quota_exhausted'||String(res.body.answer??'').includes("Today's free AI quota is used up")){
+      const providerQuota=res.body.route==='quota_exhausted' || res.body.generation_fallback_reason==='quota' ||
+        pauseDetail.code==='AI_QUOTA_EXHAUSTED' || String(res.body.answer??'').includes("Today's free AI quota is used up");
+      if(run.set==='full'&&providerQuota){
+        (run.deferred_cases ??= {})[c.test_id]={...pauseDetail,reason:'provider_quota'};
+        run.retry_after_seconds=res.retryAfter;
+        await save();
+        continue;
+      }
+      if(res.status===429||providerQuota){
         run.paused_case=pauseDetail;run.state='paused';run.retry_after_seconds=res.retryAfter;run.error='Quota or rate limit reached; resume after reset';await save();break;
       }
       if (run.set === 'full' && ((res.status === 200 && res.body.generation_fallback_reason === 'unavailable') ||

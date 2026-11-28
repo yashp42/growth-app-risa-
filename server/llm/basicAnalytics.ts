@@ -1,7 +1,7 @@
 import { isValidIsoDate } from '../gates.ts';
 import type { ToolRunAccumulator } from './tools.ts';
 
-export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'target_pacing' | 'campaign_conversion' | 'campaign_leakage' | 'funnel_bottleneck' | 'handoff_explanation' | 'named_campaign_funnel' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
+export type BasicAnalyticsIntent = 'signed' | 'signed_cash_followup' | 'partnership_counts' | 'deal_size' | 'target_pacing' | 'campaign_conversion' | 'campaign_leakage' | 'funnel_bottleneck' | 'handoff_explanation' | 'named_campaign_funnel' | 'campaign_pair' | 'historical_funnel_compare' | 'channel_performance' | 'channel_why' | 'channel_actions' | 'channel_full_diagnosis';
 const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
 export function historicalPacingDate(question: string): string | undefined {
   if (!/\b(?:against|versus|vs|progress|pacing|on track)\b/i.test(question) ||
@@ -16,6 +16,11 @@ export function historicalPacingDate(question: string): string | undefined {
 function namedCampaignFunnelSubject(question: string): string | undefined {
   return question.match(/^\s*(?:is|was)\s+(.{2,100}?)\s+(?:failing|struggling|weaker)\s+(?:at|on|with)\s+(?:reach|outreach|responses?)\s+or\s+(?:at\s+)?(?:closing|wins?|conversion)[?!.]*\s*$/i)?.[1];
 }
+function campaignPair(question: string): string[] | undefined {
+  const pair=question.match(/^\s*compare\s+(.{2,80}?)\s+(?:with|to|versus|vs)\s+(.{2,80}?)[?!.]*\s*$/i);
+  if(!pair||!pair.slice(1).every(name=>/\b(?:campaign|referrals?|introductions?|linkedin|form|email|revival)\b/i.test(name)))return;
+  return pair.slice(1);
+}
 export function basicAnalyticsIntent(question: string, hasFilters = false, previousQuestion = ''): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
   if (historicalPacingDate(question)) return 'target_pacing';
@@ -28,6 +33,7 @@ export function basicAnalyticsIntent(question: string, hasFilters = false, previ
   if (/^why\b/i.test(question) && /\b(?:handoff|qualified leads?|qualified brands?)\b/i.test(fullContext) &&
       /\b(?:leak\w*|drop\w*|lost|stalled)\b/i.test(question)) return 'handoff_explanation';
   if (namedCampaignFunnelSubject(question)) return 'named_campaign_funnel';
+  if (campaignPair(question)) return 'campaign_pair';
   const leakage = /\b(?:leak(?:ing|s|age)?|los(?:e|ing|t)|drop[- ]?off|bottlenecks?)\b/i.test(question);
   if (leakage && /\b(?:funnel|handoff)\b/i.test(question) && !/\b(?:why|compare|update|change|create)\b/i.test(question)) {
     return /\bcampaigns?\b/i.test(question) ? 'campaign_leakage' : 'funnel_bottleneck';
@@ -71,6 +77,25 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       const leader=ranked[0];
       if(leader){const tied=ranked.filter(x=>Number(x.row.value)===Number(leader.row.value)).map(x=>x.channel);const volumeLeader=[...ranked].sort((a,b)=>Number(b.row.numerator)-Number(a.row.numerator))[0];lines.push('',`Highest observed proposal-to-win rate: **${tied.join(' and ')}** (${cell(leader.row.numerator)} wins from ${cell(leader.row.denominator)} proposals).`);if(volumeLeader&&volumeLeader.channel!==leader.channel)lines.push(`By total confirmed wins, **${volumeLeader.channel}** leads with ${cell(volumeLeader.row.numerator)} vs ${cell(leader.row.numerator)}; the rate leader has a smaller sample. Compare sample sizes before treating the rate difference as durable.`);else lines.push('Compare sample sizes before treating this as a durable advantage.');}
       lines.push('','This ranks proposal conversion, not total acquisition quality or causal channel effect. A higher rate on a smaller cohort can coexist with fewer total wins.');
+      if(options.historical){
+        lines.push('', 'Synthetic historical edition. The attribution rule for the preceding rates uses the opportunity’s originating campaign. First-touch rates below attribute each brand to its first recorded campaign [M-14].',
+         '| Channel | Won brands | First-touched brands | First-touch win rate |','|---|---:|---:|---:|');
+        for(const channel of channels){
+          const r=firstRow(await read('get_metric',{metric_id:'M-14',filters:{channel_group:channel}}));
+          lines.push(`| ${channel} | ${cell(r?.numerator)} | ${cell(r?.denominator)} | ${r?.computable&&r.value!=null?(Number(r.value)*100).toFixed(1)+'%':'Unavailable'} |`);
+        }
+        const list=await read('list_records',{kind:'campaigns',limit:25});
+        const warm=((list.rows??[]) as Record<string,unknown>[]).filter(r=>r.channel_group==='warm');
+        if(Number(list.count??0)<25&&warm.length){
+          lines.push('', '**Warm campaigns**','| Campaign | Brands won / touched (first touch) [M-14] | Won opportunities [M-13] |','|---|---:|---:|');
+          for(const c of warm){
+            const filters={campaign_id:String(c.campaign_id)};
+            const [brand,opp]=await Promise.all(['M-14','M-13'].map(async metric_id=>firstRow(await read('get_metric',{metric_id,filters}))));
+            lines.push(`| ${cell(c.name)} | ${cell(brand?.numerator)} / ${cell(brand?.denominator)} | ${cell(opp?.numerator)} |`);
+          }
+        }
+        await read('search_knowledge',{query:'conversion bimodal warm inbound every brand proposal won cold won none deal origin first touch',related_kpi:'K-F-03'});
+      }
       if(intent==='channel_full_diagnosis'){
         const leader=ranked[0]?.channel;
         lines.push('', '**What the data proves:**');
@@ -155,6 +180,39 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       lines.push('', 'Closing is the clearest observed bottleneck. The campaign reached and engaged brands and sent proposals, but recorded zero wins. The cause of the failure is unknown from these counts.');
     } else lines.push('', 'These stages have different denominators. A stronger conclusion needs comparable campaigns and evidence about why individual deals stalled.');
     await read('search_knowledge',{query:'historical campaign results brands touched responded met proposals wins '+String(campaign.name).slice(0,100)});
+  } else if (intent === 'campaign_pair') {
+    const pair=campaignPair(options.question??'');
+    if(!pair)return 'Which two campaigns would you like to compare?';
+    const list=await read('list_records',{kind:'campaigns',limit:25});
+    const candidates=(list.rows??[]) as Record<string,unknown>[];
+    if(candidates.length>=25)return 'The campaign list is too broad for a unique comparison. Please use specific campaign filters.';
+    const normalize=(s:string)=>s.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    const selected=pair.map(input=>{
+      const words=normalize(input).split(' ').filter(t=>!['the','campaign'].includes(t));
+      const matches=candidates.filter(c=>{
+        const name=normalize(String(c.name)).split(' ');
+        return words.length>0&&words.every(t=>name.includes(t));
+      });
+      return matches.length===1?matches[0]:undefined;
+    });
+    if(selected.some(x=>!x)||selected[0]?.campaign_id===selected[1]?.campaign_id)return 'I could not uniquely match two different campaigns. Please use their full names.';
+    const ids=['M-11','M-12','M-13','M-17','M-02','M-15'];
+    const rows=await Promise.all(selected.map(async c=>{
+      const filter={campaign_id:String(c!.campaign_id)};
+      const metrics=await Promise.all(ids.map(async metric_id=>firstRow(await read('get_metric',{metric_id,filters:filter}))));
+      return {name:cell(c!.name),metrics};
+    }));
+    const ratio=(r:Record<string,unknown>|undefined)=>r?.computable?`${cell(r.numerator)} / ${cell(r.denominator)}`:'Unavailable';
+    const value=(r:Record<string,unknown>|undefined)=>r?.computable&&r.value!=null?money(r.value):'Unavailable';
+    lines.push('| Campaign | Met / touched brands [M-11] | Proposed / met brands [M-12] | Wins / proposals [M-13] | Qualified without opportunity [M-17] | Total signed [M-02] | Mean signed deal [M-15] |',
+      '|---|---:|---:|---:|---:|---:|---:|');
+    for(const {name,metrics:[meet,proposal,win,handoff,signed,average]} of rows){
+      lines.push(`| ${name} | ${ratio(meet)} | ${ratio(proposal)} | ${ratio(win)} | ${ratio(handoff)} | ${value(signed)} | ${value(average)} |`);
+    }
+    const stages=rows.map(({metrics:m})=>({allClose:m[2]?.computable&&Number(m[2].value)===1, leaks:m[3]?.computable&&Number(m[3].numerator)>0}));
+    if(stages.every(x=>x.allClose&&x.leaks))lines.push('', 'Both campaigns won every recorded proposal and had qualified leads without an opportunity. Review handoff before changing the proposal process.');
+    lines.push('Reach and handoff are counted by brand; wins are counted by opportunity. Small samples can make these rates unstable. Signed value measures commitments.');
+    if(options.historical)await read('search_knowledge',{query:'historical campaign results creator network referrals partner interest form brands touched met proposals won'});
   } else if (intent === 'handoff_explanation') {
     await read('search_knowledge',{query:'handoff leak late qualification season clustering owner workload recorded fit drop reason unknown',related_kpi:'K-F-05'});
     const note=acc.citations.find(c=>c.id==='KB-06.7' && !c.history);
