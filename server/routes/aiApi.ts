@@ -9,7 +9,7 @@ import { verifyScopedAnswer, verifiedFactsFallback } from '../llm/claimGrounding
 import { answerOperational } from '../llm/operationalAnswers.ts';
 import { answerFinancial, financialIntent } from '../llm/financialAnswers.ts';
 import { answerProspects } from '../llm/prospectAnswers.ts';
-import { answerBasicAnalytics, historicalPacingDate } from '../llm/basicAnalytics.ts';
+import { answerBasicAnalytics, historicalPacingDate, historicalSignedDate } from '../llm/basicAnalytics.ts';
 import { answerStrategy } from '../llm/strategyAnswers.ts';
 import { missingPlannedSections, planAnalystEvidence } from '../llm/analystPlan.ts';
 import { isGreeting, requestBudget } from '../llm/requestBudget.ts';
@@ -1169,7 +1169,7 @@ export function createAiApiRouter(
     }
 
     const pool = ensurePool();
-    const historicalDate = historicalPacingDate(parsed.data.message);
+    const historicalDate = historicalPacingDate(parsed.data.message) ?? historicalSignedDate(parsed.data.message);
     const historicalFinance = financialIntent(parsed.data.message) === 'collection_status' &&
       /\b(?:2025|historical|last year)\b/i.test(parsed.data.message) &&
       !/\b(?:2026|current|compare|versus)\b/i.test(parsed.data.message);
@@ -1526,7 +1526,7 @@ export function createAiApiRouter(
         finalAnswer = deterministicGeneralAdvice(question);
       }
     } else if (!flexibleInvestigation && (campaignLookup || operationalQuery || basicIntent || prospectQuery || financialQuery || strategyQueries.length)) {
-      routeOverride = financialQuery === 'scenario_probability' ? 'lookup' : financialQuery === 'scenario_version' ? 'rag' : basicIntent === 'handoff_explanation' ? 'rag' : basicIntent === 'funnel_bottleneck' ? 'hybrid'
+      routeOverride = financialQuery === 'scenario_probability' ? 'lookup' : financialQuery === 'scenario_version' || financialQuery === 'inventory_policy' ? 'rag' : basicIntent === 'handoff_explanation' ? 'rag' : basicIntent === 'funnel_bottleneck' ? 'hybrid'
         : operationalQuery || basicIntent || prospectQuery?.kind === 'routes' || financialQuery === 'activation_inventory' ? 'sql' : 'hybrid';
       usedMetrics = Boolean(basicIntent || financialQuery || strategyQueries.length);
       usedKnowledge = !operationalQuery || financialQuery === 'cash_position' || strategyQueries.length > 0;

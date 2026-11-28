@@ -112,7 +112,7 @@ test('full runs record provider quota cases as pending while independent reads c
  state.set='full';
  const cases=[{...simple,test_id:'A'},{...simple,test_id:'B'}];
  await runEvaluationCases(cases,state,{
-  ask:async c=>c.test_id==='A'?{status:429,body:{code:'AI_QUOTA_EXHAUSTED'},retryAfter:60}:
+  ask:async c=>c.test_id==='A'?{status:429,body:{code:'OPENROUTER_RATE_LIMIT'},retryAfter:60}:
     {status:200,body:{route:'refuse',answer:'Cannot delete',answer_check_passed:true}},
   snapshot:async()=>'same',cleanup:async()=>true,persist:()=>{},
  });

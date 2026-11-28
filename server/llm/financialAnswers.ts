@@ -5,7 +5,7 @@ import { isExplicitWriteRequest } from './actionIntent.ts';
 import { compareReceivableUrgency, documentedOverdueAmount } from './receivableTiming.ts';
 const cell=(v:unknown)=>String(v??'—').split('|').join(String.fromCharCode(92)+'|').replace(/[\r\n]/g,' ');
 const money=(v:unknown)=>'₹'+Number(v).toLocaleString('en-IN',{maximumFractionDigits:2});
-export type FinancialIntent='activation_inventory'|'scenario_comparison'|'scenario_version'|'scenario_probability'|'forecast_actual'|'collection_status'|'cash_position';
+export type FinancialIntent='activation_inventory'|'inventory_policy'|'scenario_comparison'|'scenario_version'|'scenario_probability'|'forecast_actual'|'collection_status'|'cash_position';
 export function financialIntent(question:string,hasFilters=false):FinancialIntent|null {
  if(hasFilters||isExplicitWriteRequest(question))return null;
  if(/\b(?:change|update|set|revise|replace)\b.{0,60}\b(?:forecast|expected|stretch|projection|projected)\b/i.test(question))return null;
@@ -13,6 +13,7 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  // money snapshot. Route it to the same verified metrics as an explicit cash
  // position request instead of asking the model to expose internal tools.
  if(/\bbudget\b/i.test(question)&&! /\b(?:spend|expenses?|operating costs?|budget target|approved target)\b/i.test(question)&&(/\b(?:sponsorship|sponsor|our|current|season|202[56])\b/i.test(question)||/^\s*(?:what(?:'s| is)\s+)?budget\s*[?.!]*\s*$/i.test(question)))return 'cash_position';
+ if(inventoryPolicyIntent(question))return 'inventory_policy';
  if(/\bactivations?\b/i.test(question)&&/\b(slots?|price|prices|pricing|cost|costs|inventory|how many)\b/i.test(question))return 'activation_inventory';
  if(/\b(forecast|expected|stretch|projection|projected)\b/i.test(question)&&/\b(collected|received|receipts|actual|already paid)\b/i.test(question))return 'forecast_actual';
  if(scenarioVersionQuestion(question))return 'scenario_version';
@@ -23,6 +24,13 @@ export function financialIntent(question:string,hasFilters=false):FinancialInten
  if(/\b(complete picture|cash position|how much is signed|cash-type signed|remains outstanding|largest outstanding balances)\b/i.test(question)||(/\b(signed|commitments?)\b/i.test(question)&&/\b(collected|cash collected|received)\b/i.test(question)&&/\b(compare|distinction|difference|separate|outstanding|receivable|unpaid|due dates?|overdue)\b/i.test(question)))return 'cash_position';
  if(/\b(paid late|late payment|outstanding|cash collection rate|collection rate|cash collected)\b|\b(?:cash|money) did we (?:collect|receive)\b/i.test(question))return 'collection_status';
  return null;
+}
+function inventoryPolicyIntent(question:string):'packages'|'standalone'|'title_timing'|'exclusivity_version'|undefined {
+ if(/\b(?:conflict|based on|decision log)\b/i.test(question)&&/\bexclusiv\w*\b/i.test(question))return 'exclusivity_version';
+ if(/\bexclusiv\w*\b/i.test(question)&&/\b(?:standalone|on its own|separately)\b/i.test(question))return 'standalone';
+ if(/\btitle\b/i.test(question)&&/\b(?:week\s+|w-?)\d+\b/i.test(question)&&/\b(?:sell|close|sign)\b/i.test(question))return 'title_timing';
+ if(/\b(?:packages|sponsorship packages)\b/i.test(question)&&/\b(?:offer|sell|price)\b/i.test(question)&&
+    /\b(?:sponsor|sponsorship|brand|partner|fintech)\b/i.test(question))return 'packages';
 }
 function scenarioVersionQuestion(question: string): {scenario: string; amount: number} | undefined {
  const target=question.match(/\b(base|plan|stretch)\b/i)?.[1]?.toLowerCase();
@@ -50,7 +58,57 @@ export async function getInventory(pool:QueryablePool,id:string|undefined,ctx:Re
 type Read=(name:string,args:Record<string,unknown>)=>Promise<Record<string,unknown>>;
 export async function answerFinancial(intent:FinancialIntent,read:Read,acc:ToolRunAccumulator,options:{includeReceivableDetails?:boolean; question?:string}={}):Promise<string>{
  const lines:string[]=[];
- if(intent==='scenario_version'){
+ if(intent==='inventory_policy'){
+  const policy=inventoryPolicyIntent(options.question??'');
+  const queries:Record<string,string[]>={
+   packages:['commercial inventory asset definitions title presenting activation digital packages','frozen realised price triangles low mode high title presenting activation digital asking price ratios','only the title carries exclusivity approved broad narrow payments partner'],
+   standalone:['asset definitions standalone category exclusives rejected worth less than deals they block','operating policy sell no standalone category exclusives negotiate narrow title'],
+   title_timing:['frozen asset parameters title lead times weeks sell by W7 term sheet','title term sheet W0 stop at W7 if unsold presenting decision rules'],
+   exclusivity_version:['approved stretch broad title exclusivity EXCL_SCOPE negotiating goal narrow upside'],
+  };
+  if(!policy)return 'Which inventory or exclusivity rule would you like to check?';
+  await Promise.all(queries[policy].map(query=>read('search_knowledge',{query,related_bet:'B5'})));
+  if(policy==='exclusivity_version')await read('search_knowledge',{
+    query:'conflict title narrow exclusivity decision log broad approved stretch C11',include_history:true,related_bet:'B5',
+  });
+  const note=(id:string)=>(acc.citations.find(c=>c.id===id&&c.decision_status==='approved'&&!c.history)?.text as string|undefined);
+  if(policy==='standalone'){
+   const policyText=note('KB-13.4');
+   if(!policyText)return 'The approved exclusivity rule could not be verified.';
+   lines.push('The approved policy rejects standalone category exclusives. Narrow exclusivity can be negotiated within a title deal. [KB-13.4]');
+   const explanation=note('KB-04.2')?.match(/Standalone category exclusives: ([\s\S]+?)\. Standard package/i)?.[1];
+   if(explanation)lines.push('The inventory rationale is '+cell(explanation)+'. The price ratio is a benchmark assumption. [KB-04.2]');
+  }else if(policy==='title_timing'){
+   const when=options.question?.match(/\b(?:week\s+|w)(\d+)\b/i);
+   const timing=note('KB-04.3')?.match(/Lead times \(weeks\): title (\d+) \/ (\d+) \/ (\d+) with sell-by W(\d+)/i);
+   const gate=note('KB-11.3')?.match(/Title: ([^;]+;[^.]+)\./i)?.[1];
+   if(!timing||!when)return 'The approved title timeline could not be verified for the requested week.';
+   const [,low,,high,stop]=timing;
+   lines.push(`Title lead time is an assumption of ${low}–${high} weeks, with a sell-by date in week ${stop}. [KB-04.3]`);
+   if(Number(when[1])+Number(low)>Number(stop))lines.push('A new pitch falls outside even the shortest modelled timeline. Review an existing term sheet first. If the title remains unsold at the cutoff, stop the title pitch and check presenting availability.');
+   else lines.push('There is time in the modelled window at the low end. Verify the buyer’s stage and approval date before committing capacity.');
+   if(gate)lines.push('Approved title decision rule: '+cell(gate)+'. [KB-11.3]');
+  }else if(policy==='exclusivity_version'){
+   const current=note('KB-04.4');
+   if(!current)return 'The approved exclusivity assumption could not be verified.';
+   const correction=current.match(/The approved stretch[\s\S]+?(?=Narrow exclusivity)/i)?.[0]?.trim();
+   const upside=current.match(/The \+₹[\d.]+L gain from narrow[^.]+\./i)?.[0];
+   if(correction)lines.push('The approved model uses broad exclusivity. '+cell(correction)+' [KB-04.4]');
+   if(upside)lines.push(cell(upside)+' [KB-04.4]');
+   if(acc.citations.some(c=>c.id==='KB-15.4'&&c.history))lines.push('Historical only: the log wording described the desired negotiating outcome. [KB-15.4]');
+  }else{
+   const pricing=note('KB-04.3')?.split('; Close per meeting:')[0];
+   if(!pricing)return 'The approved inventory pricing assumptions could not be verified.';
+   lines.push('Package pricing uses model assumptions based on asking-price ratios. Confirm live availability before making an offer.','',
+    '| Package | Modelled realised price, low / most likely / high (₹ lakh) |','|---|---:|');
+   for(const m of pricing.matchAll(/\b(title|presenting|activation|digital) ([\d.]+) \/ ([\d.]+) \/ ([\d.]+)/gi)){
+    lines.push(`| ${m[1]} | ${m[2]} / ${m[3]} / ${m[4]} |`);
+   }
+   lines.push('', 'Pricing assumptions: [KB-04.3].');
+   if(note('KB-04.2'))lines.push('The approved inventory includes title, presenting and add-on packages. Standalone exclusives are excluded. [KB-04.2]');
+   if(note('KB-04.4'))lines.push('Title carries exclusivity. Narrow payments-partner language can be negotiated as part of the title package. [KB-04.4]');
+  }
+ }else if(intent==='scenario_version'){
   const request=scenarioVersionQuestion(options.question??'');
   if(!request)return 'Which approved scenario figure would you like to check?';
   const catalogue=await read('get_scenario',{});

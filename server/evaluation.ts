@@ -142,7 +142,7 @@ export async function runEvaluationCases(cases:EvalCase[],run:EvaluationRun,deps
         code: typeof err.code === 'string' ? err.code.slice(0,120) : errorCode,
         message: typeof err.message === 'string' ? err.message.slice(0,500) : typeof res.body.message === 'string' ? res.body.message.slice(0,500) : undefined };
       const providerQuota=res.body.route==='quota_exhausted' || res.body.generation_fallback_reason==='quota' ||
-        pauseDetail.code==='AI_QUOTA_EXHAUSTED' || String(res.body.answer??'').includes("Today's free AI quota is used up");
+        ['AI_QUOTA_EXHAUSTED','OPENROUTER_RATE_LIMIT'].includes(pauseDetail.code??'') || String(res.body.answer??'').includes("Today's free AI quota is used up");
       if(run.set==='full'&&providerQuota){
         (run.deferred_cases ??= {})[c.test_id]={...pauseDetail,reason:'provider_quota'};
         run.retry_after_seconds=res.retryAfter;

@@ -94,3 +94,17 @@ test('a named campaign diagnosis reads response and closing counts independently
  assert.match(out,/0 wins from 6 proposals/);
  assert.match(out,/Closing is the clearest observed bottleneck/);
 });
+
+test('campaign comparison resolves abbreviated names using channel and campaign name',async()=>{
+ const question='Compare creator referrals with the inbound form.';
+ assert.equal(basicAnalyticsIntent(question),'campaign_pair');
+ const reads:string[]=[];
+ const text=await answerBasicAnalytics('campaign_pair',async(name,args)=>{
+  if(name==='list_records')return {rows:[{name:'Creator Network Referrals',campaign_id:'C1',channel_group:'warm'},{name:'Partner Interest Form',campaign_id:'C2',channel_group:'inbound'}]};
+  reads.push(String((args.filters as Record<string,unknown>).campaign_id)+':'+String(args.metric_id));
+  return {rows:[{computable:true,value:0.5,numerator:5,denominator:10}]};
+ },accumulator(),{question});
+ assert.match(text,/Creator Network Referrals/);
+ assert.match(text,/Partner Interest Form/);
+ assert.ok(reads.includes('C1:M-11')&&reads.includes('C2:M-17'));
+});

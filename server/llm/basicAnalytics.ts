@@ -7,6 +7,16 @@ export function historicalPacingDate(question: string): string | undefined {
   if (!/\b(?:against|versus|vs|progress|pacing|on track)\b/i.test(question) ||
       !/\b(?:target|goal|plan)s?\b/i.test(question) ||
       /\b(?:change|update|create|delete|move|set|approve|compare)\b/i.test(question)) return;
+  return explicitHistoricalDate(question);
+}
+export function historicalSignedDate(question:string):string|undefined{
+  if(!/\b(?:as of|by|on|through)\b/i.test(question)||
+     !/\b(?:partnerships?|sponsorships?|deals?|signed value)\b/i.test(question)||
+     !/\b(?:confirmed|sign(?:ed)?|how much|for how much)\b/i.test(question)||
+     /\b(?:change|compare|create|update|delete|move|mark|approve)\b/i.test(question))return;
+  return explicitHistoricalDate(question);
+}
+function explicitHistoricalDate(question:string):string|undefined{
   const iso = question.match(/\b2025-\d{2}-\d{2}\b/)?.[0];
   const named = question.match(/\b(\d{1,2})(?:st|nd|rd|th)?[ -]([a-z]{3,9})[, ]+2025\b/i);
   const month = named ? months.findIndex(m => m === named[2].toLowerCase() || m.slice(0,3) === named[2].toLowerCase()) + 1 : 0;
@@ -24,6 +34,7 @@ function campaignPair(question: string): string[] | undefined {
 export function basicAnalyticsIntent(question: string, hasFilters = false, previousQuestion = ''): BasicAnalyticsIntent | null {
   if (hasFilters) return null;
   if (historicalPacingDate(question)) return 'target_pacing';
+  if (historicalSignedDate(question)) return 'signed';
   const fullContext = `${question}\n${previousQuestion}`;
   if (/\b(?:three|3)\b/.test(question.toLowerCase()) && /\bactions?\b/i.test(question) && /\b(?:based on|that diagnosis|this diagnosis)\b/i.test(question) && /\bchannel\b/i.test(previousQuestion) && /\bwhy\b/i.test(previousQuestion)) return 'channel_actions';
   if (/\bwhy\b/i.test(question) && /\bchannel\b/i.test(question) && /\b(?:strongest|better|performing)\b/i.test(question) && /\bchannel\b/i.test(previousQuestion)) return 'channel_why';
@@ -123,7 +134,7 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       lines.push(`- Audit cold-channel qualification and follow-up records before assigning more capacity there. Current evidence: ${coldText} [M-13]. Measure M-11 meeting rate and M-13 proposal-to-win on the next comparable cohort; keep or stop based on those observations, not a presumed cause.`);
       lines.push('', 'These are recommendations only; no tasks or campaigns were executed.');
     }
-    lines.push('', 'Source: current selected edition and as-of date; all channel rates use M-13’s opportunity-level denominator.');
+    lines.push('', 'Source: selected edition and as-of date. M-13 uses an opportunity-level denominator.'+(options.historical?' M-14 uses a brand-level first-touch denominator.':''));
   } else if (intent === 'historical_funnel_compare') {
     const editionIds=['ED-2025','ED-2026-DEMO'];
     const stageDefs=[['M-11','Meeting rate by channel'],['M-12','Proposal rate by channel (brand-level)'],['M-13','Proposal-to-win rate (opportunity-level)']];
@@ -190,7 +201,7 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
     const selected=pair.map(input=>{
       const words=normalize(input).split(' ').filter(t=>!['the','campaign'].includes(t));
       const matches=candidates.filter(c=>{
-        const name=normalize(String(c.name)).split(' ');
+        const name=normalize(String(c.name)+' '+String(c.channel_group??'')).split(' ');
         return words.length>0&&words.every(t=>name.includes(t));
       });
       return matches.length===1?matches[0]:undefined;
@@ -354,6 +365,7 @@ export async function answerBasicAnalytics(intent: BasicAnalyticsIntent, read: R
       }
     }
     lines.push('', 'Signed commitments are distinct from cash collected.');
+    if(options.question&&historicalSignedDate(options.question))lines.push('The point-in-time cutoff includes activity through the end of the selected date in IST.');
     await read('search_knowledge', { query: 'signed sponsorship cash type in kind synthetic dataset payment records' });
     if (historical && acc.citations.some(c => c.id === 'KB-02.1' && !c.history)) {
       lines.push('The original dataset has no receipts, so actual cash collected cannot be established. [KB-02.1]');
